@@ -3,7 +3,8 @@
 The root `Dockerfile` builds React and Spring into one image. Spring serves the
 frontend at `/` and the API at `/api` on port 8080. SQLite data lives under `/data`
 on a named volume. The container runs one Java process as UID/GID 10001, not root.
-Express is not included. An image has not yet been published by this work.
+The public image is `ghcr.io/aungzm/cssu-rewards-forked:demo`, with amd64 and
+arm64 variants under the same tag.
 
 The URL selects the database automatically. SQLite needs no database server:
 
@@ -34,7 +35,7 @@ same image, but the sample Compose file does not start a PostgreSQL server.
 
 Automatic branch/PR builds run only when frontend, Spring source, the Spring POM,
 Dockerfile, `.dockerignore`, or this image workflow/smoke script changes. Docs,
-Markdown, `.env` examples, Compose deployment settings, and Express-only changes
+Markdown, `.env` examples, and Compose deployment settings
 do not trigger a build by themselves. A mixed code-and-docs change still builds.
 Version tags and manual runs bypass path filtering. `.dockerignore` also excludes
 docs and environment files from the build context, but it does not control when
@@ -67,7 +68,7 @@ The workflow does not make the source repository public or change package
 visibility automatically. Anyone can download a public image and inspect its
 compiled frontend and backend. Never include secrets or a populated database in
 the image. `.dockerignore` excludes environment files, databases, Git data,
-Express, dependencies, and local build outputs.
+dependencies, and local build outputs.
 
 Private repository Actions usage may count against your GitHub plan. Check your
 account's Actions usage and package policies before enabling regular publication.

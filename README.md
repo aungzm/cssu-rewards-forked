@@ -7,16 +7,15 @@
 <p align="center">A points and rewards system for the Computer Science Student Union at the University of Toronto.</p>
 
 <p align="center">
-  <a href="https://cssu-rewards-ad54.vercel.app">Live demo</a>
+  <a href="https://cssu-rewards.aungzm.com">Live demo</a>
 </p>
 
 <p align="center">
   <img alt="React" src="https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.7-3178c6?logo=typescript&logoColor=white">
-  <img alt="Express" src="https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white">
-  <img alt="Prisma" src="https://img.shields.io/badge/Prisma-6-2d3748?logo=prisma&logoColor=white">
   <img alt="Spring Boot" src="https://img.shields.io/badge/Spring_Boot-3.5-6db33f?logo=springboot&logoColor=white">
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169e1?logo=postgresql&logoColor=white">
+  <img alt="SQLite" src="https://img.shields.io/badge/SQLite-003b57?logo=sqlite&logoColor=white">
 </p>
 
 CSSU Rewards runs the point system for the CS student union. Students earn points from purchases recorded by staff, event attendance and promotions. They can send points to each other and redeem them for rewards at the counter. Staff use the same app to manage accounts, events, promotions and redemption requests.
@@ -58,58 +57,53 @@ The project started as a CSC309 (Software Design) course project in Winter 2025 
 | Layer | Technology |
 | --- | --- |
 | Frontend | React 19, TypeScript, Vite 6, Tailwind CSS 3, React Router 7 |
-| Express API | Node.js, Express 4, Prisma 6, PostgreSQL, Zod, JSON Web Tokens, bcrypt |
-| Spring API | Java 21, Spring Boot 3.5, Spring Security, Spring Data JPA, Flyway, PostgreSQL or SQLite |
-| Tests | Jest and Supertest for Express, JUnit and MockMvc on H2 for Spring |
+| Backend | Java 21, Spring Boot 3.5, Spring Security, Spring Data JPA, Flyway, JSON Web Tokens, bcrypt |
+| Database | PostgreSQL by default, or SQLite for a single-instance demo |
+| Tests | JUnit and MockMvc on H2 and SQLite, plus container smoke tests |
 
 ## Repository layout
 
 ```
-backend/         Express and Prisma API, the original implementation
-backend-spring/  Spring Boot port of the same API
+backend-spring/  Spring Boot API and database migrations
 frontend/        React single-page app
-docs/            Screenshots used in this README
+docs/            Screenshots and Docker deployment instructions
+.github/         Image build workflow and container smoke tests
+Dockerfile       Combined Spring and React image
 ```
 
 ## Running the app
 
-### Prerequisites
+### Docker deployment
 
-- Node.js 18 or newer
-- PostgreSQL 14 or newer for Express or Spring's default database mode. Spring can also use SQLite without a database server.
-- Java 21 if you want to run the Spring backend
+The public image includes the frontend and backend, with amd64 and arm64 variants:
 
-### 1. Express backend
-
-```bash
-cd backend
-cp .env.example .env
+```sh
+docker pull ghcr.io/aungzm/cssu-rewards-forked:demo
 ```
 
-Set `DATABASE_URL` and a random `JWT_SECRET` in `.env`, then install and start the API:
+Copy [`docs/docker/docker-compose.yml`](docs/docker/docker-compose.yml) and
+[`docs/docker/.env.example`](docs/docker/.env.example) into a deployment directory.
+Rename `.env.example` to `.env`, fill in the JWT secret and bootstrap password,
+then run:
 
-```bash
-npm install
-npm run seed
-npm run dev
+```sh
+docker compose up -d
 ```
 
-The API listens on http://localhost:3000. `npm run seed` drops and recreates the schema, then loads sample users, events and promotions. To skip the sample data, run `npm run reset` instead. Both commands destroy existing data, so use them only against a development database.
+Open http://localhost:8080. SQLite data persists on the named volume mounted at
+`/data`. The browser uses `/api` on the same origin, so no frontend/backend URL
+settings are needed. `DEMO_MODE=true` configures both the API and UI at runtime.
+For reverse proxies, set `CORS_ORIGINS` to the public site origin without a
+trailing slash. See the [Docker and GHCR guide](docs/docker/README.md) for the
+full setup, persistence limits, and security warnings.
 
-The seeded manager account is `manager1` with password `20952`.
+### Local development prerequisites
 
-### 2. Frontend
+- Java 21 for the backend. The included Maven wrapper downloads Maven as needed.
+- Node.js 22 for the frontend.
+- PostgreSQL for the default database mode, or SQLite with no database server.
 
-```bash
-cd frontend
-cp .env.example .env
-npm install
-npm run dev
-```
-
-Open http://localhost:5173. The example environment file points the app at http://localhost:3001, where the Spring backend listens. To use Express locally instead, set `VITE_BACKEND_URL=http://localhost:3000`.
-
-### 3. Spring backend
+### Backend
 
 ```bash
 cd backend-spring
@@ -118,12 +112,12 @@ cd backend-spring
 Set `DATABASE_URL`, `DATABASE_USER`, `DATABASE_PASSWORD` and a `JWT_SECRET` of at least 32 bytes, then run:
 
 ```bash
-./mvnw spring-boot:run
+sh ./mvnw spring-boot:run
 ```
 
 On Windows use `./mvnw.cmd`. The Spring API listens on http://localhost:3001, which is the frontend's default when `VITE_BACKEND_URL` is unset. For a demo instance, set `DEMO_MODE=true` in Spring's process environment and `VITE_DEMO_MODE=true` in the frontend `.env` before building. This disables password reset and password changes and hides their UI. Both default to `false`; do not use the existing reset flow with real accounts (see [the Spring backend warning](backend-spring/README.md)).
 
-Flyway creates the schema on first start, so use an empty database. Do not point it at the Express database. To create the first superuser, start the app with `BOOTSTRAP_SUPERUSER_UTORID`, `BOOTSTRAP_SUPERUSER_EMAIL` and `BOOTSTRAP_SUPERUSER_PASSWORD` set, and remove those variables once the account exists. More detail is in [backend-spring/README.md](backend-spring/README.md).
+Flyway creates the schema on first start, so use an empty database. To create the first superuser, start the app with `BOOTSTRAP_SUPERUSER_UTORID`, `BOOTSTRAP_SUPERUSER_EMAIL` and `BOOTSTRAP_SUPERUSER_PASSWORD` set, and remove all three once the account exists. More detail is in [backend-spring/README.md](backend-spring/README.md).
 
 The URL selects the database automatically: `jdbc:sqlite:./rewards.db` for a
 single-instance SQLite demo, or `jdbc:postgresql://host:5432/database` for
@@ -132,33 +126,44 @@ or password. PostgreSQL remains the default when no URL is set, and switching
 databases does not migrate existing data. See the
 [SQLite setup and storage limits](backend-spring/README.md#sqlite-demo).
 
-### Docker image
+### Frontend
 
-The root `Dockerfile` packages Spring and React in one image, with SQLite stored
-on a volume. See the [GHCR workflow and Compose setup](docs/docker/README.md).
-The workflow builds amd64/arm64 images and can publish to GHCR. No image has been
-published by this work yet.
+```sh
+cd frontend
+cp .env.example .env
+npm ci
+npm run dev
+```
+
+Open http://localhost:5173. The example environment file points the frontend at
+the standalone Spring API on http://localhost:3001. Local frontend environment
+changes require restarting Vite, or rebuilding a separately hosted frontend.
 
 ## Tests
 
 ```bash
-cd backend
-npm test
-
-cd ../backend-spring
-./mvnw test
-./mvnw -Psqlite-tests test
+cd backend-spring
+sh ./mvnw test
+sh ./mvnw -Psqlite-tests test
 
 cd ../frontend
 npm run lint
 npm run build
 ```
 
-The Express tests generate a temporary SQLite schema and restore the PostgreSQL client when they finish. The Spring tests use H2 by default; `-Psqlite-tests` runs the same suite against SQLite. Spring also tests SQLite restart persistence. Neither suite touches the development database.
+Use `.\mvnw.cmd` on Windows. The backend tests use H2 by default;
+`-Psqlite-tests` runs the same API and concurrency suite against a temporary
+SQLite database. Additional tests cover SQLite restart persistence. Neither
+configuration uses the development database. The Docker workflow also tests the
+combined container before publishing it.
 
 ## API
 
 All routes require a bearer token except login and password reset. The API is grouped by resource:
+
+These paths apply to the standalone API. In the Docker image they are prefixed
+with `/api`, for example `/api/auth/tokens` and `/api/users/me`. Demo mode
+disables password reset and password changes.
 
 | Prefix | Contents |
 | --- | --- |
@@ -170,16 +175,18 @@ All routes require a bearer token except login and password reset. The API is gr
 
 ## Demo
 
-A hosted version runs at https://cssu-rewards-ad54.vercel.app.
-
-```
-UTORid:   Clive123
-Password: Clive123
-```
+A hosted version runs at https://cssu-rewards.aungzm.com. Use an account supplied
+by the demo operator. The image does not seed a default public visitor account;
+the optional bootstrap credentials create a full administrator and should not
+be shared as a public demo login.
 
 ## Project status
 
-The Express backend is the original implementation. The Spring Boot port implements the same API surface and passes its own test suite, but its responses have not been checked field for field against Express. See [backend-spring/README.md](backend-spring/README.md) for what it covers and what still needs work.
+Spring Boot is the only backend. API and concurrency tests run on H2 and SQLite;
+integration testing against an actual PostgreSQL server remains outstanding.
+The password-reset flow is unsafe for real accounts when demo mode is off.
+See [backend-spring/README.md](backend-spring/README.md) for coverage, database
+configuration, and security limitations.
 
 ## License
 

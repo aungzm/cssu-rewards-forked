@@ -1,11 +1,11 @@
 # CSSU Rewards Spring backend
 
-Spring Boot REST API replacing the Express backend in `../backend`.
+Spring Boot REST API for CSSU Rewards, with PostgreSQL and SQLite support.
 The React UI remains in `../frontend`. Authentication, user management,
 transfers, redemptions, purchases, adjustments, promotion management, event
 management, guest registration, attendance awards, event transactions, and
-current-user event lists have Spring endpoints. H2 tests cover these flows;
-full response and error parity with Express has not been verified.
+current-user event lists have Spring endpoints. H2 and SQLite tests cover these
+flows, including concurrent writes and SQLite restart persistence.
 
 ## Layout
 
