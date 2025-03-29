@@ -1,0 +1,142 @@
+// prisma.schema
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL") // Use SQLite for local development
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum TransactionType {
+  PURCHASE
+  ADJUSTMENT
+  REDEMPTION
+  TRANSFER
+  EVENT
+}
+
+model resetToken {
+  id        Int      @id @default(autoincrement())
+  token     String
+  expiresAt DateTime 
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int      @unique
+}
+
+model User {
+  id                 Int           @id @default(autoincrement())
+  utorid             String        @unique
+  email              String        @unique
+  name               String?
+  birthday           DateTime?
+  avatarUrl          String?
+  password           String?
+  role               String        @default("REGULAR") // REGULAR, CASHIER, MANAGER, SUPERUSER
+  activated          Boolean       @default(false)
+  verified           Boolean       @default(false)
+  suspicious         Boolean       @default(false)  // used for cashier accounts
+  resetTokens        resetToken[]
+  lastLogin          DateTime?       
+  points             Int           @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  transactions       Transaction[] @relation("UserTransactions") // Transactions where the user is the affected account (e.g., for redemption, event awards)
+  operatorTransactions Transaction[] @relation("OperatorTransactions") // Transactions where the user acted as an operator (e.g., cashier or manager)
+  transfersSent      Transaction[] @relation("TransfersSent") // Transfers sent and received (for transfer transactions)
+  transfersReceived  Transaction[] @relation("TransfersReceived")
+  organizedEvents    OrganizerEvent[]  // Events organized by the user (via join table)
+  rsvps              Rsvp[] // RSVPs to events
+  userPromotions     UserPromotion[] @relation("UserPromotionToUser")
+}
+
+model Transaction {
+  id                     Int             @id @default(autoincrement())
+  type                   TransactionType
+  amount                 Float?          // For purchases/redemptions; can be null for adjustments or transfers
+  points                 Int
+  remarks                String?         // <-- Added field for storing remarks
+  createdAt              DateTime        @default(now())
+  user                   User?           @relation("UserTransactions", fields: [userId], references: [id])
+  userId                 Int?
+  operator               User?           @relation("OperatorTransactions", fields: [operatorId], references: [id])
+  operatorId             Int?
+  sender                 User?           @relation("TransfersSent", fields: [senderId], references: [id])
+  senderId               Int?
+  receiver               User?           @relation("TransfersReceived", fields: [receiverId], references: [id])
+  receiverId             Int?
+  suspicious             Boolean         @default(false)
+  relatedTransaction     Transaction?    @relation("AdjustmentToTransaction", fields: [relatedId], references: [id])
+  relatedId              Int?
+  adjustments            Transaction[]   @relation("AdjustmentToTransaction")
+  promotionIds           Promotion[] @relation("TransactionPromotion")
+  relatedEvent           Event?          @relation("EventTransactions", fields: [relatedEventId], references: [id]) // Add relation to Event
+  relatedEventId         Int?         // Add field for related event
+}
+
+
+model Event {
+  id             Int              @id @default(autoincrement())
+  name           String
+  description    String
+  startTime      DateTime
+  endTime        DateTime
+  location       String
+  capacity       Int?
+  pointsRemain   Int
+  pointsAwarded  Int              @default(0)
+  published      Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  transactions   Transaction[]    @relation("EventTransactions") // Add relation back to Transaction
+  organizers     OrganizerEvent[] @relation("EventToOrganizer")
+  guests         Rsvp[]           @relation("EventToRsvp")
+}
+
+
+
+
+model OrganizerEvent {
+  id           Int    @id @default(autoincrement()) // Relation to event and user (organizer)
+  event        Event  @relation("EventToOrganizer", fields: [eventId], references: [id], onDelete: Cascade)
+  eventId      Int
+  organizer    User   @relation(fields: [organizerId], references: [id])
+  organizerId  Int
+  @@unique([eventId, organizerId])
+}
+
+model Rsvp {
+  id        Int      @id @default(autoincrement())
+  event     Event    @relation("EventToRsvp", fields: [eventId], references: [id], onDelete: Cascade)  // Relation to event and user
+  eventId   Int
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  confirmed Boolean  @default(false)  // true only if attendance is confirmed
+  @@unique([eventId, userId])
+}
+
+model Promotion {
+  id                   Int    @id @default(autoincrement())
+  name                 String
+  description          String
+  startTime            DateTime
+  endTime              DateTime
+  rate                 Float?   
+  minSpending          Float?   
+  type                 String  
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  points               Int?     @default(0)  // If points are set, the promotion is a points promotion
+  users                UserPromotion[]  // Users who have used this promotion
+  transactions         Transaction[] @relation("TransactionPromotion")     // Transactions that used this promotion
+}
+
+model UserPromotion {
+  id          Int       @id @default(autoincrement())
+  user        User      @relation("UserPromotionToUser", fields: [userId], references: [id])
+  userId      Int
+  promotion   Promotion @relation(fields: [promotionId], references: [id])
+  promotionId Int
+  usedAt      DateTime  @default(now()) // Timestamp for when the promotion was used
+  @@unique([userId, promotionId]) // Ensures a user can only use a promotion once
+}
