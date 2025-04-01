@@ -1,17 +1,18 @@
 {
   "compilerOptions": {
     /* Base Options */
-    "target": "ES2022", // Keep: Modern JS target
-    "module": "commonjs", // Keep: You've chosen CommonJS output (require/module.exports)
+    "target": "ESNext", // Keep: Modern JS target
+    "module": "ESNext", // Keep: You've chosen CommonJS output (require/module.exports)
     "outDir": "./dist", // Keep: Output directory for compiled JS
     "rootDir": "./", // Keep: Source files start from the root (where index.ts is)
     "baseUrl": "./", // Keep: Can be useful for path aliases later if needed
+    "moduleResolution": "bundler",
 
     /* Strictness & Interop */
     "strict": true, // Keep: Enforces good practices
     "esModuleInterop": true, // Keep: Important for compatibility between CJS and potential ESM dependencies
     "forceConsistentCasingInFileNames": true, // Keep: Prevents case-related bugs
-
+    "allowSyntheticDefaultImports": true,
     /* Advanced & Convenience */
     "skipLibCheck": true, // Keep: Speeds up type checking
     "resolveJsonModule": true // Keep: Allows importing .json files
