@@ -1,10 +1,9 @@
 import React from "react";
 import ThemeToggle from "./ThemeToggle";
 import { User } from "lucide-react";
-// Assuming useUser provides user, isLoading, error, AND logout
-import { useUser } from "../context/UserContext"; // Make sure UserContext provides logout
+import { useUser } from "../context/UserContext"; 
 
-// --- Interfaces (keep as is) ---
+// Interfaces (move to a separate file later probably in types.ts)
 interface UserData {
   id: number;
   utorid: string;
@@ -84,32 +83,31 @@ const userHasRequiredRole = (
   return requiredRoles.includes(userRole);
 };
 
-// --- Navbar Component ---
+// Navbar Component
 const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
-  // Make sure useUser provides logout, otherwise you need to get it differently
   const { userData, isLoading, error, signout } = useUser();
   const isSuperUser = userData?.role === "SUPERUSER";
 
-  // --- Avatar Rendering Logic ---
+  // Avatar Rendering Logic
   const renderAvatar = () => {
     return (
       <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
         {userData?.avatarUrl ? (
-          // If URL exists, use it as background
+          // If URL exists, use it
           <div
             className="w-full h-full bg-cover bg-center"
             style={{ backgroundImage: `url(${userData.avatarUrl})` }}
-            aria-label={`${userData.utorid}'s avatar`} // Accessibility
+            aria-label={`${userData.utorid}'s avatar`} 
           ></div>
         ) : (
           // Otherwise, render the icon component
-          <User size={20} aria-label="Default user avatar" /> // Accessibility
+          <User size={20} aria-label="Default user avatar" />
         )}
       </div>
     );
   };
 
-  // --- Loading State ---
+  // Loading State
   if (isLoading) {
     return (
       <nav className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-6 py-4 shadow-md sticky top-0 z-50">
