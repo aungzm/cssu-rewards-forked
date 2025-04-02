@@ -1,7 +1,7 @@
 // prisma.schema
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL") // Use SQLite for local development
+  url      = "file:./dev.db" // Use SQLite for local development
 }
 
 generator client {
@@ -14,6 +14,13 @@ enum TransactionType {
   REDEMPTION
   TRANSFER
   EVENT
+}
+
+enum RoleType {
+  REGULAR
+  CASHIER
+  MANAGER
+  SUPERUSER
 }
 
 model resetToken {
@@ -32,7 +39,7 @@ model User {
   birthday           DateTime?
   avatarUrl          String?
   password           String?
-  role               String        @default("REGULAR") // REGULAR, CASHIER, MANAGER, SUPERUSER
+  role               RoleType
   activated          Boolean       @default(false)
   verified           Boolean       @default(false)
   suspicious         Boolean       @default(false)  // used for cashier accounts
