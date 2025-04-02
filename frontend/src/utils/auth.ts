@@ -19,4 +19,4 @@ export const isAuthenticated = (): boolean => {
   };
   
   // Base URL for API requests
-  export const API_BASE_URL = 'http://localhost:3001'; // Change this when needed
+  export const API_BASE_URL = 'http://localhost:3000'; // Change this when needed
