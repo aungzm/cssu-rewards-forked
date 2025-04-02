@@ -196,7 +196,7 @@ await createUser("clive123",RoleType.SUPERUSER,true,true)
 
 // create transactions
 const selectUsers = regularUserIds.slice(0,3);
-selectUsers.forEach(async (id)=> {
+for (const id of selectUsers) {
 	for (let i=1;i<11;i++) {
 		const transaction = await createPurchaseTransaction(1000*i,1000*i,false,id,cashier1.id);
 		await createPurchaseTransaction(69*i,69*i,true,id,sussycashier.id);
@@ -208,7 +208,7 @@ selectUsers.forEach(async (id)=> {
 		}
 		await createRedemptionTransaction(id, 50*i);
 	}
-});
+}
 for (let i=0;i<selectUsers.length-1;i++) {
 	for (let j=1;j<6;j++) {
 		await createTransferTransaction(selectUsers[i],selectUsers[i+1],10*j);
