@@ -233,7 +233,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
               </a>
               {/* Use button for actions like logout */}
               <button
-                onClick={signout} // Call logout from useUser context
+                onClick={signout} // Call signout from useUser context
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
               >
                 Sign Out
