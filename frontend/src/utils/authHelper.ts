@@ -1,4 +1,8 @@
-import { clearAuth } from './auth';
+// Clear authentication data
+export const clearAuth = (): void => {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('tokenExpiresAt');
+};
 
 // Handle authentication errors in API responses
 export const handleAuthError = (status: number): void => {

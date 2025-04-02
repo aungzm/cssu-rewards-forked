@@ -1,20 +1,22 @@
-// src/components/ProtectedRoute.tsx
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom'; // Import Outlet
 import { isAuthenticated } from '../utils/auth';
+import { UserProvider } from '../context/UserContext'; // Import UserProvider
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  // If not authenticated, redirect to login
+const ProtectedRoute: React.FC = () => {
+  // Check Authentication
   if (!isAuthenticated()) {
+    // If not authenticated, redirect to login
     return <Navigate to="/login" replace />;
   }
-  
-  // Otherwise, render the protected content
-  return <>{children}</>;
+
+  // If authenticated, wrap the content (Outlet) with UserProvider
+  return (
+    <UserProvider>
+      {/* Outlet will render the matched nested route (e.g., Dashboard) */}
+      <Outlet />
+    </UserProvider>
+  );
 };
 
 export default ProtectedRoute;

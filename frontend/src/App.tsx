@@ -1,38 +1,47 @@
-// src/App.tsx
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import ProtectedRoute from './components/ProtectedRoute';
-import Signup from './pages/Signup';
-import { isAuthenticated } from './utils/auth';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import ProtectedRoute from "./components/ProtectedRoute"; 
+import Signup from "./pages/Signup";
+import { isAuthenticated } from "./utils/auth";
 
 function App() {
   return (
     <Router>
+      {/* UserProvider is now inside ProtectedRoute */}
       <Routes>
-        {/* Login route - redirect to dashboard if already authenticated */}
-        <Route 
-          path="/login" 
-          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />} 
+        {/* Public Routes */}
+        <Route
+          path="/login"
+          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />}
         />
-        {/* Signup route */}
         <Route
           path="/signup"
-          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Signup />}
+          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Signup />} 
+        />
+        {/* Checks auth and has userProvider */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          {/* Add other protected routes here */}
+          {/* e.g., <Route path="/profile" element={<ProfilePage />} /> */}
+        </Route>
+
+        {/* Default route */}
+        <Route
+          path="/"
+          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
         />
 
-        {/* Protected routes */}
-        <Route 
-          path="/dashboard" 
-          element={<ProtectedRoute><Dashboard /></ProtectedRoute>} 
+        {/* Catch-all route that are not explicitly declard */}
+        <Route
+          path="*"
+          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
         />
-        {/* Default route */}
-        <Route 
-          path="/" 
-          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />} 
-        />
-        {/* Catch-all route for 404s */}
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
