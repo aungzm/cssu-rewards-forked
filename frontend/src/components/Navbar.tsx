@@ -219,10 +219,12 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
             </div>
 
             {/* User Dropdown Menu */}
-            <div
-              className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg
-                                 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-10"
-            >
+            <div className="relative">
+              {/* Invisible wrapper to expand the hover area */}
+              <div className="absolute inset-0 -m-2" />
+              <div
+              className="absolute left-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-10"
+              >
               <a
                 href="#profile" // Replace with actual profile link/route
                 className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
@@ -236,6 +238,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
               >
                 Sign Out
               </button>
+              </div>
             </div>
           </div>
         </div>
