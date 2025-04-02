@@ -1,8 +1,8 @@
 // src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
-// import Dashboard from './pages/Dashboard';
-// import ProtectedRoute from './components/ProtectedRoute';
+import Dashboard from './pages/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 import Signup from './pages/Signup';
 import { isAuthenticated } from './utils/auth';
 
@@ -22,10 +22,10 @@ function App() {
         />
 
         {/* Protected routes */}
-        {/* <Route 
+        <Route 
           path="/dashboard" 
           element={<ProtectedRoute><Dashboard /></ProtectedRoute>} 
-        /> */}
+        />
         {/* Default route */}
         <Route 
           path="/" 
