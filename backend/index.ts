@@ -6,11 +6,11 @@ import express, {
   Express,
   ErrorRequestHandler,
 } from "express";
-import http from "http"; // Import http module for Server type
-import morgan from "morgan"; // Import morgan
-import cors from "cors"; // <-- Import CORS
+import http from "http"; 
+import morgan from "morgan";
+import cors from "cors"; 
 
-// --- Imports for routes ---
+// Imports for routes
 import userRoutes from "./routes/userRoute";
 import authRoutes from "./routes/authRoute";
 import transactionRoutes from "./routes/transactionRoute";
@@ -19,20 +19,20 @@ import promotionRoutes from "./routes/promotionRoute";
 
 const app: Express = express();
 
-// --- Essential Middleware ---
+// Essential Middleware 
 app.use(express.json());
 
-// --- CORS Middleware ---
+// CORS Middleware
 app.use(cors()); 
 
-// --- Logging Middleware (Morgan) ---
+// Logging Middleware (Morgan)
 // Use 'dev' format for concise output colored by response status for development use
 // Other formats include 'common', 'combined', 'short', 'tiny'
 if (process.env.NODE_ENV !== "test") {
   app.use(morgan("dev"));
 }
 
-// --- Port Parsing ---
+// Port Parsing
 const port: number = (() => {
   const args = process.argv;
   if (process.env.NODE_ENV === "test") {
@@ -54,7 +54,7 @@ const port: number = (() => {
   return num;
 })();
 
-// --- Mount Routers ---
+// Mount Routers
 // Routes should come AFTER general middleware like cors() and express.json()
 app.use("/users", userRoutes);
 app.use("/auth", authRoutes);
