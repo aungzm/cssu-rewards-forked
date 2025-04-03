@@ -1,14 +1,47 @@
-// import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Login from './pages/Login';
-import RoleManagementPage from './pages/RoleManagement';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import ProtectedRoute from "./components/ProtectedRoute"; 
+import Signup from "./pages/Signup";
+import { isAuthenticated } from "./utils/auth";
 import UserProfile from './pages/UserProfile';
 function App() {
   return (
     <Router>
+      {/* UserProvider is now inside ProtectedRoute */}
       <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/management" element={<RoleManagementPage/>}/>
+        {/* Public Routes */}
+        <Route
+          path="/login"
+          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />}
+        />
+        <Route
+          path="/signup"
+          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Signup />} 
+        />
+        {/* Checks auth and has userProvider */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          {/* Add other protected routes here */}
+          {/* e.g., <Route path="/profile" element={<ProfilePage />} /> */}
+        </Route>
+
+        {/* Default route */}
+        <Route
+          path="/"
+          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
+        />
+
+        {/* Catch-all route that are not explicitly declard */}
+        <Route
+          path="*"
+          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
+        />
         <Route path="/users/me" element={<UserProfile/>}/>
       </Routes>
     </Router>
