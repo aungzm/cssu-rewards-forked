@@ -14,4 +14,5 @@ npx tsx prisma/seed.ts
 
 Start dev server
 ------------------------------------------------
-npx tsx --watch index.ts 3000
+npx tsx --watch index.ts 3000  (or)
+npm run dev {port}   (e.g: npm run dev 3000)
