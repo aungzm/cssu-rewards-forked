@@ -1,14 +1,15 @@
+import React from "react";
 import {useUser} from "../context/UserContext";
 
 
-async function DashboardPoints() {
+const DashboardPoints =  React.memo(() =>{
 
     const user = useUser();
     let points = user?.userData?.points || 0;
 
-    <div className="dashboard-points">
+    return <div className="dashboard-points">
         
-        <h2> {points} Points</h2>
+        <h1> {points} Points</h1>
         <p> Available Points</p>
         <div className="buttons">
             <button onClick={() => alert("Sending Points")}> Send Points </button>
@@ -17,7 +18,7 @@ async function DashboardPoints() {
 
 
     </div>
-    return (<></>);
-}
+    
+});
 
 export default DashboardPoints;
