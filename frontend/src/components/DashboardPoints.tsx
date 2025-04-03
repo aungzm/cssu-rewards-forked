@@ -1,26 +1,14 @@
+import {useUser} from "../context/UserContext";
 
 
 async function DashboardPoints() {
 
-    let points = 20;
-    const url = "http://localhost:3000/users/me";
-
-    try {
-        await fetch(url, {method: "GET"})
-    
-    } catch (error) {
-        console.log("Error fetching data:", error);
-        return 
-    }
-
-
-        // get/users/me
-
+    const user = useUser();
+    let points = user?.userData?.points || 0;
 
     <div className="dashboard-points">
-
         
-        <h1> {points} Points</h1>
+        <h2> {points} Points</h2>
         <p> Available Points</p>
         <div className="buttons">
             <button onClick={() => alert("Sending Points")}> Send Points </button>
