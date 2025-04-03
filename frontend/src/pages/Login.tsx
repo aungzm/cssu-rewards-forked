@@ -1,6 +1,85 @@
+// src/pages/LoginPage.tsx
 import ThemeToggle from "../components/ThemeToggle";
+import { useState } from "react";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../utils/auth";
 
-const LoginPage = () => {
+interface AuthTokenResponse {
+  token: string;
+  expiresAt: string;
+}
+
+interface ApiError {
+  message: string;
+}
+
+const LoginPage: React.FC = () => {
+  const [utorid, setUtorid] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const handleUtoridChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUtorid(event.target.value);
+  };
+
+  const handlePasswordChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setPassword(event.target.value);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/tokens`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ utorid, password }),
+      });
+
+      // Try to parse the body regardless of status code
+      const data: AuthTokenResponse | ApiError = await response.json();
+
+      if (!response.ok) {
+        // Check if the parsed data has a 'message' property
+        const errorMessage =
+          typeof data === "object" && data !== null && "message" in data
+            ? (data as ApiError).message
+            : `HTTP error! Status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      // Authentication Successful
+      const successData = data as AuthTokenResponse;
+      
+      // Store the token and expiry
+      localStorage.setItem('authToken', successData.token);
+      localStorage.setItem('tokenExpiresAt', successData.expiresAt);
+
+      // Redirect to dashboard
+      navigate('/dashboard');
+      
+    } catch (err) {
+      console.error("Authentication failed:", err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Rest of your component remains the same
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4 transition-colors duration-300">
       {/* Dark Mode Toggle Button */}
@@ -39,8 +118,15 @@ const LoginPage = () => {
           <span className="flex-1 border-t border-gray-300 dark:border-gray-700"></span>
         </div>
 
+        {/* Display Error Message */}
+        {error && (
+          <div className="mb-4 text-center text-sm text-red-600 dark:text-red-400">
+            {error}
+          </div>
+        )}
+
         {/* Login Form */}
-        <form>
+        <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label
               htmlFor="utorid"
@@ -53,6 +139,10 @@ const LoginPage = () => {
               id="utorid"
               name="utorid"
               placeholder="Enter your UTORid"
+              value={utorid}
+              onChange={handleUtoridChange}
+              required
+              disabled={loading}
               className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded text-black dark:text-white bg-white dark:bg-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white"
             />
           </div>
@@ -70,14 +160,19 @@ const LoginPage = () => {
               name="password"
               placeholder="Enter your password"
               className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded text-black dark:text-white bg-white dark:bg-gray-900 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white"
+              value={password}
+              onChange={handlePasswordChange} 
+              required
+              disabled={loading}
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 bg-black dark:bg-white text-white dark:text-black rounded font-semibold transition-colors hover:bg-gray-800 dark:hover:bg-gray-200"
+            disabled={loading}
+            className="w-full py-3 bg-black dark:bg-white text-white dark:text-black rounded font-semibold transition-colors hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-70"
           >
-            Sign In
+            {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
 

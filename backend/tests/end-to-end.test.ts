@@ -3529,6 +3529,16 @@ describe("End-to-End API Tests (Strict Order)", () => {
 
   // Log #276
   it("Log #276: should create automatic promotion 'Spring Sale' (ID 1) (201)", async () => {
+    const now = new Date();
+    const startTime = new Date(now);
+    startTime.setMinutes(now.getMinutes() + 1);
+    const endTime = new Date(startTime);
+    // Add 1 day to the end time
+    endTime.setDate(startTime.getDate() + 1);
+    // Convert dates to ISO 8601 string format (which includes the 'Z' for UTC)
+    const startTimeISO = startTime.toISOString();
+    const endTimeISO = endTime.toISOString();
+    // --- End date calculation ---
     const response = await request(app)
       .post("/promotions")
       .set("Authorization", `Bearer ${userTokens["johndoe1_manager_temp"]}`)
@@ -3536,8 +3546,8 @@ describe("End-to-End API Tests (Strict Order)", () => {
         name: "Spring Sale",
         description: "This is a test promotion",
         type: "automatic",
-        startTime: "2025-03-29T01:58:09.899Z",
-        endTime: "2025-03-30T01:58:09.899Z",
+        startTime: startTimeISO, 
+        endTime: endTimeISO, 
         minSpending: 50,
         rate: 0.02,
         points: 10,
@@ -3555,6 +3565,16 @@ describe("End-to-End API Tests (Strict Order)", () => {
 
   // Log #277
   it("Log #277: should create one-time promotion 'Start of Summer Celebration' (ID 2) (201)", async () => {
+    const now = new Date();
+    const startTime = new Date(now);
+    startTime.setMinutes(now.getMinutes() + 1);
+    const endTime = new Date(startTime);
+    // Add 1 day to the end time
+    endTime.setDate(startTime.getDate() + 1);
+    // Convert dates to ISO 8601 string format (which includes the 'Z' for UTC)
+    const startTimeISO = startTime.toISOString();
+    const endTimeISO = endTime.toISOString();
+    // --- End date calculation ---
     const response = await request(app)
       .post("/promotions")
       .set("Authorization", `Bearer ${userTokens["johndoe1_manager_temp"]}`)
@@ -3562,14 +3582,13 @@ describe("End-to-End API Tests (Strict Order)", () => {
         name: "Start of Summer Celebration",
         description: "A simple promotion",
         type: "one-time",
-        startTime: "2025-03-31T01:58:09.899Z",
-        endTime: "2025-04-02T01:58:09.899Z",
+        startTime: startTimeISO, // Use the dynamic start time
+        endTime: endTimeISO, // Use the dynamic end time
         minSpending: 50,
         rate: 0.01,
         points: 0,
       })
-      .set("Content-Type", "application/json");
-
+      .set("Content-Type", "application/json");    
     expect(response.status).toBe(201);
     expect(response.body).toMatchObject({
       id: 2, // Assuming second promo gets ID 2
@@ -3922,6 +3941,15 @@ const promotionStartTimes: { [key: string]: number } = {};
 
   // Log #298
   it("Log #298: should create a promotion (ID 4) for deletion test (201)", async () => {
+    const now = new Date();
+    const startTime = new Date(now);
+    startTime.setMinutes(now.getMinutes() + 1);
+    const endTime = new Date(startTime);
+    // Add 1 day to the end time
+    endTime.setDate(startTime.getDate() + 1);
+    // Convert dates to ISO 8601 string format (which includes the 'Z' for UTC)
+    const startTimeISO = startTime.toISOString();
+    const endTimeISO = endTime.toISOString();
     const response = await request(app)
       .post("/promotions")
       .set("Authorization", `Bearer ${userTokens["johndoe1_manager_temp"]}`)
@@ -3929,8 +3957,8 @@ const promotionStartTimes: { [key: string]: number } = {};
         name: "Delete Test Promo",
         description: "To be deleted",
         type: "one-time",
-        startTime: "2025-03-31T01:58:15.025Z",
-        endTime: "2025-04-01T01:58:15.025Z",
+        startTime: startTimeISO,
+        endTime: endTimeISO,
         points: 20,
       })
       .set("Content-Type", "application/json");
