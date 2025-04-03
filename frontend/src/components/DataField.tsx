@@ -5,16 +5,19 @@ interface DataFieldProps {
   fieldName: string,
 	fieldContent: string | number,
 	isEditable: boolean,
+	isLong?: boolean // note: DO NOT USE THIS SHIT THIS HARDCODE IS SO BAD honestly I don't see anything in the design that would benefit from this field
 }
 
 const DataField: React.FC<DataFieldProps> = ({
   fieldName,
 	fieldContent,
 	isEditable,
+	isLong,
 }) => {
-	return <div className={"rounded-xl bg-white row flex flex-row p-6 m-5 drop-shadow-lg "+(window.innerWidth>=1250?"w-[25vw]":"w-[40vw]")}>
-		<span className='justify-self-start '>{fieldName}:</span>
-		<span className="ml-5">{fieldContent}</span>
+	return <div className={"rounded-md bg-white row flex flex-row p-1 m-2 drop-shadow-lg items-center h-[3rem] "
+	+(isLong?"ml-2 col-span-2 justify-self-center text-center w-[49rem]":"w-[24rem]")}>
+		<span className='p-2 justify-self-center text-lg font-bold'>{fieldName}:</span>
+		<span className="ml-2 text-center text-lg text-ellipsis overflow-hidden">{fieldContent}</span>
 		<span className="ml-auto">{ (isEditable? <Pencil/>: <></>)}</span>
 	</div>
 }
