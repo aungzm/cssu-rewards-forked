@@ -5,7 +5,7 @@ function EventListEntry(props: { event: any }) {
     const { event } = props;
 
 
-    return (<div className="flex flex-row bg-white border-t border-gray-300 py-2 justify-between items-center">
+    return (<div className="flex flex-row bg-white border-t border-gray-300 py-2 justify-between items-center hover:bg-gray-200">
         {/* <div></div> */}
         <div className="flex flex-col"> 
             <p> {event.name}</p>

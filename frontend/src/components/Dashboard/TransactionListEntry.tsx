@@ -14,7 +14,7 @@ function TransactionListEntry(props : { transaction: any }) {
     //relatedId
 
 
-    return (<div className="flex flex-row bg-white border-t border-gray-300 py-2 justify-between items-center"
+    return (<div className="flex flex-row bg-white border-t border-gray-300 py-2 justify-between items-center hover:bg-gray-200"
     onClick={handleClick}>
         {/* <div></div>  */}
 

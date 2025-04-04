@@ -1,7 +1,7 @@
 import React from 'react';
-import DashboardPoints from './DashboardPoints';
-import TransactionListEntry from './TransactionListEntry';
-import EventListEntry from './EventListEntry';
+import DashboardPoints from './Dashboard/DashboardPoints';
+import TransactionListEntry from './Dashboard/TransactionListEntry';
+import EventListEntry from './Dashboard/EventListEntry';
 
 
 function DashboardTable() {
