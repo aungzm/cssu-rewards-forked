@@ -1001,12 +1001,13 @@ export async function markRedemptionAsProcessed(
       return updated;
     });
 
+    const positiveRedeemedAmount = Math.abs(updatedTransaction.amount ?? 0);
     res.status(200).json({
       id: updatedTransaction.id,
       utorid: updatedTransaction.user?.utorid,
       type: "redemption",
       processedBy: operator.utorid,
-      redeemed: updatedTransaction.amount,
+      redeemed: positiveRedeemedAmount,
       remark: updatedTransaction.remarks || "",
       createdBy: transaction.user?.utorid || "",
     });
