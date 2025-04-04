@@ -1,51 +1,54 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, RoleType, TransactionType } from "@prisma/client";
 
 const prisma = new PrismaClient();
-
 /**
  * POST /transactions
- * Creates a new purchase or adjustment transaction (Manager or higher)
+ * Creates a new purchase or adjustment transaction (Manager or higher for adjustment)
  */
 export async function createPurchaseTransaction(
   req: Request,
   res: Response
 ): Promise<void> {
   try {
-    // Destructure common fields and the type from the payload.
+    // Consider using a validation library like Zod here for better type safety and validation.
     const { utorid, type } = req.body as { utorid: string; type: string };
-    const operator = (req as any).user; // Authenticated user from middleware
+    const operator = (req as any).user; // Authenticated user from middleware (ensure this type is safe)
 
     // Find the target user by utorid.
     const user = await prisma.user.findUnique({
       where: { utorid },
+      select: { id: true, points: true }, // Select only needed fields
     });
     if (!user) {
       res.status(404).json({ error: "User not found." });
       return;
     }
 
-    // Handle promotions first (common for both purchase and adjustment)
-    const { promotionIds } = req.body as { promotionIds?: any };
+    // --- Promotion Handling (Common Logic) ---
+    const { promotionIds } = req.body as { promotionIds?: number[] }; // Assume IDs are numbers
     let validPromotionIds: number[] = [];
-    let promotions: any[] = [];
+    let promotions: any[] = []; // Consider defining a stricter type for Promotion
 
-    if (
-      promotionIds !== null &&
-      promotionIds !== undefined &&
-      promotionIds.length > 0
-    ) {
-      // Find active promotions.
+    if (promotionIds && promotionIds.length > 0) {
+      // Ensure promotionIds are numbers if they come as strings from JSON
+      const numericPromotionIds = promotionIds.map(Number).filter(Number.isFinite);
+
+      if (numericPromotionIds.length !== promotionIds.length) {
+         res.status(400).json({ error: "Invalid format for promotion IDs." });
+         return;
+      }
+
       promotions = await prisma.promotion.findMany({
         where: {
-          id: { in: promotionIds.map((id: any) => Number(id)) },
+          id: { in: numericPromotionIds },
           startTime: { lte: new Date() },
           endTime: { gte: new Date() },
         },
       });
 
-      // Check if all promotion IDs are valid
-      if (promotions.length !== promotionIds.length) {
+      // Check if all requested promotions were found and are active
+      if (promotions.length !== numericPromotionIds.length) {
         res.status(400).json({
           error:
             "One or more promotion IDs are invalid, expired, or not yet active.",
@@ -53,99 +56,91 @@ export async function createPurchaseTransaction(
         return;
       }
 
-      // Check if one-time promotions have been used
-      for (const promo of promotions) {
-        if (promo.type === "one-time") {
-          const alreadyUsed = await prisma.userPromotion.findUnique({
-            where: {
-              userId_promotionId: {
-                userId: user.id,
-                promotionId: promo.id,
-              },
-            },
+      // Check if one-time promotions have already been used by this user
+      const oneTimePromos = promotions.filter((p) => p.type === "one-time");
+      if (oneTimePromos.length > 0) {
+        const usedPromos = await prisma.userPromotion.findMany({
+          where: {
+            userId: user.id,
+            promotionId: { in: oneTimePromos.map((p) => p.id) },
+          },
+          select: { promotionId: true },
+        });
+
+        if (usedPromos.length > 0) {
+          const usedPromoId = usedPromos[0].promotionId;
+          res.status(400).json({
+            error: `Promotion ${usedPromoId} has already been used by this user.`,
           });
-          if (alreadyUsed) {
-            res
-              .status(400)
-              .json({ error: `Promotion ${promo.id} has already been used.` });
-            return;
-          }
+          return;
         }
-        validPromotionIds.push(promo.id);
       }
+      validPromotionIds = promotions.map((p) => p.id);
     }
 
+    // Transaction Type Logic ---
     if (type.toLowerCase() === "purchase") {
-      // Extract purchase-specific fields.
       const { spent, remark = "" } = req.body as {
         spent: number;
         remark?: string;
       };
 
-      // Validate that spent is a positive number.
-      if (spent <= 0) {
+      if (typeof spent !== "number" || spent <= 0) {
         res
           .status(400)
           .json({ error: "The spent amount must be a positive number." });
         return;
       }
 
-      // Calculate base earned points: 1 point per 25 cents spent.
+      // Calculate base points
       let pointsToAward = Math.round(spent / 0.25);
-      console.log("Points to award before multiplier", pointsToAward);
 
-      // Loop over each promotion to enforce criteria and apply effects.
+      // Apply promotion effects
       for (const promo of promotions) {
-        // Enforce a minimum spending requirement if defined.
         if (promo.minSpending && spent < promo.minSpending) {
           res.status(400).json({
             error: `Promotion ${promo.id} requires a minimum spending of ${promo.minSpending}.`,
           });
           return;
         }
-
-        // Apply promotion effects.
         if (promo.rate) {
-          // Apply rate multiplier (using 1 + rate multiplier effect)
-          pointsToAward = Math.round(pointsToAward + spent * 100 * promo.rate);
+           pointsToAward += Math.round(spent * 100 * promo.rate); // Clarify this logic if needed
         }
-
-        console.log("Points to award after multiplier", pointsToAward);
-
         if (promo.points) {
-          // Add bonus points.
-          pointsToAward += promo.points;
+          pointsToAward += promo.points; // Add fixed bonus points
         }
       }
 
-      // Check if operator is suspicious.
-      const suspiciousUser = await prisma.user.findUnique({
+      // Check if operator is suspicious
+      const operatorInfo = await prisma.user.findUnique({
         where: { id: operator.id },
         select: { suspicious: true },
       });
+      const isSuspicious = operatorInfo?.suspicious ?? false; // Default to false if not found
 
-      // Store the original points for the database, but set response points to 0 if suspicious.
       const pointsForDatabase = pointsToAward;
-      const isSuspicious = suspiciousUser?.suspicious === true;
       const pointsForResponse = isSuspicious ? 0 : pointsForDatabase;
 
-      const transaction = await prisma.$transaction(async (tx) => {
-        // Create the purchase transaction.
-        const txRecord = await tx.transaction.create({
+      // *** Use Transaction for Atomic Operations ***
+      const transactionResult = await prisma.$transaction(async (tx) => {
+        const createdTx = await tx.transaction.create({
           data: {
-            type: "PURCHASE",
-            amount: spent, // dollars spent
-            points: pointsForDatabase, // store original points calculation
-            suspicious: isSuspicious, // mark as suspicious if operator is suspicious
+            type: TransactionType.PURCHASE, // Use Enum
+            spent: spent, // Use 'spent' field from schema
+            amount: pointsForDatabase,
+            suspicious: isSuspicious,
             remarks: remark,
             user: { connect: { id: user.id } },
             operator: { connect: { id: operator.id } },
-            promotionIds: { connect: validPromotionIds.map((id) => ({ id })) },
+            // Connect valid promotions
+            promotionIds: {
+              connect: validPromotionIds.map((id) => ({ id })),
+            },
           },
           select: {
             id: true,
+            spent: true, // Select 'spent'
             amount: true,
-            points: true,
             suspicious: true,
             createdAt: true,
             remarks: true,
@@ -153,133 +148,151 @@ export async function createPurchaseTransaction(
           },
         });
 
-        // Only update user's points if operator is not suspicious.
+        // Only update user points if operator is not suspicious
         if (!isSuspicious) {
           await tx.user.update({
             where: { id: user.id },
-            data: { points: user.points + pointsForDatabase },
+            data: { points: { increment: pointsForDatabase } }, // Use increment for safety
           });
         }
 
-        // Record usage for each one-time promotion.
-        for (const promo of promotions) {
-          if (promo.type === "one-time") {
-            await tx.userPromotion.create({
-              data: {
-                user: { connect: { id: user.id } },
-                promotion: { connect: { id: promo.id } },
-              },
-            });
-          }
+        // Record usage for one-time promotions
+        const oneTimePromoIdsToRecord = promotions
+          .filter((p) => p.type === "one-time")
+          .map((p) => p.id);
+
+        if (oneTimePromoIdsToRecord.length > 0) {
+          await tx.userPromotion.createMany({
+            data: oneTimePromoIdsToRecord.map((promoId) => ({
+              userId: user.id,
+              promotionId: promoId,
+            }))
+          });
         }
 
-        return txRecord;
+        return createdTx;
       });
 
       res.status(201).json({
-        id: transaction.id,
+        id: transactionResult.id,
         utorid: utorid,
         type: "purchase",
-        spent: transaction.amount,
-        earned: pointsForResponse, // Use 0 if suspicious, otherwise calculated points.
-        remark: transaction.remarks || "",
+        spent: transactionResult.spent, // Use 'spent' from result
+        earned: pointsForResponse,
+        remark: transactionResult.remarks || "",
         promotionIds: validPromotionIds,
         createdBy: operator.utorid,
       });
-      return;
+      // No return needed here as res.json() sends the response
     } else if (type.toLowerCase() === "adjustment") {
-      // Only a Manager or Superuser can create an adjustment.
-      if (!(operator.role === "MANAGER" || operator.role === "SUPERUSER")) {
+      // Check permissions
+      if (!(operator.role === RoleType.MANAGER || operator.role === RoleType.SUPERUSER)) { // Use Enum
         res.status(403).json({
           error: "Insufficient clearance to create an adjustment transaction.",
         });
         return;
       }
 
-      // Extract adjustment-specific fields.
       const {
-        amount: adjustmentAmount,
+        amount: adjustmentAmount, // Renamed to avoid conflict
         relatedId,
         remark = "",
       } = req.body as {
         amount: number;
-        relatedId: number;
+        relatedId: number; // Should be number
         remark?: string;
       };
 
-      // Validate that the related transaction exists.
+       if (typeof adjustmentAmount !== 'number') {
+         res.status(400).json({ error: "Adjustment amount must be a number." });
+         return;
+       }
+       if (typeof relatedId !== 'number') {
+         res.status(400).json({ error: "Related transaction ID must be a number." });
+         return;
+       }
+
+
+      // Validate related transaction
       const relatedTx = await prisma.transaction.findUnique({
-        where: { id: Number(relatedId) },
+        where: { id: relatedId },
+        select: { id: true }, // Just need to know if it exists
       });
       if (!relatedTx) {
         res.status(404).json({ error: "Related transaction not found." });
         return;
       }
 
-      const transaction = await prisma.$transaction(async (tx) => {
-        // Create the adjustment transaction.
-        const txRecord = await tx.transaction.create({
+      // *** Use Transaction for Atomic Operations ***
+      const transactionResult = await prisma.$transaction(async (tx) => {
+        const createdTx = await tx.transaction.create({
           data: {
-            type: "ADJUSTMENT",
+            type: TransactionType.ADJUSTMENT, // Use Enum
+            // 'amount' is not a direct field in Transaction schema based on provided schema
+            // Adjustments modify points directly. Let's store the adjustment value in 'points'.
             amount: adjustmentAmount,
-            points: adjustmentAmount, // points are equal to the adjustment amount
-            suspicious: false,
+            suspicious: false, // Adjustments are likely not suspicious by default
             remarks: remark,
             user: { connect: { id: user.id } },
             operator: { connect: { id: operator.id } },
-            promotionIds: { connect: validPromotionIds.map((id) => ({ id })) },
-            relatedTransaction: { connect: { id: Number(relatedId) } },
+            relatedTransaction: { connect: { id: relatedId } },
+            // Connect valid promotions (if applicable to adjustments)
+            promotionIds: {
+              connect: validPromotionIds.map((id) => ({ id })),
+            },
           },
           select: {
             id: true,
-            amount: true,
+            amount: true, // Select points (representing the adjustment amount)
             remarks: true,
             relatedId: true,
             user: { select: { utorid: true } },
           },
         });
 
-        // Update the user's points balance with the adjustment.
+        // Update user points
         await tx.user.update({
           where: { id: user.id },
-          data: { points: user.points + adjustmentAmount },
+          data: { points: { increment: adjustmentAmount } }, // Use increment/decrement
         });
 
-        // Record usage for each one-time promotion.
-        for (const promo of promotions) {
-          if (promo.type === "one-time") {
-            await tx.userPromotion.create({
-              data: {
-                user: { connect: { id: user.id } },
-                promotion: { connect: { id: promo.id } },
-              },
-            });
-          }
+        // Record usage for one-time promotions (if applicable)
+        const oneTimePromoIdsToRecord = promotions
+          .filter((p) => p.type === "one-time")
+          .map((p) => p.id);
+
+        if (oneTimePromoIdsToRecord.length > 0) {
+          await tx.userPromotion.createMany({
+            data: oneTimePromoIdsToRecord.map((promoId) => ({
+              userId: user.id,
+              promotionId: promoId,
+            })),
+          });
         }
 
-        return txRecord;
+        return createdTx;
       });
 
       res.status(201).json({
-        id: transaction.id,
+        id: transactionResult.id,
         utorid: utorid,
-        amount: transaction.amount,
+        amount: transactionResult.amount, 
         type: "adjustment",
-        relatedId,
-        remark: transaction.remarks || "",
+        relatedId: transactionResult.relatedId,
+        remark: transactionResult.remarks || "",
         promotionIds: validPromotionIds,
         createdBy: operator.utorid,
       });
-      return;
     } else {
-      res.status(400).json({ error: "Invalid transaction type." });
-      return;
+      res.status(400).json({ error: "Invalid transaction type specified." });
     }
   } catch (error) {
     console.error("Error creating transaction:", error);
+    // Avoid sending detailed error info to client in production
     res.status(500).json({ error: "Internal server error." });
   }
 }
+
 
 /**
  * POST /transactions/adjustment
@@ -331,16 +344,15 @@ export async function createAdjustmentTransaction(
     const transaction = await prisma.transaction.create({
       data: {
         type: "ADJUSTMENT",
-        points: finalPoints,
+        amount: finalPoints,
         remarks,
-        amount,
         user: { connect: { id: user.id } },
         operator: { connect: { id: operator.id } },
         relatedTransaction: { connect: { id: relatedId } },
       },
       select: {
         id: true,
-        points: true,
+        amount: true,
         createdAt: true,
         remarks: true,
         relatedId: true,
@@ -360,7 +372,7 @@ export async function createAdjustmentTransaction(
     res.status(201).json({
       id: transaction.id,
       utorid: utorid,
-      points: transaction.points,
+      amount: transaction.amount,
       createdAt: transaction.createdAt,
       remark: transaction.remarks,
       relatedId: transaction.relatedId,
@@ -498,7 +510,7 @@ export async function getTransactions(
         return {
           ...baseResponse,
           spent: transaction.amount,
-          amount: transaction.points,
+          amount: transaction.amount,
         };
       } else if (transaction.type === "REDEMPTION") {
         return {
@@ -560,8 +572,8 @@ export async function getTransactionById(
       select: {
         id: true,
         type: true,
+        spent: true,
         amount: true,
-        points: true,
         suspicious: true,
         remarks: true,
         createdAt: true,
@@ -578,8 +590,8 @@ export async function getTransactionById(
       id: transaction.id,
       utorid: transaction.user?.utorid,
       type: (transaction.type as string).toLowerCase(),
-      spent: transaction.amount, // for purchase transactions
-      amount: transaction.points,
+      spent: transaction.spent, // for purchase transactions
+      amount: transaction.amount,
       promotionIds: [],
       suspicious: transaction.suspicious,
       relatedId: transaction.relatedId || null,
@@ -622,10 +634,9 @@ export async function toggleTransactionSuspicious(
     let userPointsAdjustment = 0;
     if (suspicious && !currentTransaction.suspicious) {
       // Deduct points from user's balance.
-      userPointsAdjustment = -currentTransaction.points;
+      userPointsAdjustment = -(currentTransaction.amount ?? 0);
     } else if (!suspicious && currentTransaction.suspicious) {
-      // Add points to user's balance.
-      userPointsAdjustment = currentTransaction.points;
+      userPointsAdjustment = currentTransaction.amount ?? 0;
     }
     const updatedTransaction = await prisma.$transaction(async (tx) => {
       const updated = await tx.transaction.update({
@@ -634,8 +645,8 @@ export async function toggleTransactionSuspicious(
         select: {
           id: true,
           type: true,
+          spent: true,
           amount: true,
-          points: true,
           suspicious: true,
           remarks: true,
           createdAt: true,
@@ -657,8 +668,8 @@ export async function toggleTransactionSuspicious(
       id: updatedTransaction.id,
       utorid: updatedTransaction.user?.utorid,
       type: (updatedTransaction.type as string).toLowerCase(),
-      spent: updatedTransaction.amount,
-      amount: updatedTransaction.points,
+      spent: updatedTransaction.spent,
+      amount: updatedTransaction.amount,
       promotionIds: [],
       suspicious: updatedTransaction.suspicious,
       remark: updatedTransaction.remarks || "",
@@ -714,7 +725,7 @@ export async function createTransferTransaction(
         prisma.transaction.create({
           data: {
             type: "TRANSFER",
-            points: -amount,
+            amount: -amount,
             remarks: remark || "",
             user: { connect: { id: senderUser.id } },
             sender: { connect: { id: senderUser.id } },
@@ -724,7 +735,7 @@ export async function createTransferTransaction(
         prisma.transaction.create({
           data: {
             type: "TRANSFER",
-            points: amount,
+            amount: amount,
             remarks: remark || "",
             user: { connect: { id: recipientId } },
             sender: { connect: { id: senderUser.id } },
@@ -805,8 +816,7 @@ export async function createRedemptionTransaction(
     const transaction = await prisma.transaction.create({
       data: {
         type: "REDEMPTION",
-        amount: validRedemptionAmount,
-        points: -validRedemptionAmount,
+        amount: -validRedemptionAmount,
         remarks: remark,
         user: { connect: { id: currentUser.id } },
       },
@@ -822,7 +832,7 @@ export async function createRedemptionTransaction(
       utorid: currentUser.utorid,
       type: "redemption",
       processedBy: null,
-      amount: redemptionAmount,
+      amount: validRedemptionAmount,
       remark: remark,
       createdBy: currentUser.utorid,
     });
@@ -991,12 +1001,13 @@ export async function markRedemptionAsProcessed(
       return updated;
     });
 
+    const positiveRedeemedAmount = Math.abs(updatedTransaction.amount ?? 0);
     res.status(200).json({
       id: updatedTransaction.id,
       utorid: updatedTransaction.user?.utorid,
       type: "redemption",
       processedBy: operator.utorid,
-      redeemed: updatedTransaction.amount,
+      redeemed: positiveRedeemedAmount,
       remark: updatedTransaction.remarks || "",
       createdBy: transaction.user?.utorid || "",
     });
