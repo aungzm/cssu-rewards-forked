@@ -7,7 +7,7 @@ interface PromotionsCardProps {
   endDate: Date,
   points: number,
   minSpending: number,
-  rate: number,
+  rate: number,  //this is the additional rate, the default rate is 0.04
   isAutomatic?: boolean, //false by default
 }
 
@@ -16,24 +16,29 @@ const PromotionsCard: React.FC<PromotionsCardProps> = ({
   name,
   endDate,
   points,
-  minSpending,
+  minSpending, // in terms of dollar
   rate,
   isAutomatic, //false by default
 }) => {
   id=0 //stop ts from complaining
+  let bonus = `Gain ${(rate?"+"+Math.round(rate*100/0.04)+"% points":"")}`;
+  bonus+=`${(rate && points?" and ":" ")}`;
+  bonus+=`${(points ? points+" extra points":" ")}`;
+  bonus+= `${(minSpending ? " by spending $"+minSpending:" for any purchase")}`;
   if (isAutomatic) {
     return (
-      <div className="bg-gray-100 h-[3rem] w-[21rem] p-1 m-2 rounded-md">
+      <div className="bg-gray-100 h-[3.5rem] w-[21rem] p-1 m-2 rounded-md">
         <p className="font-bold ml-2 text-sm">{name}</p>
-        <p className="ml-2 text-gray-600 text-sm"> Gain </p>
-        <p className="ml-2 text-gray-600 text-sm">{"Active until "+endDate.toISOString().slice(0,10)}</p>
+        <p className="ml-2 text-gray-600 text-xs italic"> {bonus}</p>
+        <p className="ml-2 text-gray-600 text-xs">{"Active until "+endDate.toISOString().slice(0,10)}</p>
       </div>
     )
   } else {
     return (
-      <div className="h-[3rem] w-[21rem] p-1 m-2 rounded-md">
+      <div className="bg-gray-100 h-[3.5rem] w-[21rem] p-1 m-2 rounded-md">
         <p className="font-bold ml-2 text-sm">{name}</p>
-        <p className="ml-2 text-gray-600 text-sm">{"Expires at "+endDate.toISOString().slice(0,10)}</p>
+        <p className="ml-2 text-gray-600 text-xs italic"> {bonus}</p>
+        <p className="ml-2 text-gray-600 text-xs">{"Expires at "+endDate.toISOString().slice(0,10)}</p>
       </div>
     )
   }

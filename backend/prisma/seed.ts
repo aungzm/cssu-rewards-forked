@@ -137,7 +137,7 @@ async function createTransferTransaction(
 		where: { id: senderId },
 		data: { points: { decrement: points } },
 	});
-	const updatedReceiver = await prisma.user.update({
+	prisma.user.update({
 		where: { id: recipientId },
 		data: { points: { increment: points } },
 	});
@@ -166,9 +166,31 @@ async function clearData() {
 	await prisma.user.deleteMany({});
 	await prisma.event.deleteMany({});
 	await prisma.transaction.deleteMany({});
+	await prisma.promotion.deleteMany({});
 	
 }
-
+async function createPromotion(
+	name: string,
+	startTime: string,
+	endTime: string,
+	rate: number,
+	minSpending:number,
+	points: number,
+	type: string,
+) {
+	await prisma.promotion.create({
+		data: {
+			name,
+			description: name,
+			startTime: new Date(startTime),
+			endTime: new Date(endTime),
+			rate: rate !== null ? rate : undefined,
+			minSpending: minSpending !== null ? minSpending : undefined,
+			points,
+			type,
+		},
+	})
+}
 // Delete all existing data
 clearData();
 
@@ -222,3 +244,12 @@ for (let i=0;i<selectUsers.length-1;i++) {
 }
 
 
+
+await createPromotion("curr promo 1", "2022/01/01","2026/01/01",0.01,69,50,"automatic");
+await createPromotion("curr promo 2", "2022/01/01","2026/01/01",0.02,100,300,"automatic");
+await createPromotion("curr promo 3", "2022/01/01","2026/01/01",0.03,200,420,"automatic");
+await createPromotion("past promo", "2022/01/01","2023/01/01",0.02,69,500,"automatic");
+await createPromotion("future promo", "2026/01/01","2027/01/01",0.03,60,40,"automatic");
+await createPromotion("infinite points", "2022/01/01","2026/01/01",0.03,0,999999999,"one-time");
+await createPromotion("past infinite points", "2022/01/01","2023/01/01",0.03,0,999999999,"one-time");
+await createPromotion("future infinite points", "2027/01/01","2028/01/01",0.03,0,999999999,"one-time");

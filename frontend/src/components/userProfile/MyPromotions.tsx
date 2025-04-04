@@ -1,9 +1,36 @@
-import React from "react";
+import React, {useState,useEffect} from "react";
 import PromotionsCard from "./PromotionsCard";
 import { fetchWithAuth } from "../../utils/authHelper";
 import { API_BASE_URL } from "../../utils/auth";
 
+interface PromotionParams {
+  id: number
+  name: string
+  amount: number
+  endDate: Date
+  minSpending: number
+  rate: number
+  type: string
+}
+interface GetPromotionsResponse {
+  data: PromotionParams[]
+  count: number
+}
+
 const MyPromotions: React.FC = () => {
+  const [autoPromotions, setAutoPromotions] = useState({} as GetPromotionsResponse);
+  const [oneTimePromotions, setOneTimePromotions] = useState({} as GetPromotionsResponse);
+  useEffect(()=> {
+    fetchWithAuth(`${API_BASE_URL}/promotions?type=automatic&page=1&size=2`).then(res=>res.json()).then(setAutoPromotions);
+    fetchWithAuth(`${API_BASE_URL}/promotions?type=one-time&page=1&size=2`).then(res=>res.json()).then(setOneTimePromotions);
+  }, [])
+  // const dataLoader = ()=> {
+  //   fetchWithAuth(`${API_BASE_URL}/promotions?type=automatic&page=1&size=2`).then(res=>res.json()).then(setAutoPromotions);
+  //   fetchWithAuth(`${API_BASE_URL}/promotions?type=one-time&page=1&size=2`).then(res=>res.json()).then(setOneTimePromotions);
+  //   return {auto: autoPromotions,oneTime: oneTimePromotions};
+  // }
+  // const {auto,oneTime} = dataLoader();
+  console.log(autoPromotions)
   return (
     <div className="rounded-md bg-white row flex flex-col p-1 m-2 mb-0 drop-shadow-lg h-[25rem] w-[24rem]">
       <div className="flex justify-between border-b">
@@ -15,24 +42,20 @@ const MyPromotions: React.FC = () => {
           <p className="whitespace-nowrap italic font-bold">Automatic Promotions </p> 
           <p className=" text-xs text-gray-500">Gain extra points throughout <br></br> the entire promotion period</p>
         </div>
-        <PromotionsCard 
-          id={1}
-          name="asd"
-          points={69}
-          endDate={new Date(Date.now()+1000*3600*48)}
-          minSpending={0}
-          rate={0}
-          isAutomatic={true}
-        />
-        <PromotionsCard 
-          id={1}
-          name="asd"
-          points={69}
-          endDate={new Date(Date.now()+1000*3600*48)}
-          minSpending={0}
-          rate={0}
-          isAutomatic={true}
-        />
+        {/** Add auto promotions here using map */}
+        
+        {autoPromotions.data.map((promotion )=> {
+          return (
+          <PromotionsCard
+            id={promotion.id}
+            name={promotion.name}
+            endDate={promotion.endDate}
+            points={promotion.amount}
+            minSpending={promotion.minSpending}
+            rate= {promotion.rate}
+            isAutomatic={true}
+          />)
+        })}
 
       </div>
       <div className="flex flex-col items-center justify-evenly">
@@ -41,24 +64,19 @@ const MyPromotions: React.FC = () => {
           <p className=" text-xs text-gray-500">These promotions can <br></br> only be used once</p>
         </div>
         <div className="flex flex-col justify-evenly">
-          <PromotionsCard 
-            id={1}
-            name="asd"
-            points={69}
-            endDate={new Date(Date.now()+1000*3600*48)}
-            minSpending={0}
-            rate={0}
+          {/** Add one time promotions here using map */}
+          {oneTimePromotions.data.map((promotion )=> {
+          return (
+          <PromotionsCard
+            id={promotion.id}
+            name={promotion.name}
+            endDate={promotion.endDate}
+            points={promotion.amount}
+            minSpending={promotion.minSpending}
+            rate= {promotion.rate}
             isAutomatic={false}
-          />
-          <PromotionsCard 
-            id={1}
-            name="asd"
-            points={69}
-            endDate={new Date(Date.now()+1000*3600*48)}
-            minSpending={0}
-            rate={0}
-            isAutomatic={false}
-          />
+          />)
+        })}
         </div>
         
         
