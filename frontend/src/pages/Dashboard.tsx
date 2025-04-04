@@ -14,7 +14,7 @@ const Dashboard: React.FC = () => {
     
     // Function to make a call to the fetchWithAuth function
     const fetchData = async (url: string)  => {
-        const response = await fetchWithAuth(API_BASE_URL + url);
+        const response = await fetchWithAuth(`${API_BASE_URL}${url}?limit=61`);
 
         if (!response.ok) {
             throw new Error(`Failed to fetch data: ${response.status}`);
@@ -30,11 +30,12 @@ const Dashboard: React.FC = () => {
             try {
                 // Fetch transactions
                 const transactions = await fetchData('/users/me/transactions');
-                setTransactionList(transactions.results.slice(0, 3));
+                setTransactionList(transactions.results.slice(9, 14));  // TODO update this to be first 4
 
                 // Fetch events
                 const events = await fetchData('/events');
                 setEventList(events.results.slice(0, 2));
+                console.log(events.results.slice(0, 2));
             } catch (error) {
                 console.error("Error fetching dashboard data:", error);
             }
@@ -69,7 +70,7 @@ const Dashboard: React.FC = () => {
                         <button className="mt-2 text-blue-500 hover:underline"> View All </button>
                         <div className="mt-4">
                             {transactionList.map((transaction: any) => (
-                                <TransactionListEntry />
+                                <TransactionListEntry transaction={transaction}/>
                             ))}
                         </div>
                     </div>
