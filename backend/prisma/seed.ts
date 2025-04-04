@@ -43,8 +43,8 @@ async function createEvent(name: string,startTime: Date,endTime: Date,capacity: 
 }
 
 async function createPurchaseTransaction(
-	amount: number,
-	points: number,
+	amount: number,	// This is the dollars spent corresponding to spent
+	points: number,	// This is the points earned corresponding to amount
 	sus: boolean,
 	userId: number,
 	operatorId: number 
@@ -59,8 +59,8 @@ async function createPurchaseTransaction(
  	const transaction = await prisma.transaction.create({
 		data: {
 			type: "PURCHASE",
-			amount: amount,
-			points: points,
+			amount: points,
+			spent: amount,
 			suspicious: sus,
 			remarks: "",
 			user: { connect: { id: userId } },
@@ -93,7 +93,6 @@ async function createAdjustmentTransaction(
 		data: {
 			type: "ADJUSTMENT",
 			amount: amount,
-			points: amount, // points are equal to the adjustment amount
 			suspicious: false,
 			remarks: "",
 			user: { connect: { id: userId } },
@@ -114,32 +113,31 @@ async function createTransferTransaction(
 		where: { id: recipientId },
 		select: { id: true, utorid: true, points: true },
 	});
-	const transaction =await  prisma.transaction.create({
+	const sendTransaction = await prisma.transaction.create({
 		data: {
 			type: "TRANSFER",
-			points: -points,
+			amount: -points,
 			remarks: "",
 			user: { connect: { id: senderId } },
 			sender: { connect: { id: senderId } },
 			receiver: { connect: { id: recipientId } },
 		},
 	});
-	console.log(transaction);
-	await prisma.transaction.create({
+	const receiveTransaction = await prisma.transaction.create({
 		data: {
 			type: "TRANSFER",
-			points: points,
+			amount: points,
 			remarks: "",
 			user: { connect: { id: recipientId } },
 			sender: { connect: { id: senderId } },
 			receiver: { connect: { id: recipientId } },
 		},
 	});
-	await prisma.user.update({
+	const updatedSender = await prisma.user.update({
 		where: { id: senderId },
 		data: { points: { decrement: points } },
 	});
-	await prisma.user.update({
+	const updatedReceiver = await prisma.user.update({
 		where: { id: recipientId },
 		data: { points: { increment: points } },
 	});
@@ -158,15 +156,21 @@ async function createRedemptionTransaction(
 		data: {
 			type: "REDEMPTION",
 			amount: validRedemptionAmount,
-			points: -validRedemptionAmount,
 			remarks: "",
 			user: { connect: { id:userId } },
 		},
 	});
 }
 
+async function clearData() {
+	await prisma.user.deleteMany({});
+	await prisma.event.deleteMany({});
+	await prisma.transaction.deleteMany({});
+	
+}
 
-
+// Delete all existing data
+clearData();
 
 createEvent("a",new Date("2000-01-01"), new Date("2024-01-11"), 5000, 50000, true,0);
 createEvent("a",new Date("2005-01-01"), new Date("2025-02-12"), 5000, 50000, true,0);
