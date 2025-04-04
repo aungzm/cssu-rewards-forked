@@ -1003,7 +1003,6 @@ export async function awardPoints(req: Request, res: Response): Promise<void> {
           data: {
             type: "EVENT",
             amount,
-            points: amount,
             user: { connect: { id: targetUser.id } },
             operator: { connect: { id: operatorId } },
             remarks: remark || "",
@@ -1058,7 +1057,6 @@ export async function awardPoints(req: Request, res: Response): Promise<void> {
         data: {
           type: "EVENT",
           amount,
-          points: amount,
           user: { connect: { id: rsvp.userId } },
           operator: { connect: { id: operatorId } },
           remarks: remark || "",

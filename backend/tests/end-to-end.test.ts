@@ -4056,7 +4056,7 @@ const promotionStartTimes: { [key: string]: number } = {};
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
-      error: `Promotion ${promoId} has already been used.`,
+      error: `Promotion ${promoId} has already been used by this user.`,
     });
   });
 
@@ -4077,7 +4077,7 @@ const promotionStartTimes: { [key: string]: number } = {};
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
-      error: `Promotion ${promoId} has already been used.`,
+      error: `Promotion ${promoId} has already been used by this user.`,
     });
   });
 });

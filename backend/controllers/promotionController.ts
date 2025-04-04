@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
  *  - description: string (optional)
  *  - startTime: ISO8601, must not be in the past
  *  - endTime: ISO8601, must be after startTime
- *  - points (if you added it in your schema): positive integer
+ *  - points: positive integer
  */
 export async function createPromotion(req: Request, res: Response): Promise<void> {
   try {
@@ -60,8 +60,8 @@ export async function createPromotion(req: Request, res: Response): Promise<void
         description: description || "",
         startTime: new Date(startTime),
         endTime: new Date(endTime),
-        rate: rate ?? null,
-        minSpending: minSpending ?? null,
+        rate: rate !== null ? rate : undefined,
+        minSpending: minSpending !== null ? minSpending : undefined,
         points,
         type,
       },
