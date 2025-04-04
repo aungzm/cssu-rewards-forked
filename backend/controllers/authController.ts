@@ -70,6 +70,13 @@ export async function generateJWTToken(
           lastLogin: new Date(),
         },
       });
+    } else {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          lastLogin: new Date(),
+        },
+      });
     }
 
     res.status(200).json({ token, expiresAt });

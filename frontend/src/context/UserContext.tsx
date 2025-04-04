@@ -11,8 +11,8 @@ interface UserData {
   birthday: string;
   role: "REGULAR" | "CASHIER" | "MANAGER" | "SUPERUSER";
   points: number;
-  createdAt: Date;
-  lastLogin: Date;
+  createdAt: string;
+  lastLogin: string;
   verified: boolean;
   avatarUrl?: string;
 }

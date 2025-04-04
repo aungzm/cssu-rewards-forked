@@ -128,12 +128,12 @@ model Promotion {
   description          String
   startTime            DateTime
   endTime              DateTime
-  rate                 Float?   
-  minSpending          Float?   
+  rate                 Float    @default(0)
+  minSpending          Float    @default(0)   
   type                 String  
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
-  points               Int?     @default(0)  // If points are set, the promotion is a points promotion
+  points               Int      @default(0)  // If points are set, the promotion is a points promotion
   users                UserPromotion[]  // Users who have used this promotion
   transactions         Transaction[] @relation("TransactionPromotion")     // Transactions that used this promotion
 }

@@ -114,7 +114,7 @@ async function createTransferTransaction(
 		where: { id: recipientId },
 		select: { id: true, utorid: true, points: true },
 	});
-	prisma.transaction.create({
+	const transaction =await  prisma.transaction.create({
 		data: {
 			type: "TRANSFER",
 			points: -points,
@@ -124,7 +124,8 @@ async function createTransferTransaction(
 			receiver: { connect: { id: recipientId } },
 		},
 	});
-	prisma.transaction.create({
+	console.log(transaction);
+	await prisma.transaction.create({
 		data: {
 			type: "TRANSFER",
 			points: points,
@@ -134,11 +135,11 @@ async function createTransferTransaction(
 			receiver: { connect: { id: recipientId } },
 		},
 	});
-	prisma.user.update({
+	await prisma.user.update({
 		where: { id: senderId },
 		data: { points: { decrement: points } },
 	});
-	prisma.user.update({
+	await prisma.user.update({
 		where: { id: recipientId },
 		data: { points: { increment: points } },
 	});
