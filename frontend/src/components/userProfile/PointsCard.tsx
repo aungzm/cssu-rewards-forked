@@ -13,7 +13,7 @@ const PointsCard: React.FC<PointsCardProps> = ({
     <p> You have </p>
     <p className="text-6xl text-[#002A5C] font-bold"> {points}</p>
     <p> available points</p>
-    <div className="flex justify-evenly w-full">
+    <div className="flex justify-evenly w-full mt-4">
       <button className="w-[8rem] p-2 border-solid border border-[#00329E] rounded-md text-[#00329E]">Send Points</button>
       <button className="w-[8rem] p-2 rounded-md bg-[#00329E] text-white">Redeem Points</button>
     </div>

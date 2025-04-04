@@ -192,7 +192,7 @@ async function createPromotion(
 	})
 }
 // Delete all existing data
-clearData();
+// await clearData();
 
 createEvent("a",new Date("2000-01-01"), new Date("2024-01-11"), 5000, 50000, true,0);
 createEvent("a",new Date("2005-01-01"), new Date("2025-02-12"), 5000, 50000, true,0);

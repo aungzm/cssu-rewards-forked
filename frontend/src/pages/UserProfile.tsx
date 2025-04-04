@@ -2,10 +2,12 @@ import DataField from '../components/userProfile/DataField';
 import PointsCard from '../components/userProfile/PointsCard';
 import Navbar from "../components/Navbar";
 import MyPromotions from "../components/userProfile/MyPromotions"
-import React from "react";
+import React, {useState} from "react";
 import { useUser } from  '../context/UserContext';
 const UserProfile: React.FC= () => {
+	
 	const { userData } = useUser();
+
 	if (!userData) {
 		return <>How did you even get here like you should be redirected to login by now</>
 	}
@@ -23,7 +25,6 @@ const UserProfile: React.FC= () => {
 					fieldName="Name"
 					fieldContent={userData.name}
 					isEditable={true}
-
 				/>
 				<DataField 
 					fieldName="Utorid"
@@ -43,7 +44,7 @@ const UserProfile: React.FC= () => {
 				<DataField 
 					fieldName="Email"
 					fieldContent={userData.email}
-					isEditable={false}
+					isEditable={true}
 					isLong={true}
 				/>
 				<div className="row-start-6 row-end-9">
