@@ -40,7 +40,7 @@ const MyPromotions: React.FC = () => {
         <span className="m-2 mb-0">Your Promotions</span>
         <a className="m-2 mb-0" href={`${API_BASE_URL}/promotions/me`}>View All</a> {/**Doesn't exist yet */}
       </div>
-      <div className="flex flex-col items-center">
+      <div className="mt-2 flex flex-col items-center">
         <div className="flex items-start gap-2 items-center"> 
           <p className="whitespace-nowrap italic font-bold">Automatic Promotions </p> 
           <p className=" text-xs text-gray-500">Gain extra points throughout <br></br> the entire promotion period</p>

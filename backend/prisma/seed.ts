@@ -137,7 +137,7 @@ async function createTransferTransaction(
 		where: { id: senderId },
 		data: { points: { decrement: points } },
 	});
-	prisma.user.update({
+	await prisma.user.update({
 		where: { id: recipientId },
 		data: { points: { increment: points } },
 	});
