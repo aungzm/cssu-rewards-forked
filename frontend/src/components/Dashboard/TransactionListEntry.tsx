@@ -1,17 +1,12 @@
+// Component for each entry in the Recent Transactions list for the Dashboard
 
 
 function TransactionListEntry(props : { transaction: any }) {
     const { transaction } = props;
 
     const handleClick = () => {
-        console.log("Clicked",transaction.type);
+        // TODO Link to Redeem Transaction Popup
     }
-    // console.log(transaction);
-
-    // type = PURCHASE ADJUSTMENT REDEMPTION TRANSFER EVENT
-    //createdAt
-    //amount
-    //relatedId
 
 
     return (<div className="flex flex-row bg-white border-t border-gray-300 py-2 justify-between items-center hover:bg-gray-200"

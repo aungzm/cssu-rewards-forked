@@ -44,13 +44,13 @@ const Dashboard: React.FC = () => {
                 // console.log(transactions.results.slice(9, 14));
 
                 // Fetch events
-                const events = await fetchData('/events?started=false&showFull=false');
-                setEventList(events.results.slice(0, 3));
+                const events = await fetchData('/events?started=false&showFull=false&limit=3');
+                setEventList(events.results);
                 // console.log(events.results.slice(0, 2));
 
-                // Fetch promotions
-                const promotions = await fetchData('/promotions');
-                setPromotionList(promotions.results.slice(0, 3));                
+                // // Fetch promotions
+                const promotions = await fetchData('/promotions?limit=10');
+                setPromotionList(promotions.results.slice(3, 7));                
 
             } catch (error) {
                 console.error("Error fetching dashboard data:", error);
@@ -61,6 +61,19 @@ const Dashboard: React.FC = () => {
 
     }, []);
     
+    // Repeated Component. Placed here instead of in components to avoid dealing with navigation issues
+    const ListHeader = (props: {heading: string, link: string}) => {
+
+        const {heading, link} = props;
+        return( 
+    
+        <div className='flex flex-row justify-between items-center'> 
+            <h2 className="text-lg font-normal text-[#002A5C]">{heading}</h2>
+            <button className="text-blue-500 hover:underline">{link} </button>
+        </div>
+        )
+    
+    }
 
     return (
         <div>
@@ -84,10 +97,7 @@ const Dashboard: React.FC = () => {
                         {/* Recent Transactions */}
                         {transactionList && transactionList.length > 0 && (
                             <div className="flex flex-col mt-8 bg-white shadow-md rounded-lg p-6 max-w-2xl">
-                                <div className='flex flex-row justify-between items-center'> 
-                                    <h2 className="text-lg font-normal text-[#002A5C]">Recent Transactions</h2>
-                                    <button className="mt-2  text-blue-500 hover:underline"> View All </button>
-                                </div>
+                                <ListHeader heading='Recent Transactions' link='View All' />
                                 
                                 <div className="mt-4">
                                     {transactionList.map((transaction: any, index: number) => (
@@ -100,10 +110,8 @@ const Dashboard: React.FC = () => {
                         {/*Upcoming Events */}
                         {eventList && eventList.length > 0 && (
                             <div className="flex flex-col mt-8 bg-white shadow-md rounded-lg p-6 max-w-2xl">
-                                <div className='flex flex-row justify-between items-center'> 
-                                    <h2 className="text-lg font-normal text-[#002A5C]">Upcoming Events</h2>
-                                    <button className="mt-2  text-blue-500 hover:underline"> View All </button>
-                                </div>
+                                <ListHeader heading='Upcoming Events' link='View All' />
+
 
                                 <div className="mt-4">
                                     {eventList.map((event: any, index: number) => (
@@ -120,13 +128,10 @@ const Dashboard: React.FC = () => {
                         {/* QR Code Container */}
                         <div className="flex flex-col bg-white shadow-md rounded-lg p-6 max-w-2xl my-4">
 
-                            <div className='flex flex-row justify-between items-center border-b border-gray-300 mb-4 pb-4'> 
-                                <h2 className="text-lg font-normal text-[#002A5C]">Your QR Code</h2>
-                                <button className=" text-blue-500 hover:underline"> View </button>
+                            <ListHeader heading='Your QR Code' link='View' />
 
-                            </div>
                             
-                            <div className="flex flex-col justify-center items-center">
+                            <div className="flex flex-col justify-center items-center pt-2 border-t border-gray-300">
                                 <QRCodeSVG value={"TODO"} />
                                 <p className='text-gray-500 text-sm mt-2'> Show this to transfer points </p>
                             </div>
@@ -135,9 +140,9 @@ const Dashboard: React.FC = () => {
 
                         {/* Active Promotions */}
                         {promotionList && promotionList.length > 0 && (
-                            <div className="mt-8"> 
-                                <h2 className="text-2xl font-semibold">Promotions</h2>
-                                <button className="mt-2 text-blue-500 hover:underline"> View All </button>
+                            <div className="flex flex-col bg-white shadow-md rounded-lg p-6 max-w-2xl my-4"> 
+                                <ListHeader heading='Upcoming Promotions' link='View All' />
+
                                 <div className="mt-4">
                                     {promotionList.map((promotion: any, index: number) => (
                                         <PromotionListEntry key={index} promotion={promotion}/>

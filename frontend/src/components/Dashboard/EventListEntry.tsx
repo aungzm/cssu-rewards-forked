@@ -1,4 +1,4 @@
-
+// Component for each entry in the Recent Events list for the Dashboard
 
 function EventListEntry(props: { event: any }) {
 
