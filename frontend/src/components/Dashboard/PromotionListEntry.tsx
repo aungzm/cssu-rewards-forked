@@ -11,9 +11,8 @@ function PromotionListEntry(props : { promotion: any }) {
         {promotion.type === "one-time" && <FaRegStar className="text-yellow-500 h-8 w-8 mr-4" />}
 
         <div className="flex flex-col ">
+            
             <p> {promotion.name}</p>
-            {/* {promotion.type === "automatic" && <p> Automatic Promotion </p>}
-            {promotion.type === "one-time" && <p> One-Time Promotion </p>} */}
 
             {promotion.type === "automatic" &&
                 <p className="text-gray-500"> Active until {promotion.endTime.slice(0, 10)}</p>

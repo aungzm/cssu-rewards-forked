@@ -19,7 +19,7 @@ const Dashboard: React.FC = () => {
     const [eventList, setEventList] = React.useState<any[]>([]);
     const [promotionList, setPromotionList] = React.useState<any[]>([]);
     const [redemptionList, setRedemptionList] = React.useState<any []>([]);
-    // const [user, setUser] = React.useState<any>(null);
+    
     const user = useUser();
     
     // Function to make a call to the fetchWithAuth function
