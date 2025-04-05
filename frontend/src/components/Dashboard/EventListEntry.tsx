@@ -1,7 +1,6 @@
 // Component for each entry in the Recent Events list for the Dashboard
 import { CiCalendar } from "react-icons/ci";
 import { FaLocationDot } from "react-icons/fa6";
-import { format } from "date-fns"; 
 
 function EventListEntry(props: { event: any }) {
 
