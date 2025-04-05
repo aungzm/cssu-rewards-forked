@@ -10,6 +10,7 @@ import DashboardPoints from '../components/Dashboard/DashboardPoints';
 import TransactionListEntry from '../components/Dashboard/TransactionListEntry';
 import EventListEntry from '../components/Dashboard/EventListEntry';
 import PromotionListEntry from '../components/Dashboard/PromotionListEntry';
+import RedemptionListEntry from '../components/Dashboard/RedemptionListEntry';
 
 const Dashboard: React.FC = () => {
 
@@ -17,6 +18,7 @@ const Dashboard: React.FC = () => {
     const [transactionList, setTransactionList] = React.useState<any[]>();
     const [eventList, setEventList] = React.useState<any[]>([]);
     const [promotionList, setPromotionList] = React.useState<any[]>([]);
+    const [redemptionList, setRedemptionList] = React.useState<any []>([]);
     // const [user, setUser] = React.useState<any>(null);
     const user = useUser();
     
@@ -40,17 +42,19 @@ const Dashboard: React.FC = () => {
             try {
                 // Fetch transactions
                 const transactions = await fetchData('/users/me/transactions?limit=20');
-                setTransactionList(transactions.results.slice(9, 14));  // TODO update this to be first 4
-                // console.log(transactions.results.slice(9, 14));
-
+                setTransactionList(transactions.results.slice(9, 14));  // TODO update this to use limit not slice
+                
                 // Fetch events
                 const events = await fetchData('/events?started=false&showFull=false&limit=3');
                 setEventList(events.results);
-                // console.log(events.results.slice(0, 2));
 
-                // // Fetch promotions
+                // Fetch promotions
                 const promotions = await fetchData('/promotions?limit=10');
-                setPromotionList(promotions.results.slice(3, 7));                
+                setPromotionList(promotions.results.slice(3, 7));
+                
+                // Get user's redemptions
+                const redemptions = await fetchData('/users/me/transactions?limit=2&type=redemption');
+                setRedemptionList(redemptions.results);
 
             } catch (error) {
                 console.error("Error fetching dashboard data:", error);
@@ -82,21 +86,21 @@ const Dashboard: React.FC = () => {
             <div className=" bg-gray-100 dark:bg-gray-900 "> {/* This is the main page container  */}
 
                 {/* Heading */}
-                <div className='mx-80 pt-10'>
+                <div className='pt-5 justify-center items-left text-center flex flex-col max-w-2xl'>
                 <h1 className="text-2xl font-medium text-[#002A5C] dark:text-white ">Welcome Back, {user?.userData?.name || "User"}!</h1> {/* Unsure why name is giving error */}
                 <p className="text-gray-500">Welcome to your dashboard!</p>
                 </div>
 
-                <div className='flex flex-row'>
+                <div className='flex flex-row justify-center w-full'>
 
 
                     {/* Main Content */}
-                    <div className='flex-grow flex-col ml-80 mb-5'>
+                    <div className='flex-1 max-w-3xl flex-col'>
 
                         <DashboardPoints />
                         {/* Recent Transactions */}
                         {transactionList && transactionList.length > 0 && (
-                            <div className="flex flex-col mt-8 bg-white shadow-md rounded-lg p-6 max-w-2xl">
+                            <div className="flex flex-col bg-white shadow-md rounded-lg p-4 max-w-2xl">
                                 <ListHeader heading='Recent Transactions' link='View All' />
                                 
                                 <div className="mt-4">
@@ -109,7 +113,7 @@ const Dashboard: React.FC = () => {
 
                         {/*Upcoming Events */}
                         {eventList && eventList.length > 0 && (
-                            <div className="flex flex-col mt-8 bg-white shadow-md rounded-lg p-6 max-w-2xl">
+                            <div className="flex flex-col bg-white mt-4 shadow-md rounded-lg p-4 max-w-2xl">
                                 <ListHeader heading='Upcoming Events' link='View All' />
 
 
@@ -123,10 +127,10 @@ const Dashboard: React.FC = () => {
                     </div> 
 
                     {/* Right Sidebar */}
-                    <div className='w-1/6 mr-40 mb-5' >
+                    <div className='mr-[1%] w-1/5 shrink-0' >
                     
                         {/* QR Code Container */}
-                        <div className="flex flex-col bg-white shadow-md rounded-lg p-6 max-w-2xl my-4">
+                        <div className="flex flex-col bg-white shadow-md rounded-lg p-4 max-w-2xl my-4">
 
                             <ListHeader heading='Your QR Code' link='View' />
 
@@ -140,8 +144,8 @@ const Dashboard: React.FC = () => {
 
                         {/* Active Promotions */}
                         {promotionList && promotionList.length > 0 && (
-                            <div className="flex flex-col bg-white shadow-md rounded-lg p-6 max-w-2xl my-4"> 
-                                <ListHeader heading='Upcoming Promotions' link='View All' />
+                            <div className="flex flex-col bg-white shadow-md rounded-lg p-4 max-w-2xl my-4"> 
+                                <ListHeader heading='Promotions' link='View All' />
 
                                 <div className="mt-4">
                                     {promotionList.map((promotion: any, index: number) => (
@@ -150,7 +154,20 @@ const Dashboard: React.FC = () => {
                                 </div>
                         </div>)}
 
-                        {/* Popular Redemption s */}
+                        {/* Previous Redemptions */}
+                        {redemptionList && redemptionList.length > 0 && (
+                            <div className="flex flex-col bg-white shadow-md rounded-lg p-4 max-w-2xl my-4"> 
+                                <ListHeader heading='My Redemptions' link='' />
+
+                                <div className="mt-4">
+                                    {redemptionList.map((redemption: any, index: number) => (
+                                        <RedemptionListEntry key={index} redemption={redemption}/>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+
                     </div>
 
 
