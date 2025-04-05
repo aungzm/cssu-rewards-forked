@@ -27,7 +27,7 @@ function App() {
         {/* Checks auth and has userProvider */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/users/me" element={<UserProfile/>}/>
+          <Route path="/profile" element={<UserProfile/>}/>
           {/* Add other protected routes here */}
           {/* e.g., <Route path="/profile" element={<ProfilePage />} /> */}
         </Route>

@@ -26,18 +26,18 @@ const PromotionsCard: React.FC<PromotionsCardProps> = ({
   bonus+= `${(minSpending ? " by spending $"+minSpending:" for any purchase")}`;
   if (isAutomatic) {
     return (
-      <div key={id as React.Key} className="bg-gray-100 h-[3.5rem] w-[21rem] p-1 m-2 rounded-md">
+      <div key={id as React.Key} className="bg-gray-100 w-[21rem] p-1 m-2 rounded-md">
         <p className="font-bold ml-2 text-sm">{name}</p>
         <p className="ml-2 text-gray-600 text-xs italic whitespace-nowrap text-ellipsis overflow-hidden "> {bonus}</p>
-        <p className="ml-2 text-gray-600 text-xs">{"Active until "+endTime.slice(0,10)}</p>
+        <p className="ml-2 text-gray-600 text-xs mb-2">{"Active until "+endTime.slice(0,10)}</p>
       </div>
     )
   } else {
     return (
-      <div key={id as React.Key} className="bg-gray-100 h-[3.5rem] w-[21rem] p-1 m-2 rounded-md">
+      <div key={id as React.Key} className="bg-gray-100 w-[21rem] p-1 m-2 rounded-md">
         <p className="font-bold ml-2 text-sm">{name}</p>
         <p className="ml-2 text-gray-600 text-xs italic whitespace-nowrap text-ellipsis overflow-hidden"> {bonus}</p>
-        <p className="ml-2 text-gray-600 text-xs">{"Expires at "+endTime.slice(0,10)}</p>
+        <p className="ml-2 text-gray-600 text-xs mb-2">{"Expires at "+endTime.slice(0,10)}</p>
       </div>
     )
   }
