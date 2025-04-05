@@ -27,9 +27,12 @@ function TransactionListEntry(props : { transaction: any }) {
                     } else if (transaction.type === "purchase") {
                         return <HiOutlinePlusCircle className="text-green-500 h-8 w-8" />;
 
-                    } else if (transaction.type === "adjustment") {
+                    } else if (transaction.type === "adjustment" && transaction.amount > 0) {
                         return <HiOutlineArrowUpCircle className="text-green-500 h-8 w-8" />;
 
+                    } else if (transaction.type === "adjustment" && transaction.amount < 0) {
+                        return <HiOutlineArrowDownCircle className="text-red-500 h-8 w-8" />;
+                    
                     } else if (transaction.type === "transfer" && transaction.amount > 0) {
                         return <HiOutlineArrowUpCircle className="text-green-500 h-8 w-8" />;
 
