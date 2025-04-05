@@ -13,7 +13,8 @@
     "pretest": "npm run test:setup:db && npm run test:create-su",
     "test": "npm run test:run",
     "posttest": "npm run test:teardown",
-    "seed": "tsx prisma/seed.ts"
+    "reset": "npx prisma generate && npx prisma db push --force-reset",
+    "seed": "npm run reset && tsx prisma/seed.ts"
   },
   "author": "CSC309 Student, Winter 2025",
   "license": "ISC",
