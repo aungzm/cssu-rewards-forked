@@ -1,19 +1,37 @@
 // Component for each entry in the Recent Transactions list for the Dashboard
 import { HiOutlineArrowUpCircle, HiOutlineArrowDownCircle, HiOutlinePlusCircle, HiOutlineMinusCircle } from "react-icons/hi2";
+import { useState } from "react";
+import RedemptionCodeModal from "./RedemptionCodeModal";
 
 
-
-function TransactionListEntry(props : { transaction: any }) {
+function TransactionListEntry(props : { transaction: any}) {
     const { transaction } = props;
 
-    const handleClick = () => {
-        // TODO Link to Redeem Transaction Popup
+    // Modal for the QR Code for Redemptions
+    const [isRedemptionModalOpen, setIsRedemptionModalOpen] = useState(false);
+    const [redemption, setRedemption] = useState<any>(null);
+
+    // Function to handle the clicking on the transaction
+    const handleRedemptionClick = () => {
+        setIsRedemptionModalOpen(true);
+        setRedemption(transaction);
+    }
+    
+    // Function to handle the closing of the modal
+    const handleRedemptionClose = () => {
+        setIsRedemptionModalOpen(false);
+        setRedemption(null);
     }
 
-
     return (
-    <div className="flex flex-row bg-white border-t border-gray-300 py-2 hover:bg-gray-200"
-    onClick={handleClick}>
+    <div className="flex flex-row bg-white border-t border-gray-300 py-2 hover:bg-gray-200">
+
+        {/* Modal for the QR Code for Redemptions */}
+        <div>
+            <RedemptionCodeModal isOpen={isRedemptionModalOpen} 
+            onClose={handleRedemptionClose}
+            redemption={redemption}/>
+        </div>
 
         {/* Icon */}
         <div className="flex items-center justify-center mr-4">
@@ -53,7 +71,7 @@ function TransactionListEntry(props : { transaction: any }) {
                 {/* Print out title based on type*/}
                 {transaction.type === "purchase" && <p> Purchased Item </p>}
                 {transaction.type === "adjustment" && <p> Adjusted by Manager </p>}
-                {transaction.type === "redemption" && <button className="hover:underline"> Redeemed Points </button>}
+                {transaction.type === "redemption" && <button className="hover:underline" onClick={handleRedemptionClick}> Redeemed Points </button>}
                 {transaction.type === "transfer" &&  transaction.amount > 0 && <p> Received Points from Transfer</p>}
                 {transaction.type === "transfer" &&  transaction.amount < 0 && <p> Sent Points in Transfer </p>}
                 {transaction.type === "event" && <p> Attended Event </p>}
