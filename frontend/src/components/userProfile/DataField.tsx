@@ -172,7 +172,7 @@ const DataField: React.FC<DataFieldProps> = ({
       : undefined;
 
   const baseClasses =
-    'rounded-md bg-white dark:bg-gray-700 dark:text-gray-100 row flex flex-row p-1 m-2 drop-shadow-lg items-center h-[3rem] w-full';
+    'rounded-md bg-white dark:bg-gray-700 dark:text-gray-100 row flex flex-row p-2 drop-shadow-lg items-center h-[3rem] w-full';
 
   return (
     <>

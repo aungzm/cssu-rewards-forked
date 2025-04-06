@@ -1,18 +1,20 @@
-import DataField from '../components/userProfile/DataField';
-import PointsCard from '../components/userProfile/PointsCard';
+import DataField from "../components/userProfile/DataField";
+import PointsCard from "../components/userProfile/PointsCard";
 import Navbar from "../components/Navbar";
-import MyPromotions from "../components/userProfile/MyPromotions"
+import MyPromotions from "../components/userProfile/MyPromotions";
 import React, { useState } from "react";
-import { User, Pencil } from 'lucide-react';
-import { useUser } from '../context/UserContext';
+import { User, Pencil } from "lucide-react";
+import { useUser } from "../context/UserContext";
 // import { fetchWithAuth } from '../utils/authHelper';
 // import { API_BASE_URL } from '../utils/auth';
 
 const UserProfile: React.FC = () => {
   const { userData } = useUser();
-  const [profilePicture, setProfilePicture] = useState<string | null>(userData?.avatarUrl || null);
+  const [profilePicture, setProfilePicture] = useState<string | null>(
+    userData?.avatarUrl || null,
+  );
 
-  // Update profile picture 
+  // Update profile picture
   const updateProfilePicture = () => {
     // Create a hidden file input to open file picker
     const fileInput = document.createElement("input");
@@ -60,17 +62,24 @@ const UserProfile: React.FC = () => {
   };
 
   if (!userData) {
-    return <>How did you even get here like you should be redirected to login by now</>
+    // Consider a more user-friendly loading state or redirect logic here
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading user data or redirecting...
+      </div>
+    );
   }
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
-      <Navbar activeLink={''} />
+      <Navbar activeLink={""} />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="grid grid-cols-[1fr,1fr] gap-x-8 gap-y-4 items-start">
-
-          {/* Avatar: Column 1, Rows 1-4 */}
+        {/* Use grid-cols-1 for mobile (default) and md:grid-cols-[1fr,1fr] for medium screens and up */}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr,1fr] gap-x-8 gap-y-6 items-start">
           <div
-            className="relative group row-start-1 row-span-4 col-start-1 bg-gray-500 rounded-full self-center flex items-center justify-center mr-[6rem] justify-self-end w-[16rem] h-[16rem] cursor-pointer"
+            className="relative group row-start-1 bg-gray-500 rounded-full flex items-center justify-center 
+                       w-[12rem] h-[12rem] justify-self-center mb-4 cursor-pointer 
+                       md:row-span-4 md:col-start-1 md:mr-[6rem] md:justify-self-end md:w-[16rem] md:h-[16rem] md:mb-0"
             onClick={updateProfilePicture}
           >
             {profilePicture ? (
@@ -87,8 +96,7 @@ const UserProfile: React.FC = () => {
             </div>
           </div>
 
-          {/* Name: Row 1, Column 2 */}
-          <div className="row-start-1 col-start-2 w-full">
+          <div className="w-full md:row-start-1 md:col-start-2">
             <DataField
               fieldName="Name"
               fieldContent={userData.name}
@@ -96,8 +104,7 @@ const UserProfile: React.FC = () => {
             />
           </div>
 
-          {/* Utorid: Row 2, Column 2 */}
-          <div className="row-start-2 col-start-2 w-full">
+          <div className="w-full md:row-start-2 md:col-start-2">
             <DataField
               fieldName="Utorid"
               fieldContent={userData.utorid}
@@ -105,17 +112,17 @@ const UserProfile: React.FC = () => {
             />
           </div>
 
-          {/* Birthday: Row 3, Column 2 */}
-          <div className="row-start-3 col-start-2 w-full">
+          <div className="w-full md:row-start-3 md:col-start-2">
             <DataField
               fieldName="Birthday"
-              fieldContent={(userData.birthday ? userData.birthday.slice(0, 10) : "")}
+              fieldContent={
+                userData.birthday ? userData.birthday.slice(0, 10) : ""
+              }
               isEditable={true}
             />
           </div>
 
-          {/* Role: Row 4, Column 2 */}
-          <div className="row-start-4 col-start-2 w-full">
+          <div className="w-full md:row-start-4 md:col-start-2">
             <DataField
               fieldName="Role"
               fieldContent={userData.role.toLowerCase()}
@@ -123,8 +130,7 @@ const UserProfile: React.FC = () => {
             />
           </div>
 
-          {/* Email: Row 5, Spans both columns */}
-          <div className="row-start-5 col-start-1 col-span-2 w-full max-w-full justify-self-center">
+          <div className="w-full max-w-full justify-self-center md:row-start-5 md:col-start-1 md:col-span-2">
             <DataField
               fieldName="Email"
               fieldContent={userData.email}
@@ -132,38 +138,35 @@ const UserProfile: React.FC = () => {
             />
           </div>
 
-          {/* Points Card: Row 6, Column 1 */}
-          <div className="row-start-6 col-start-1 max-w-full mr-[2rem]">
-            <PointsCard
-              points={userData.points}
-            />
+          <div className="w-full md:row-start-6 md:col-start-1 md:max-w-full">
+            <PointsCard points={userData.points} />
           </div>
 
-          {/* Promotions: Row 6, Column 2, Spans multiple rows */}
-          <div className="row-start-6 col-start-2 row-span-4 self-start w-full ml-2">
+          <div className="self-start w-full md:row-start-6 md:col-start-2 md:row-span-4">
             <MyPromotions />
           </div>
 
-          {/* Password: Row 7, Column 1 */}
-          <div className="row-start-7 col-start-1 max-w-full mr-[3rem]">
+            <div className="w-full md:row-start-7 md:col-start-1 md:max-w-full md:mr-[8rem]">
             <DataField
               fieldName="Password"
               fieldContent="********"
               isEditable={true}
             />
-          </div>
+            </div>
 
-          {/* Last login: Row 8, Column 1 */}
-          <div className="row-start-8 col-start-1 max-w-full mr-[3rem]">
+          <div className="w-full md:row-start-8 md:col-start-1 md:max-w-full md:mr-[3rem]">
             <DataField
               fieldName="Last login"
-              fieldContent={(userData.lastLogin ? userData.lastLogin.slice(0, 10) : new Date().toISOString().slice(0, 10))}
+              fieldContent={
+                userData.lastLogin
+                  ? userData.lastLogin.slice(0, 10)
+                  : new Date().toISOString().slice(0, 10)
+              }
               isEditable={false}
             />
           </div>
 
-          {/* Created at: Row 9, Column 1 */}
-          <div className="row-start-9 col-start-1 max-w-full mr-[3rem]">
+          <div className="w-full md:row-start-9 md:col-start-1 md:max-w-full md:mr-[6rem]">
             <DataField
               fieldName="Created at"
               fieldContent={userData.createdAt.slice(0, 10)}
@@ -173,7 +176,7 @@ const UserProfile: React.FC = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default UserProfile
+export default UserProfile;
