@@ -239,12 +239,23 @@ export default function PromotionsPage() {
     setSortOption(e.target.value as SortOption);
   };
 
+  const stickyHeaderTopOffset = 'top-14';
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar activeLink="Promotions" />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-16 py-6 ">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div
+          className={`
+            sticky ${stickyHeaderTopOffset} z-10
+            bg-gray-50 dark:bg-gray-900
+            pt-6 pb-4 /* Add padding within the sticky header */
+            flex flex-col gap-4
+            md:flex-row md:items-center md:justify-between
+            /* Removed mb-6 */
+          `}
+        >
           <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-300">
             Promotions
           </h1>
