@@ -9,7 +9,7 @@ const PointsCard: React.FC<PointsCardProps> = ({
 }) => {
   return (
   <div className="rounded-md bg-white justify-self-end flex flex-col drop-shadow-lg 
-  items-center p-1 drop-shadow-lg items-center h-[12rem] ">
+  items-center p-1 m-2 drop-shadow-lg items-center h-[12rem] dark:bg-gray-700 dark:text-gray-100">
     <p> You have </p>
     <p className="text-6xl text-[#002A5C] font-bold dark:text-gray-100"> {points}</p>
     <p> available points</p>
