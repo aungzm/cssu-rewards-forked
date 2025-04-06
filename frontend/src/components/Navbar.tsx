@@ -33,7 +33,7 @@ interface NavbarProps {
 
 // Navigation Links Configuration 
 const navLinks: NavLink[] = [
-  { name: "Dashboard", href: "#" },
+  { name: "Dashboard", href: "/dashboard" },
   { name: "Users", href: "#" },
   {
     name: "My Points",
@@ -56,7 +56,7 @@ const navLinks: NavLink[] = [
     ],
     requiredRoles: ["CASHIER", "MANAGER", "SUPERUSER"],
   },
-  { name: "Promotions", href: "#" },
+  { name: "Promotions", href: "/promotions" },
   {
     name: "Events",
     href: "#",
