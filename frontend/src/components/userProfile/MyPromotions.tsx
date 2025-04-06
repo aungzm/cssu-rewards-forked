@@ -35,7 +35,7 @@ const MyPromotions: React.FC = () => {
     fetchWithAuth(`${API_BASE_URL}/promotions?type=one-time&page=1&limit=2`).then(res=>res.json()).then(setOneTimePromotions);
   }, [])
   return (
-    <div className="rounded-md bg-white row flex flex-col p-2 mb-2 drop-shadow-lg">
+    <div className="rounded-md bg-white dark:bg-gray-700 dark:text-gray-100 row flex flex-col p-2 mb-2 drop-shadow-lg">
       <div className="flex justify-between border-b">
         <span className="m-2 mb-0">Your Promotions</span>
         <a className="m-2 mb-0" href={`${API_BASE_URL}/promotions/me`}>View All</a> {/**Doesn't exist yet */}
