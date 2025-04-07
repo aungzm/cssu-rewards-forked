@@ -169,9 +169,10 @@ const ViewUserModal: React.FC<ViewUserInfoModalProps> = ({
             {/* Available Promotions Section */}
             {detailedUser.promotions !== undefined && ( // Check if promotions field exists
               <div>
-                <h3 className="mb-3 border-b pb-2 text-base font-semibold text-gray-700">
-                  Available Promotions
-                </h3>
+                <div className="mb-3 border-b pb-2 text-base font-semibold text-gray-700 justify-between flex items-center">
+                  <h3>Available Promotions</h3> 
+                  <h4><a href="promotions" className="cursor-pointer hover:text-blue-700">View All</a></h4>
+                </div>
                 {detailedUser.promotions &&
                 detailedUser.promotions.length > 0 ? (
                   <div className="space-y-2">
