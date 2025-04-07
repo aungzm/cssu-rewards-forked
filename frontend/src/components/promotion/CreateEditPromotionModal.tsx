@@ -44,7 +44,7 @@ export default function CreateEditPromotionModal({
   const [formData, setFormData] = useState(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
-
+  const MAX_DESC_LENGTH = 300;
   const isEditing = Boolean(promotionToEdit);
 
   // Effect to populate form when editing
@@ -74,6 +74,11 @@ export default function CreateEditPromotionModal({
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >,
   ) => {
+
+    // Prevent exceeding max length for description
+    if (e.target.name === 'description' && e.target.value.length > MAX_DESC_LENGTH) {
+      return;
+    }
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -277,6 +282,9 @@ export default function CreateEditPromotionModal({
               disabled={isSubmitting}
               className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
             />
+             <p className="mt-1 text-xs text-right text-gray-500 dark:text-gray-400">
+              {formData.description.length} / {MAX_DESC_LENGTH} characters
+            </p>
           </div>
 
           {/* Type */}
