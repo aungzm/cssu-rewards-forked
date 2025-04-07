@@ -10,7 +10,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Signup from "./pages/Signup";
 import PromotionsPage from "./pages/Promotions";
 import { isAuthenticated } from "./utils/auth";
-
+import UserProfile from './pages/UserProfile';
 function App() {
   return (
     <Router>
@@ -28,6 +28,9 @@ function App() {
         {/* Checks auth and has userProvider */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<UserProfile/>}/>
+          {/* Add other protected routes here */}
+          {/* e.g., <Route path="/profile" element={<ProfilePage />} /> */}
           <Route path="/promotions" element={<PromotionsPage />} />
         </Route>
 
@@ -42,6 +45,7 @@ function App() {
           path="*"
           element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
         />
+        
       </Routes>
     </Router>
   );
