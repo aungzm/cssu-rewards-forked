@@ -87,7 +87,7 @@ export default function PromotionsCard({
 
           {/* Description */}
           <p className="text-gray-600 dark:text-gray-300 mt-1 text-sm">
-            {description}
+            {description.length > 30 ? description.substring(0, 30) + '...' : description}
           </p>
 
           {/* Date information */}
