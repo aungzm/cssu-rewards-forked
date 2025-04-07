@@ -38,6 +38,7 @@ model User {
   name               String?
   birthday           DateTime?
   avatarUrl          String?
+  avatar             String?
   password           String?
   role               RoleType
   activated          Boolean       @default(false)

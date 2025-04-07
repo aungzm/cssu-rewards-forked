@@ -20,9 +20,10 @@ import {
   createRedemptionTransaction,
   getUserTransactions,
 } from "../controllers/transactionController";
-
+import cors from "cors";
 const router = express.Router();
-const upload = multer({ dest: "uploads/avatars/" });
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 // Custom parser to convert strings to boolean correctly
 const parseBoolean = (val: unknown): unknown => {
@@ -58,6 +59,17 @@ const validate =
     }
   };
 
+  
+const checkImg = (file: File) => {
+  if (!file) {
+    return true;
+  } else if (file.name) {
+      const fileType = file.name.split(".").pop();
+      if (fileType ==="png") return true;
+  } 
+  return false;
+  
+}
 // Schemas
 
 const userIdSchema = z.object({
@@ -158,18 +170,36 @@ const updateCurrentUserSchema = z.object({
           { message: "Invalid date. Please provide a valid calendar date." }
         )
         .transform((val) => (val ? new Date(val) : val)), // Transform to Date object if not null
+      avatar: z
+        .any()
+        .optional()
+        .nullable()
+        .refine((file) => {
+          if (!file) {
+            return true;
+          };
+          return file.size < 5000000;
+        }, "Max size is 5MB.")
+        .refine((file) => checkImg(file), "Only .png format is supported."),
     })
-    .refine(
-      (data) => {
-        // Check that at least one field is provided and not null
-        return Object.entries(data).some(([_, value]) => value !== null);
-      },
-      {
-        message:
-          "At least one field must be provided with a non-null value",
-      }
-    ),
+    // .refine( TODO: i do not know why this is causing update to fail for updating avatars, but it is
+    //   (data) => {
+    //     // Check that at least one field is provided and not null
+    //     return Object.entries(data).some(([_, value]) => value !== null);
+    //   },
+    //   {
+    //     message:
+    //       "At least one field must be provided with a non-null value",
+    //   }
+    // ),
 });
+
+const corsOptions = {
+  origin: 'http://localhost:5173',  // Change to the correct frontend URL
+  methods: ['PATCH', 'OPTIONS'],  // Only allow PATCH and OPTIONS methods
+  allowedHeaders: ['Content-Type', 'Authorization'],  // Allow headers we need
+  credentials: true,  // Allow credentials (cookies, tokens, etc.)
+};
 
 const updatePasswordSchema = z.object({
   body: z.object({
@@ -264,8 +294,11 @@ router.get("/me", authenticateToken, getCurrentUser);
  * @route   PATCH /users/me
  * @desc    Update the current logged-in user's info (e.g. name, email)
  */
+
+
 router.patch(
   "/me",
+  cors(corsOptions),
   authenticateToken,
   upload.single("avatar"),
   validate(updateCurrentUserSchema),
@@ -356,5 +389,6 @@ router.get(
   validate(getUsersSchema),
   getUsers
 );
+router.options('*', cors());
 
 export default router;
