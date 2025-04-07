@@ -5,10 +5,10 @@ import {useUser} from "../../context/UserContext";
 const DashboardPoints =  React.memo(() =>{
 
     const user = useUser();
-    let points = user?.userData?.points || 0;
-    let formattedPoints = points.toLocaleString();
+    const points = user?.userData?.points || 0;
+    const formattedPoints = points.toLocaleString();
 
-    return <div className="flex flex-col items-center justify-center bg-white shadow-md rounded-lg p-6 my-4 max-w-2xl">
+    return <div className="flex flex-col items-center justify-center bg-white shadow-md rounded-lg p-6 my-4 mr-8 ">
         
         <h1 className="text-3xl text-[#002A5C] font-bold"> {formattedPoints}</h1>
         <p className="text-gray-500"> Available Points</p>
