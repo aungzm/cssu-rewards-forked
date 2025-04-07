@@ -97,7 +97,7 @@ export async function createPromotion(req: Request, res: Response): Promise<void
  */
 export async function getPromotions(req: Request, res: Response): Promise<void> {
   try {
-    const { name, started, ended, page = "1", limit = "10", type } = req.query;
+    const { name,type, started, ended, page = "1", limit = "10" } = req.query;
     
     // If both started and ended are specified, return 400
     if (started && ended) {
@@ -116,7 +116,11 @@ export async function getPromotions(req: Request, res: Response): Promise<void> 
         contains: name as string,
       };
     }
-
+    if (type) { //no error checking at all just temporary
+      where.type = {
+        equals: type
+      }
+    }
     // Determine user role; assuming req.user is injected by auth middleware
     const userRole: string = ((req as any).user?.role) || "REGULAR";
 
@@ -134,13 +138,18 @@ export async function getPromotions(req: Request, res: Response): Promise<void> 
         where.type = type;
       }
     }
-
-    // Filter by ended
-    if (ended === "true") {
-      where.endTime = { lte: now };
-    } else if (ended === "false") {
-      where.endTime = { gt: now };
+    if (userRole === "REGULAR" || userRole === "CASHIER") {
+      // Only promotions that have not ended (now <= endTime)
+      where.endTime = { gte: now };
+    } else {
+      // Filter by ended
+      if (ended === "true") {
+        where.endTime = { lte: now };
+      } else if (ended === "false") {
+        where.endTime = { gt: now };
+      }
     }
+    
 
     // Pagination
     const pageNum = parseInt(page as string, 10) || 1;
