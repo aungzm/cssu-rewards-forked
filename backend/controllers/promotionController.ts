@@ -97,7 +97,7 @@ export async function createPromotion(req: Request, res: Response): Promise<void
  */
 export async function getPromotions(req: Request, res: Response): Promise<void> {
   try {
-    const { name, started, ended, page = "1", limit = "10" } = req.query;
+    const { name, started, ended, page = "1", limit = "10", type } = req.query;
     
     // If both started and ended are specified, return 400
     if (started && ended) {
@@ -114,7 +114,6 @@ export async function getPromotions(req: Request, res: Response): Promise<void> 
     if (name) {
       where.name = {
         contains: name as string,
-        mode: "insensitive",
       };
     }
 
@@ -130,6 +129,9 @@ export async function getPromotions(req: Request, res: Response): Promise<void> 
         where.startTime = { lte: now };
       } else if (started === "false") {
         where.startTime = { gt: now };
+      }
+      if (type) {
+        where.type = type;
       }
     }
 

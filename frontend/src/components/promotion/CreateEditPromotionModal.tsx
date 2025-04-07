@@ -15,7 +15,7 @@ interface Promotion {
   description: string;
 }
 
-type PromotionType = 'oneTime' | 'automatic';
+type PromotionType = 'one-time' | 'automatic';
 
 // Had to use because id is not always present in the API response
 interface PromotionPayload {
@@ -78,7 +78,7 @@ const CreateEditPromotionModal: React.FC<CreateEditPromotionModalProps> = ({
     return {
       name: promotionToEdit?.name ?? '',
       description: promotionToEdit?.description ?? '',
-      type: promotionToEdit?.type ?? 'oneTime',
+      type: promotionToEdit?.type ?? 'one-time',
       startTime: formatISOForInput(promotionToEdit?.startTime),
       endTime: formatISOForInput(promotionToEdit?.endTime),
       minSpending: promotionToEdit?.minSpending ?? 0,
@@ -361,7 +361,7 @@ const CreateEditPromotionModal: React.FC<CreateEditPromotionModalProps> = ({
                 }`}
                 disabled={isLoading}
               >
-                <option value="oneTime">One Time</option>
+                <option value="one-time">One Time</option>
                 <option value="automatic">Automatic</option>
               </select>
               {errors.type && (

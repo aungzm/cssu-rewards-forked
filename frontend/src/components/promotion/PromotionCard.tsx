@@ -2,7 +2,7 @@
 interface PromotionCardProps {
   id: number;
   name: string;
-  type: 'automatic' | 'oneTime';
+  type: 'automatic' | 'one-time';
   startTime: string;
   endTime?: string;
   minSpending: number;
