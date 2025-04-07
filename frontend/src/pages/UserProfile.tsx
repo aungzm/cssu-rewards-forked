@@ -30,6 +30,9 @@ const UserProfile: React.FC = () => {
           // Send a PATCH request to upload the file
           console.log(formData)
           try {
+            // cannot use fetch with auth here, since fetch with auth has application/json set in headers, but this requires multipart/form-data
+            // trying to set multipart/form-data will result in not having a default boundary and thus fetch fails
+            // backend cors settings allows localhost:5173 (and BASE_API_URL), for PATCH /users/me in order for this to be able to send a file.
             fetch(`${API_BASE_URL}/users/me`, {
               headers : {'Authorization': `Bearer ${token}`},
               method: "PATCH",
@@ -71,6 +74,9 @@ const UserProfile: React.FC = () => {
                        md:row-span-4 md:col-start-1 md:mr-[6rem] md:justify-self-end md:w-[16rem] md:h-[16rem] md:mb-0"
             onClick={updateProfilePicture}
           >
+            {/**for some reason, profilePicture is set to null on load, while userData.avatar actually has the content, this allows the page on load 
+             * to contain the user avatar using userData.avatar, and on update, uses profilePicture to get the most updated avatar
+             */}
             {profilePicture || userData.avatar? (
               <img
                 src={`data:image/png;base64,${(profilePicture ? profilePicture: userData.avatar )}`}
