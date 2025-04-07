@@ -427,13 +427,13 @@ export default function PromotionsPage() {
         {!isLoading && !error && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {sortedPromotions.map((promotion) => (
-              <PromotionsCard
-                key={promotion.id}
-                {...promotion}
-                endTime={promotion.endTime ?? undefined}
-                onEdit={() => handleOpenEditModal(promotion)}
-              />
-            ))}
+            <PromotionsCard
+              key={promotion.id}
+              {...promotion}
+              endTime={promotion.endTime ?? undefined}
+              onEdit={() => handleOpenEditModal(promotion)}
+            />
+          ))}
           </div>
         )}
 
@@ -463,7 +463,7 @@ export default function PromotionsPage() {
       <CreateEditPromotionModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        promotionToEdit={editingPromotion} // Pass null or the promotion object
+        promotionToEdit={editingPromotion || undefined} 
         onSuccess={handleSuccess}
       />
     </div>
