@@ -118,6 +118,7 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
         birthday: true,
         points: true,
         avatarUrl: true,
+        activated: true,
         createdAt: true,
         verified: true,
         lastLogin: true,
