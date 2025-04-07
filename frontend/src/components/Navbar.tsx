@@ -34,29 +34,16 @@ interface NavbarProps {
 // Navigation Links Configuration 
 const navLinks: NavLink[] = [
   { name: "Dashboard", href: "/dashboard" },
-  { name: "Users", href: "#" },
   {
-    name: "My Points",
+    name: "Points ",
     href: "#",
     hasDropdown: true,
     dropdownItems: [
-      { name: "Current Balance", href: "#" },
-      { name: "Transfer/Redeem", href: "#" },
-      { name: "Transaction History", href: "#" },
+      { name: "Create Transactions", href: "#" }, // Transfer points, Redeem points and Create Purchase transaction
+      { name: "Transaction history", href: "#" }, // Has current balance as well 
     ],
   },
-  {
-    name: "Transactions",
-    href: "#",
-    hasDropdown: true,
-    dropdownItems: [
-      { name: "Transaction History", href: "#" },
-      { name: "Process Redemption", href: "#" },
-      { name: "Create Transaction", href: "#" },
-    ],
-    requiredRoles: ["CASHIER", "MANAGER", "SUPERUSER"],
-  },
-  { name: "Promotions", href: "#" },
+  { name: "Promotions", href: "/promotions" },
   {
     name: "Events",
     href: "#",
@@ -68,7 +55,7 @@ const navLinks: NavLink[] = [
   },
   {
     name: "Role Management",
-    href: "#",
+    href: "user-management",
     requiredRoles: ["MANAGER", "SUPERUSER"],
   },
 ];
@@ -226,7 +213,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
               className="absolute left-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-10"
               >
               <a
-                href="/profile" // Replace with actual profile link/route
+                href="#profile" // Replace with actual profile link/route
                 className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
               >
                 Profile Details
