@@ -242,7 +242,7 @@ export default function PromotionsPage() {
   const stickyHeaderTopOffset = 'top-14';
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       <Navbar activeLink="Promotions" />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-16 py-6 ">
