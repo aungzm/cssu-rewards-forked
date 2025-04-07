@@ -30,7 +30,7 @@ const UserTable: React.FC<UserTableProps> = ({
   return (
     <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
       <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50 sticky top-0 z-10">
+        <thead className="bg-gray-50 sticky top-0 z-10 justify-between">
           <tr>
             <th
               scope="col"
@@ -46,19 +46,19 @@ const UserTable: React.FC<UserTableProps> = ({
             </th>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+              className="px-10 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
             >
               Role
             </th>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+              className="px-8 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
             >
               Joined
             </th>
             <th
               scope="col"
-              className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500" // Adjusted alignment
+              className="items-center pl-8 text-xs font-medium uppercase tracking-wider text-gray-500"
             >
               Actions
             </th>

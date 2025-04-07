@@ -7,6 +7,7 @@ interface UserTableRowProps {
   user: ExtendedUserData;
   onViewInfo: (user: UserData) => void;
   onEditUser: (user: UserData) => void;
+  
 }
 
 interface ExtendedUserData extends UserData {
@@ -85,7 +86,7 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
         {formatDate(user.createdAt)}
       </td>
       {/* Actions Cell */}
-      <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+      <td className="whitespace-nowrap p pr-6 py-4 text-right text-sm font-medium">
         <button
           onClick={() => onViewInfo(user)}
           className="mr-3 text-indigo-600 hover:text-indigo-900"
