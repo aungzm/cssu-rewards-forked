@@ -34,27 +34,14 @@ interface NavbarProps {
 // Navigation Links Configuration 
 const navLinks: NavLink[] = [
   { name: "Dashboard", href: "/dashboard" },
-  { name: "Users", href: "#" },
   {
-    name: "My Points",
+    name: "Points ",
     href: "#",
     hasDropdown: true,
     dropdownItems: [
-      { name: "Current Balance", href: "#" },
-      { name: "Transfer/Redeem", href: "#" },
-      { name: "Transaction History", href: "#" },
+      { name: "Create Transactions", href: "#" }, // Transfer points, Redeem points and Create Purchase transaction
+      { name: "Transaction history", href: "#" }, // Has current balance as well 
     ],
-  },
-  {
-    name: "Transactions",
-    href: "#",
-    hasDropdown: true,
-    dropdownItems: [
-      { name: "Transaction History", href: "#" },
-      { name: "Process Redemption", href: "#" },
-      { name: "Create Transaction", href: "#" },
-    ],
-    requiredRoles: ["CASHIER", "MANAGER", "SUPERUSER"],
   },
   { name: "Promotions", href: "/promotions" },
   {
