@@ -163,7 +163,7 @@ export default function CreateEditPromotionModal({
           errorData = await response.json();
           if (errorData?.error && Array.isArray(errorData.error)) {
             errorMessage = errorData.error
-              .map((e: { path: string; message: string }) => `${e.path}: ${e.message}`)
+              .map((e: {path: string, message: string}) => `${e.path}: ${e.message}`) 
               .join('; '); // Join multiple errors
           } else if (errorData?.message) {
             errorMessage = errorData.message;
@@ -255,7 +255,7 @@ export default function CreateEditPromotionModal({
               onChange={handleChange}
               required
               disabled={isSubmitting}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
+              className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
             />
           </div>
 
@@ -275,7 +275,7 @@ export default function CreateEditPromotionModal({
               onChange={handleChange}
               required
               disabled={isSubmitting}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
+              className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
             />
           </div>
 
@@ -294,7 +294,7 @@ export default function CreateEditPromotionModal({
               onChange={handleChange}
               required
               disabled={isSubmitting}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
+              className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
             >
               <option value="one-time">One Time</option>
               <option value="automatic">Automatic</option>
@@ -317,7 +317,7 @@ export default function CreateEditPromotionModal({
               onChange={handleChange}
               required
               disabled={isSubmitting}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
+              className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
             />
           </div>
 
@@ -336,7 +336,7 @@ export default function CreateEditPromotionModal({
               value={formData.endTime}
               onChange={handleChange}
               disabled={isSubmitting}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
+              className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
             />
           </div>
 
@@ -358,7 +358,7 @@ export default function CreateEditPromotionModal({
               onChange={handleChange}
               required
               disabled={isSubmitting}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
+              className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
             />
           </div>
 
@@ -402,7 +402,7 @@ export default function CreateEditPromotionModal({
               onChange={handleChange}
               required
               disabled={isSubmitting}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
+              className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
             />
           </div>
 
