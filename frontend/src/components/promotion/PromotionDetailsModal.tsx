@@ -1,8 +1,9 @@
-import { X } from "lucide-react";
+import { Pencil, X } from "lucide-react";
 
 interface PromotionDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onEdit: () => void; 
   promotion: Promotion | null;
 }
 
@@ -35,6 +36,7 @@ export default function PromotionDetailsModal({
   isOpen,
   onClose,
   promotion,
+  onEdit,
 }: PromotionDetailsModalProps) {
   if (!isOpen || !promotion) return null;
 
@@ -57,10 +59,18 @@ export default function PromotionDetailsModal({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-1 text-gray-500 transition hover:bg-gray-200 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-100"
+          className="absolute right-6 top-4 rounded-full p-1 text-gray-500 transition hover:bg-gray-200 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-100"
           aria-label="Close modal"
         >
           < X size={24} />
+        </button>
+        {/* Close Button */}
+        <button
+          onClick={onEdit}
+          className="absolute right-6 top-24 mt-2 rounded-full p-1 text-gray-500 transition hover:bg-gray-200 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-100"
+          aria-label="Close modal"
+        >
+          < Pencil size={20} />
         </button>
 
         {/* Header */}

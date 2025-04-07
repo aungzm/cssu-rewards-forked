@@ -241,6 +241,7 @@ export default function PromotionsPage() {
   };
 
   const handleOpenEditModal = (promotion: Promotion) => {
+    handleCloseViewModal(); // Close view modal if open
     setEditingPromotion(promotion);
     setIsEditModalOpen(true);
   };
@@ -454,6 +455,7 @@ export default function PromotionsPage() {
         isOpen={isViewModalOpen}
         onClose={handleCloseViewModal}
         promotion={viewingPromotion}
+        onEdit={() => handleOpenEditModal(viewingPromotion as Promotion)}
       />
     </div>
   );
