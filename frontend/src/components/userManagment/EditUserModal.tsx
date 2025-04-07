@@ -120,7 +120,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               id="edit-email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               required
             />
           </div>
@@ -157,7 +157,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                value={role}
                onChange={(e) => setRole(e.target.value as UserData['role'])}
                disabled={!canEditRole} // Disable based on permission
-               className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!canEditRole ? 'cursor-not-allowed bg-gray-100' : ''}`}
+               className={`p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!canEditRole ? 'cursor-not-allowed bg-gray-100' : ''}`}
              >
                {allowedRoles.map((r) => (
                  <option key={r} value={r}>{r}</option>

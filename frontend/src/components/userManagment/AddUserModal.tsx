@@ -138,7 +138,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
                             onChange={(e) => setUtorid(e.target.value)}
                             placeholder="Enter utorid"
                             maxLength={8}
-                            className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${validationErrors.utorid ? 'border-red-500' : ''
+                            className={`p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${validationErrors.utorid ? 'border-red-500' : ''
                                 }`}
                             required
                         />
@@ -163,10 +163,9 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Enter name"
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            className="p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             required
                         />
-                        {/* Add name validation error display if needed */}
                     </div>
 
                     {/* Email Input */}
@@ -183,7 +182,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Enter email address"
-                            className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${validationErrors.email ? 'border-red-500' : ''
+                            className={`p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${validationErrors.email ? 'border-red-500' : ''
                                 }`}
                             required
                         />
