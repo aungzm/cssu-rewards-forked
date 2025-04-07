@@ -67,8 +67,6 @@ export default function PromotionsPage() {
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   // Sort State
   const [sortOption, setSortOption] = useState<SortOption>('default');
-
-  // --- Modal State ---
   // Edit/Create Modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(
@@ -86,7 +84,7 @@ export default function PromotionsPage() {
     return !error && promotions.length < totalCount;
   }, [promotions.length, totalCount, error]);
 
-  // Data Fetching Logic (fetchPromotions - remains the same)
+  // Data Fetching Logic
   const fetchPromotions = useCallback(
     async (
       page: number,
@@ -150,7 +148,7 @@ export default function PromotionsPage() {
   );
 
 
-  // Effect for Initial Load & Filter Changes (remains the same)
+  // Effect for Initial Load & Filter Changes
   useEffect(() => {
     setPromotions([]);
     setCurrentPage(1);
@@ -159,7 +157,7 @@ export default function PromotionsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchTerm, filterCriteria, typeFilter]);
 
-  // Effect for Infinite Scroll Observer (loadMoreItems, useEffect - remain the same)
+  // Effect for Infinite Scroll Observer 
    const loadMoreItems = useCallback(() => {
     if (!isLoading && !isLoadingMore && hasMore && !error) {
       fetchPromotions(
@@ -204,7 +202,7 @@ export default function PromotionsPage() {
   }, [loadMoreItems, isLoadingMore]);
 
 
-  // Sorting Logic (sortedPromotions - remains the same)
+  // Sorting Logic
   const sortedPromotions = useMemo(() => {
     const sortable = [...promotions];
     sortable.sort((a, b) => {
@@ -270,7 +268,7 @@ export default function PromotionsPage() {
     handleCloseEditModal(); // Close the edit/create modal
   };
 
-  // Event Handlers for Controls (handleCriteriaChange, handleTypeChange, handleSortChange - remain the same)
+  // Event Handlers for Controls
   const handleCriteriaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newCriteria = e.target.value as FilterCriteria;
     setFilterCriteria(newCriteria);
@@ -289,7 +287,7 @@ export default function PromotionsPage() {
   };
 
 
-  const stickyHeaderTopOffset = 'top-14'; // Or your Navbar's height
+  const stickyHeaderTopOffset = 'top-14'; // Or Navbar's height
 
   return (
     <div className="min-h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
@@ -414,7 +412,6 @@ export default function PromotionsPage() {
                 key={promotion.id}
                 {...promotion}
                 endTime={promotion.endTime ?? undefined}
-                // Pass the correct handlers
                 onEdit={() => handleOpenEditModal(promotion)}
                 onClick={() => handleOpenViewModal(promotion)}
               />
@@ -444,14 +441,12 @@ export default function PromotionsPage() {
         </div>
       </div>
 
-      {/* --- Modals --- */}
       {/* Edit/Create Modal */}
       <CreateEditPromotionModal
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
         promotionToEdit={editingPromotion || undefined}
         onSuccess={handleSuccess}
-        // Removed viewOnly prop if it existed here
       />
 
       {/* View Details Modal */}
