@@ -6,8 +6,13 @@ import { clearAuth } from '../utils/authHelper';
 interface UserData {
   id: number;
   utorid: string;
+  name: string;
+  email: string;
+  birthday: string;
   role: "REGULAR" | "CASHIER" | "MANAGER" | "SUPERUSER";
   points: number;
+  createdAt: string;
+  lastLogin: string;
   verified: boolean;
   avatarUrl?: string;
 }

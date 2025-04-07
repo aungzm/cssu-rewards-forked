@@ -43,8 +43,8 @@ async function createEvent(name: string,startTime: Date,endTime: Date,capacity: 
 }
 
 async function createPurchaseTransaction(
-	amount: number,
-	points: number,
+	amount: number,	// This is the dollars spent corresponding to spent
+	points: number,	// This is the points earned corresponding to amount
 	sus: boolean,
 	userId: number,
 	operatorId: number 
@@ -59,8 +59,8 @@ async function createPurchaseTransaction(
  	const transaction = await prisma.transaction.create({
 		data: {
 			type: "PURCHASE",
-			amount: amount,
-			points: points,
+			amount: points,
+			spent: amount,
 			suspicious: sus,
 			remarks: "",
 			user: { connect: { id: userId } },
@@ -93,7 +93,6 @@ async function createAdjustmentTransaction(
 		data: {
 			type: "ADJUSTMENT",
 			amount: amount,
-			points: amount, // points are equal to the adjustment amount
 			suspicious: false,
 			remarks: "",
 			user: { connect: { id: userId } },
@@ -114,31 +113,31 @@ async function createTransferTransaction(
 		where: { id: recipientId },
 		select: { id: true, utorid: true, points: true },
 	});
-	prisma.transaction.create({
+	const sendTransaction = await prisma.transaction.create({
 		data: {
 			type: "TRANSFER",
-			points: -points,
+			amount: -points,
 			remarks: "",
 			user: { connect: { id: senderId } },
 			sender: { connect: { id: senderId } },
 			receiver: { connect: { id: recipientId } },
 		},
 	});
-	prisma.transaction.create({
+	const receiveTransaction = await prisma.transaction.create({
 		data: {
 			type: "TRANSFER",
-			points: points,
+			amount: points,
 			remarks: "",
 			user: { connect: { id: recipientId } },
 			sender: { connect: { id: senderId } },
 			receiver: { connect: { id: recipientId } },
 		},
 	});
-	prisma.user.update({
+	const updatedSender = await prisma.user.update({
 		where: { id: senderId },
 		data: { points: { decrement: points } },
 	});
-	prisma.user.update({
+	await prisma.user.update({
 		where: { id: recipientId },
 		data: { points: { increment: points } },
 	});
@@ -157,15 +156,43 @@ async function createRedemptionTransaction(
 		data: {
 			type: "REDEMPTION",
 			amount: validRedemptionAmount,
-			points: -validRedemptionAmount,
 			remarks: "",
 			user: { connect: { id:userId } },
 		},
 	});
 }
 
-
-
+async function clearData() {
+	await prisma.user.deleteMany({});
+	await prisma.event.deleteMany({});
+	await prisma.transaction.deleteMany({});
+	await prisma.promotion.deleteMany({});
+	
+}
+async function createPromotion(
+	name: string,
+	startTime: string,
+	endTime: string,
+	rate: number,
+	minSpending:number,
+	points: number,
+	type: string,
+) {
+	await prisma.promotion.create({
+		data: {
+			name,
+			description: name,
+			startTime: new Date(startTime),
+			endTime: new Date(endTime),
+			rate: rate !== null ? rate : undefined,
+			minSpending: minSpending !== null ? minSpending : undefined,
+			points,
+			type,
+		},
+	})
+}
+// Delete all existing data
+// await clearData();
 
 createEvent("a",new Date("2000-01-01"), new Date("2024-01-11"), 5000, 50000, true,0);
 createEvent("a",new Date("2005-01-01"), new Date("2025-02-12"), 5000, 50000, true,0);
@@ -217,3 +244,12 @@ for (let i=0;i<selectUsers.length-1;i++) {
 }
 
 
+
+await createPromotion("curr promo 1", "2022/01/01","2026/01/01",0.01,69,50,"automatic");
+await createPromotion("curr promo 2", "2022/01/01","2026/01/01",0.02,100,300,"automatic");
+await createPromotion("curr promo 3", "2022/01/01","2026/01/01",0.03,200,420,"automatic");
+await createPromotion("past promo", "2022/01/01","2023/01/01",0.02,69,500,"automatic");
+await createPromotion("future promo", "2026/01/01","2027/01/01",0.03,60,40,"automatic");
+await createPromotion("infinite points", "2022/01/01","2026/01/01",0.03,0,999999999,"one-time");
+await createPromotion("past infinite points", "2022/01/01","2023/01/01",0.03,0,999999999,"one-time");
+await createPromotion("future infinite points", "2027/01/01","2028/01/01",0.03,0,999999999,"one-time");
