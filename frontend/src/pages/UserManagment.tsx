@@ -130,14 +130,12 @@ const UserManagement: React.FC = () => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    
-    searchTerm,
+    debouncedSearchTerm, 
     roleFilter,
     verifiedFilter,
     activatedFilter,
     currentUser,
     isUserLoading,
-
   ]);
 
   // Effect for Intersection Observer (infinite scroll)
