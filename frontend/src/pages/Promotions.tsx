@@ -8,21 +8,16 @@ import React, {
 import Navbar from '../components/Navbar';
 import PromotionsCard from '../components/promotion/PromotionCard';
 import CreateEditPromotionModal from '../components/promotion/CreateEditPromotionModal';
+import PromotionDetailsModal from '../components/promotion/PromotionDetailsModal'; // Import the new modal
 import { API_BASE_URL } from '../utils/auth';
 import { fetchWithAuth } from '../utils/authHelper';
 import { useDebounce } from '../hooks/useDebounce';
 
-// Interface for the API response structure
-interface ApiPromotionResponse {
-  count: number;
-  results: Promotion[];
-}
-
-// Interface for Promotion object
-interface Promotion {
+// Interfaces (Promotion, ApiPromotionResponse) remain the same
+export interface Promotion { // Export if needed by PromotionDetailsModal
   id: number;
   name: string;
-  type: 'one-time' | 'automatic'; 
+  type: 'one-time' | 'automatic';
   startTime: string;
   endTime: string | null;
   minSpending: number;
@@ -31,14 +26,15 @@ interface Promotion {
   description: string;
 }
 
-// This type is for the state variable `typeFilter`
-type SelectedPromotionType = 'one-time' | 'automatic' | null; // Allow null for no filter
+interface ApiPromotionResponse {
+  count: number;
+  results: Promotion[];
+}
 
-// Filter Types
+
+// Types (SelectedPromotionType, FilterCriteria, SortOption) remain the same
+type SelectedPromotionType = 'one-time' | 'automatic' | null;
 type FilterCriteria = 'All' | 'Type';
-// Add more types as needed
-
-// Sort Types
 type SortOption =
   | 'default'
   | 'nameAsc'
@@ -71,9 +67,16 @@ export default function PromotionsPage() {
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   // Sort State
   const [sortOption, setSortOption] = useState<SortOption>('default');
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // --- Modal State ---
+  // Edit/Create Modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(
+    null,
+  );
+  // View Details Modal
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingPromotion, setViewingPromotion] = useState<Promotion | null>(
     null,
   );
 
@@ -83,7 +86,7 @@ export default function PromotionsPage() {
     return !error && promotions.length < totalCount;
   }, [promotions.length, totalCount, error]);
 
-  // Data Fetching Logic
+  // Data Fetching Logic (fetchPromotions - remains the same)
   const fetchPromotions = useCallback(
     async (
       page: number,
@@ -105,16 +108,15 @@ export default function PromotionsPage() {
       if (search) {
         params.append('name', search);
       }
-      // Only add 'type' if criteria is 'Type' AND a specific type is selected
       if (criteria === 'Type' && type !== null) {
-        params.append('type', type); 
+        params.append('type', type);
       }
 
       console.log(
         `Fetching: ${API_BASE_URL}/promotions?${params.toString()}`, {
           cache: 'no-cache'
         },
-      ); // Debugging log
+      );
 
       try {
         const response = await fetchWithAuth(
@@ -125,24 +127,16 @@ export default function PromotionsPage() {
           try {
             const errData = await response.json();
             errorMsg = errData.message || errorMsg;
-          } catch {
-            /* Ignore */
-          }
+          } catch { /* Ignore */ }
           throw new Error(errorMsg);
         }
         const data: ApiPromotionResponse = await response.json();
-        const results = data.results;
-
         setTotalCount(data.count);
-        setPromotions((prevPromotions) =>
-          page === 1 ? results : [...prevPromotions, ...results],
-        );
+        setPromotions((prev) => page === 1 ? data.results : [...prev, ...data.results]);
         setCurrentPage(page);
       } catch (err) {
         console.error('Failed to fetch promotions:', err);
-        setError(
-          err instanceof Error ? err.message : 'An unknown error occurred',
-        );
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
         if (page === 1) {
           setPromotions([]);
           setTotalCount(0);
@@ -155,23 +149,24 @@ export default function PromotionsPage() {
     [],
   );
 
-  // Effect for Initial Load & Filter Changes
+
+  // Effect for Initial Load & Filter Changes (remains the same)
   useEffect(() => {
     setPromotions([]);
     setCurrentPage(1);
     setTotalCount(0);
     fetchPromotions(1, debouncedSearchTerm, filterCriteria, typeFilter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, filterCriteria, typeFilter]); // Dependencies are correct
+  }, [debouncedSearchTerm, filterCriteria, typeFilter]);
 
-  // Effect for Infinite Scroll Observer
-  const loadMoreItems = useCallback(() => {
+  // Effect for Infinite Scroll Observer (loadMoreItems, useEffect - remain the same)
+   const loadMoreItems = useCallback(() => {
     if (!isLoading && !isLoadingMore && hasMore && !error) {
       fetchPromotions(
         currentPage + 1,
         debouncedSearchTerm,
         filterCriteria,
-        typeFilter, // Pass current typeFilter state
+        typeFilter,
       );
     }
   }, [
@@ -181,7 +176,7 @@ export default function PromotionsPage() {
     currentPage,
     debouncedSearchTerm,
     filterCriteria,
-    typeFilter, // Include typeFilter
+    typeFilter,
     fetchPromotions,
     error,
   ]);
@@ -208,24 +203,16 @@ export default function PromotionsPage() {
     };
   }, [loadMoreItems, isLoadingMore]);
 
-  // Sorting Logic
+
+  // Sorting Logic (sortedPromotions - remains the same)
   const sortedPromotions = useMemo(() => {
     const sortable = [...promotions];
     sortable.sort((a, b) => {
       switch (sortOption) {
-        // ... (sorting cases remain the same)
-        case 'nameAsc':
-          return a.name.localeCompare(b.name);
-        case 'nameDesc':
-          return b.name.localeCompare(a.name);
-        case 'startNewest':
-          return (
-            new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-          );
-        case 'startOldest':
-          return (
-            new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-          );
+        case 'nameAsc': return a.name.localeCompare(b.name);
+        case 'nameDesc': return b.name.localeCompare(a.name);
+        case 'startNewest': return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+        case 'startOldest': return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
         case 'endSoonest': {
           const timeA = a.endTime ? new Date(a.endTime).getTime() : Infinity;
           const timeB = b.endTime ? new Date(b.endTime).getTime() : Infinity;
@@ -236,55 +223,57 @@ export default function PromotionsPage() {
           const timeB = b.endTime ? new Date(b.endTime).getTime() : 0;
           return timeB - timeA;
         }
-        case 'rateHighest':
-          return b.rate - a.rate;
-        case 'rateLowest':
-          return a.rate - b.rate;
-        case 'pointsHighest':
-          return b.points - a.points;
-        case 'pointsLowest':
-          return a.points - b.points;
-        case 'minSpendHighest':
-          return b.minSpending - a.minSpending;
-        case 'minSpendLowest':
-          return a.minSpending - b.minSpending;
+        case 'rateHighest': return b.rate - a.rate;
+        case 'rateLowest': return a.rate - b.rate;
+        case 'pointsHighest': return b.points - a.points;
+        case 'pointsLowest': return a.points - b.points;
+        case 'minSpendHighest': return b.minSpending - a.minSpending;
+        case 'minSpendLowest': return a.minSpending - b.minSpending;
         case 'default':
-        default: {
-          return (
-            new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-          );
-        }
+        default: return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
       }
     });
     return sortable;
   }, [promotions, sortOption]);
 
-  // Modal Handlers
+  // --- Modal Handlers ---
   const handleOpenCreateModal = () => {
     setEditingPromotion(null);
-    setIsModalOpen(true);
+    setIsEditModalOpen(true);
   };
+
   const handleOpenEditModal = (promotion: Promotion) => {
     setEditingPromotion(promotion);
-    setIsModalOpen(true);
-  };
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingPromotion(null);
+    setIsEditModalOpen(true);
   };
 
-  // Success Handler
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingPromotion(null); // Clear data on close
+  };
+
+  const handleOpenViewModal = (promotion: Promotion) => {
+    setViewingPromotion(promotion);
+    setIsViewModalOpen(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setIsViewModalOpen(false);
+    setViewingPromotion(null); // Clear data on close
+  };
+
+  // Success Handler (Only for Create/Edit)
   const handleSuccess = (resultPromotion?: Promotion) => {
     console.log('Operation successful:', resultPromotion);
+    // Refetch data from page 1 to see changes/new items at the top
     fetchPromotions(1, debouncedSearchTerm, filterCriteria, typeFilter);
-    handleCloseModal();
+    handleCloseEditModal(); // Close the edit/create modal
   };
 
-  // Event Handlers for Controls
+  // Event Handlers for Controls (handleCriteriaChange, handleTypeChange, handleSortChange - remain the same)
   const handleCriteriaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newCriteria = e.target.value as FilterCriteria;
     setFilterCriteria(newCriteria);
-    // Reset typeFilter to null when switching away from 'Type' filter
     if (newCriteria !== 'Type') {
       setTypeFilter(null);
     }
@@ -299,21 +288,20 @@ export default function PromotionsPage() {
     setSortOption(e.target.value as SortOption);
   };
 
-  const stickyHeaderTopOffset = 'top-14';
+
+  const stickyHeaderTopOffset = 'top-14'; // Or your Navbar's height
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+    <div className="min-h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
       <Navbar activeLink="Promotions" />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-16 py-6 ">
+      <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-16 ">
         {/* Sticky Header */}
         <div
           className={`
             sticky ${stickyHeaderTopOffset} z-10
-            bg-gray-50 dark:bg-gray-900
-            pt-6 pb-4
-            flex flex-col gap-4
-            md:flex-row md:items-center md:justify-between
+            flex flex-col gap-4 bg-gray-50 pb-4 pt-6
+            dark:bg-gray-900 md:flex-row md:items-center md:justify-between
           `}
         >
           <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-300">
@@ -322,6 +310,7 @@ export default function PromotionsPage() {
 
           {/* Controls */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Create Button */}
             <button
               className="order-last mt-2 w-full rounded bg-slate-600 px-4 py-2 text-white hover:bg-slate-700 disabled:opacity-50 dark:bg-gray-700 dark:hover:bg-slate-600 md:order-first md:mt-0 md:w-auto"
               onClick={handleOpenCreateModal}
@@ -343,7 +332,7 @@ export default function PromotionsPage() {
               <option value="Type">Filter by Type</option>
             </select>
 
-            {/* Type Specific Dropdown (only when criteria is 'Type') */}
+            {/* Type Specific Dropdown */}
             {filterCriteria === 'Type' && (
               <select
                 className="rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
@@ -352,6 +341,8 @@ export default function PromotionsPage() {
                 aria-label="Select promotion type"
                 disabled={isLoading}
               >
+                 {/* Add a default "All Types" option when filtering by Type */}
+                <option value="">All Types</option>
                 <option value="one-time">One Time</option>
                 <option value="automatic">Automatic</option>
               </select>
@@ -365,7 +356,6 @@ export default function PromotionsPage() {
               aria-label="Sort promotions"
               disabled={isLoading || promotions.length === 0}
             >
-              {/* ... sort options ... */}
               <option value="default">Sort by Default</option>
               <option value="nameAsc">Name (A-Z)</option>
               <option value="nameDesc">Name (Z-A)</option>
@@ -408,14 +398,7 @@ export default function PromotionsPage() {
           <div className="py-12 text-center text-red-600 dark:text-red-400">
             <p>Error loading promotions: {error}</p>
             <button
-              onClick={() =>
-                fetchPromotions(
-                  1,
-                  debouncedSearchTerm,
-                  filterCriteria,
-                  typeFilter,
-                )
-              }
+              onClick={() => fetchPromotions(1, debouncedSearchTerm, filterCriteria, typeFilter)}
               className="mt-2 rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
             >
               Retry
@@ -427,14 +410,15 @@ export default function PromotionsPage() {
         {!isLoading && !error && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {sortedPromotions.map((promotion) => (
-            <PromotionsCard
-              key={promotion.id}
-              {...promotion}
-              endTime={promotion.endTime ?? undefined}
-              onEdit={() => handleOpenEditModal(promotion)}
-              onClick={() => handleOpenEditModal(promotion)}
-            />
-          ))}
+              <PromotionsCard
+                key={promotion.id}
+                {...promotion}
+                endTime={promotion.endTime ?? undefined}
+                // Pass the correct handlers
+                onEdit={() => handleOpenEditModal(promotion)}
+                onClick={() => handleOpenViewModal(promotion)}
+              />
+            ))}
           </div>
         )}
 
@@ -460,12 +444,21 @@ export default function PromotionsPage() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* --- Modals --- */}
+      {/* Edit/Create Modal */}
       <CreateEditPromotionModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        promotionToEdit={editingPromotion || undefined} 
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        promotionToEdit={editingPromotion || undefined}
         onSuccess={handleSuccess}
+        // Removed viewOnly prop if it existed here
+      />
+
+      {/* View Details Modal */}
+      <PromotionDetailsModal
+        isOpen={isViewModalOpen}
+        onClose={handleCloseViewModal}
+        promotion={viewingPromotion}
       />
     </div>
   );
