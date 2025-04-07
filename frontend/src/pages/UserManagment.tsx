@@ -250,24 +250,24 @@ const UserManagement: React.FC = () => {
 
           {/* Search and Filters */}
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="relative sm:col-span-2 lg:col-span-1">
+          <div className="relative rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={handleSearchChange}
                 placeholder="Search by name or utorid..."
-                className="block w-full rounded-md border-gray-300 px-4 py-2 pr-10 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className="block rounded-md border-gray-300 px-4 py-2 pr-10 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 aria-label="Search users"
               />
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                 <Search
                   className="h-5 w-5 text-gray-400"
-                  aria-hidden="true"
+                  aria-hidden="false"
                 />
               </div>
             </div>
 
-            <div>
+            <div className="rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
               <label htmlFor="roleFilter" className="sr-only">
                 Filter by Role
               </label>
@@ -285,7 +285,7 @@ const UserManagement: React.FC = () => {
               </select>
             </div>
 
-            <div>
+            <div className="rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
               <label htmlFor="verifiedFilter" className="sr-only">
                 Filter by Verified Status
               </label>
@@ -301,7 +301,7 @@ const UserManagement: React.FC = () => {
               </select>
             </div>
 
-            <div>
+            <div className="rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
               <label htmlFor="activatedFilter" className="sr-only">
                 Filter by Activated Status
               </label>

@@ -38,7 +38,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     setError(null);
   }, [user]);
 
-  const canEditRole = currentUser?.role === 'SUPERUSER'; // Example permission
+  const canEditRole = currentUser?.role === 'SUPERUSER' || currentUser?.role === 'MANAGER'; 
   const allowedRoles =
     currentUser?.role === 'SUPERUSER'
       ? ['REGULAR', 'CASHIER', 'MANAGER', 'SUPERUSER']
@@ -126,16 +126,21 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           </div>
 
           {/* Verified Checkbox */}
-          <div className="mb-4 flex items-center">
+            <div className="mb-4 flex items-center">
             <input
               id="edit-verified"
               type="checkbox"
               checked={verified}
-              onChange={(e) => setVerified(e.target.checked)}
+              onChange={(e) => {
+              if (!verified) {
+                setVerified(e.target.checked);
+              }
+              }}
+              disabled={verified}
               className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
             />
             <label htmlFor="edit-verified" className="ml-2 block text-sm text-gray-900">Verified</label>
-          </div>
+            </div>
 
           {/* Suspicious Checkbox */}
           <div className="mb-4 flex items-center">
@@ -156,8 +161,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                id="edit-role"
                value={role}
                onChange={(e) => setRole(e.target.value as UserData['role'])}
-               disabled={!canEditRole} // Disable based on permission
-               className={`p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!canEditRole ? 'cursor-not-allowed bg-gray-100' : ''}`}
+               disabled={!canEditRole || !allowedRoles.includes(role)}
+               className={`p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${(!canEditRole || !allowedRoles.includes(role)) ? 'cursor-not-allowed bg-gray-100' : ''}`}
              >
                {allowedRoles.map((r) => (
                  <option key={r} value={r}>{r}</option>
