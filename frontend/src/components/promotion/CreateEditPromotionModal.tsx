@@ -163,7 +163,7 @@ export default function CreateEditPromotionModal({
           errorData = await response.json();
           if (errorData?.error && Array.isArray(errorData.error)) {
             errorMessage = errorData.error
-              .map((e: unknown) => `${e.path}: ${e.message}`) 
+              .map((e: { path: string; message: string }) => `${e.path}: ${e.message}`)
               .join('; '); // Join multiple errors
           } else if (errorData?.message) {
             errorMessage = errorData.message;
