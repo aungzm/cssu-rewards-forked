@@ -231,7 +231,7 @@ const UserManagement: React.FC = () => {
   return (
     <>
       <Navbar activeLink="user-management" />
-      <div className="p-4 md:p-6 lg:p-8">
+      <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
         <div className="bg-white px-4 py-5 shadow sm:rounded-lg sm:p-6">
           <div className="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <h2 className="text-xl font-semibold leading-6 text-gray-900">
