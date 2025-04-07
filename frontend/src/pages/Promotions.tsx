@@ -432,6 +432,7 @@ export default function PromotionsPage() {
               {...promotion}
               endTime={promotion.endTime ?? undefined}
               onEdit={() => handleOpenEditModal(promotion)}
+              onClick={() => handleOpenEditModal(promotion)}
             />
           ))}
           </div>
