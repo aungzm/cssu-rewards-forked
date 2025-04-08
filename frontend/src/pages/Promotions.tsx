@@ -51,7 +51,7 @@ type SortOption =
   | 'minSpendHighest'
   | 'minSpendLowest';
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 12; // 4 items per row, 3 rows per page
 
 export default function PromotionsPage() {
   // --- State Management ---
