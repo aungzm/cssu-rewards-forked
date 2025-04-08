@@ -14,6 +14,7 @@ import {
   getCurrentUser,
   updateCurrentUser,
   updateCurrentUserPassword,
+  getMyOrganizedEvents,
 } from "../controllers/userController";
 import {
   createTransferTransaction,
@@ -218,6 +219,14 @@ const updatePasswordSchema = z.object({
   }),
 });
 
+const getMyOrganizedEventsSchema = z.object({
+  query: z.object({
+    past: z.coerce.boolean().optional(),
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().optional(),
+  })
+});
+
 const getUsersSchema = z.object({
   query: z.object({
     name: z.string().optional(),
@@ -315,6 +324,18 @@ router.post(
   authenticateToken,
   validate(redemptionTransactionSchema),
   createRedemptionTransaction
+);
+
+/**
+ * @route   GET /users/me/events
+ * @desc    Retrieve a list of events that the user organized
+ * @access  Regular user or higher
+ */
+router.get(
+  "/me/events",
+  authenticateToken,
+  validate(getMyOrganizedEventsSchema),
+  getMyOrganizedEvents
 );
 
 /**

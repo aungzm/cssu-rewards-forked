@@ -497,3 +497,73 @@ export async function updateCurrentUserPassword(req: Request, res: Response): Pr
     res.status(500).json({ error: "Internal server error." });
   }
 }
+
+export async function getMyOrganizedEvents(req :Request, res: Response): Promise<void> {
+  try {
+    const currentUserId = (req as any).user?.id;
+    const {past = false, page = "1", limit = "10" } = req.query; // include past events or not (users probably would not want to filter out their currently organized events)
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    if (!currentUserId) {
+      res.status(401).json({ error: "Not authenticated" });
+      return;
+    }
+    const user = await prisma.user.findUnique({ where: { id: currentUserId } });
+    if (!user) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+    const events = await prisma.organizerEvent.findMany({
+      skip: (pageNum - 1) * limitNum,
+      take: limitNum,
+      where: {
+        organizerId: currentUserId,
+        event: {
+          endTime: {
+            gte: (past? undefined: new Date())
+          }
+        }
+      },
+      select: {
+        event: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            startTime: true,
+            endTime: true,
+            location: true,
+            capacity: true,
+            pointsRemain: true,
+            pointsAwarded: true,
+            published: true,
+            organizers: {
+              select: {
+                organizer: { select: { id: true, utorid: true, name: true } },
+              },
+            },
+            guests: {
+              include: {
+                user: { select: { id: true, utorid: true, name: true } },
+              },
+            },
+          }
+        },
+      }
+    });
+    const count = await prisma.organizerEvent.count({
+      where: {
+        organizerId: currentUserId,
+        event: {
+          endTime: {
+            gte: (past? undefined: new Date())
+          }
+        }
+      }
+    });
+    res.status(200).json({results: events, count: count})
+  } catch(error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error." }); 
+  }
+}
