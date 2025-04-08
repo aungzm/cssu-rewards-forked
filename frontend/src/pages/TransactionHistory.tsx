@@ -4,6 +4,7 @@ import TransactionPoints from '../components/transactionHistory/TransactionPoint
 import TransactionEntry from '../components/transactionHistory/TransactionEntry';
 import { API_BASE_URL } from '../utils/auth';
 import { fetchWithAuth } from '../utils/authHelper';
+import TransactionFilterSort from '../components/transactionHistory/TransactionFilterSort';
 
 
 interface Transaction {
@@ -58,15 +59,13 @@ const TransactionHistory: React.FC = () => {
         <Navbar activeLink="dashboard" />
         <div className='bg-gray-100 min-h-screen flex flex-col justify-center items-center'>
 
-            <div className=" flex flex-col w-1/2 my-10">
+            <div className=" flex flex-col w-2/3 my-10">
                 <h1 className="text-3xl font-bold">Transaction History</h1>
 
                 <TransactionPoints transactions={allTransacitions}/>
     
                 {/* Filters */}
-                <div>
-
-                </div>
+                <TransactionFilterSort transactions={allTransacitions} setTransactions={setTransactionHistory} />
 
                 {/* transaction history items */}
                 <div className="mt-4">
