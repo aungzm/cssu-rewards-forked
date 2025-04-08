@@ -4,13 +4,14 @@ import UserTableRow from "./UserTableRow";
 import { Loader2 } from "lucide-react";
 
 type FetchedUser = Partial<UserData> &
-  Pick<UserData, "id" | "name" | "utorid" | "verified"> & {
+  Pick<UserData, "id" | "name" | "verified"> & {
+    utorid?: string;
     email?: string;
     avatarUrl?: string;
   };
 
 interface UserTableProps {
-  users: FetchedUser[]; // Use the partial user type
+  users: (Pick<UserData, "id" | "name" | "verified"> & { utorid?: string })[];
   isLoading: boolean;
   error: string | null;
   onViewInfo: (user: FetchedUser) => void; 
