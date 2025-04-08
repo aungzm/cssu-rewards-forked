@@ -8,7 +8,7 @@ interface Promotion {
   name: string;
   type: 'one-time' | 'automatic';
   startTime: string; // ISO String
-  endTime: string | null; // ISO String or null
+  endTime: string; // ISO String or null
   minSpending: number;
   rate: number;
   points: number;

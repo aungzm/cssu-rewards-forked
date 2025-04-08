@@ -20,7 +20,7 @@ export interface Promotion { // Export if needed by PromotionDetailsModal
   name: string;
   type: 'one-time' | 'automatic';
   startTime: string;
-  endTime: string | null;
+  endTime: string;
   minSpending: number;
   rate: number;
   points: number;
@@ -290,6 +290,36 @@ export default function PromotionsPage() {
     setSortOption(e.target.value as SortOption);
   };
 
+  const handleDeleteClick = (promotion: Promotion) => {
+    if (window.confirm(`Are you sure you want to delete the promotion "${promotion.name}"?`)) {
+      // Make sure promotion is not on going or in the past 
+      const currentTime = new Date().getTime();
+      const startTime = new Date(promotion.startTime).getTime();
+      const endTime = new Date(promotion.endTime).getTime();
+      if (currentTime >= startTime) {
+        alert('Cannot delete a promotion that is currently active.');
+        return;
+      }
+      if (currentTime >= endTime) {
+        alert('Cannot delete a promotion that has already ended.');
+        return;
+      }
+      fetchWithAuth(`${API_BASE_URL}/promotions/${promotion.id}/`, {
+        method: 'DELETE',
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Failed to delete promotion');
+          }
+          // Refetch promotions after deletion
+          fetchPromotions(1, debouncedSearchTerm, filterCriteria, typeFilter);
+        })
+        .catch((error) => {
+          console.error('Error deleting promotion:', error);
+          setError(error.message);
+        });
+    }
+  }
 
   const stickyHeaderTopOffset = 'top-14'; // Or Navbar's height
 
@@ -418,6 +448,7 @@ export default function PromotionsPage() {
                 endTime={promotion.endTime ?? undefined}
                 onEdit={() => handleOpenEditModal(promotion)}
                 onClick={() => handleOpenViewModal(promotion)}
+                onDelete={() => handleDeleteClick(promotion)}
               />
             ))}
           </div>
