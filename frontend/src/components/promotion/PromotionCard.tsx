@@ -62,7 +62,7 @@ export default function PromotionsCard({
     >
       {/* Header */}
       <div className="relative h-28 flex-shrink-0 bg-slate-600 p-4 dark:bg-slate-500">
-        {/* Edit button container handles edit click */}
+        {/* Edit button container handles edit click only for manager+ */}
         {(currentUserRole === "MANAGER" || currentUserRole === "SUPERUSER") && (<div
           className="absolute right-2 top-2 z-10 cursor-pointer rounded-md bg-white p-2 hover:bg-gray-100 dark:bg-gray-200 dark:hover:bg-gray-300"
           onClick={handleEditClick} 
