@@ -15,12 +15,13 @@ interface Transaction {
     remarks: string;
     suspicious: boolean;
     relatedId: number | null;
-    createdBy: String | null;
+    operatorId: number | null;
 }
 
 
 const TransactionHistory: React.FC = () => {
     const [transactionHistory, setTransactionHistory] = useState<Transaction[]>([]);
+    const [allTransacitions, setAllTransactions] = useState<Transaction[]>([]);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
@@ -28,12 +29,19 @@ const TransactionHistory: React.FC = () => {
 
     const fetchTransactionHistory = async (url: string, page: number) => {
         try {
-            const response = await fetchWithAuth(url + `?page=${page}&limit=10`, {});
+            const response = await fetchWithAuth(url + `?page=${page}`, {});
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
             const data = await response.json();
             setTransactionHistory(data.results);
+
+            const responseAll = await fetchWithAuth(url + `?limit=${data.count}`, {}); // Get all the user's transactions
+            if (!responseAll.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const dataAll = await responseAll.json();
+            setAllTransactions(dataAll.results);
 
         } catch (error) {
             console.error('Error fetching transaction history:', error);
@@ -48,12 +56,12 @@ const TransactionHistory: React.FC = () => {
     return (
     <>
         <Navbar activeLink="dashboard" />
-        <div className='bg-gray-100 min-h-screen flex flex-col items-center '>
+        <div className='bg-gray-100 min-h-screen flex flex-col justify-center items-center'>
 
-            <div className="mx-auto flex flex-col justify-center">
+            <div className=" flex flex-col w-1/2 my-10">
                 <h1 className="text-3xl font-bold">Transaction History</h1>
 
-                <TransactionPoints transactions={transactionHistory}/>
+                <TransactionPoints transactions={allTransacitions}/>
     
                 {/* Filters */}
                 <div>
@@ -62,6 +70,7 @@ const TransactionHistory: React.FC = () => {
 
                 {/* transaction history items */}
                 <div className="mt-4">
+                    <p> Transaction History</p>
                     {transactionHistory.map((transaction: Transaction, index: number) => (
                         <TransactionEntry transaction={transaction} key={index} />
                     ))}

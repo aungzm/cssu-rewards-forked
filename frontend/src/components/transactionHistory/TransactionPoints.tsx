@@ -6,6 +6,7 @@ interface TransactionPointsProps {
         amount: number;
         suspicious: boolean;
         createdAt: string | null;
+        operatorId: number | null;
     }[];
 }
 
@@ -13,10 +14,8 @@ const TransactionPoints: React.FC<TransactionPointsProps> = ({
     transactions
 }) => {
 
-    console.log("Transaction Points: ", transactions);
-
     const points = transactions.reduce((acc, transaction) => {
-        if ((transaction.type === "redemption" && transaction.createdBy !== null) && !transaction.suspicious) {
+        if (!((transaction.type === "redemption" && transaction.operatorId === null) || transaction.suspicious)) {
             if (transaction.amount > 0) {
                 acc.positive += transaction.amount;
             } else {
@@ -28,11 +27,10 @@ const TransactionPoints: React.FC<TransactionPointsProps> = ({
 
     }, { positive: 0, negative: 0, total: 0 });
 
-    console.log("Transaction Points: ", points);
 
 
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 mb-4">
+        <div className="bg-white shadow-md rounded-lg p-6 my-4 max-w-4xl w-full">
             <h2 className="text-xl font-semibold mb-4"> Points Summary</h2>
             
             <div className="flex flex-row justify-between items-center">
