@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { AuthenticatedRequest } from "middlewares/authMiddleware";
 
 const prisma = new PrismaClient();
 
@@ -95,25 +96,18 @@ export async function createPromotion(req: Request, res: Response): Promise<void
  *  - page, limit: for pagination
  *  - If started & ended are both specified => 400
  */
-export async function getPromotions(req: Request, res: Response): Promise<void> {
+export async function getPromotions(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    const { name,type, started, ended, page = "1", limit = "10" } = req.query;
-    
-    // If both started and ended are specified, return 400
-    if (started && ended) {
-      res.status(400).json({
-        error: 'Cannot specify both "started" and "ended" simultaneously.',
-      });
-      return;
-    }
-    
+    const { name,type, started, ended, page = "1", limit = "10" } = req.query; 
+
+    // note ended and started comes in as boolean because zod schema
     const now = new Date();
     const where: any = {};
 
     // Filter by name
     if (name) {
       where.name = {
-        contains: name as string,
+        contains: name,
       };
     }
     if (type) { //no error checking at all just temporary
@@ -121,35 +115,21 @@ export async function getPromotions(req: Request, res: Response): Promise<void> 
         equals: type
       }
     }
-    // Determine user role; assuming req.user is injected by auth middleware
-    const userRole: string = ((req as any).user?.role) || "REGULAR";
+    // Determine user role; Req.user is injected by auth middleware
+    const isManagerOrHigher  = req.user?.role === "MANAGER" || req.user?.role === "SUPERUSER";
+    if (isManagerOrHigher){
+      if (started !== undefined) { // Check if the boolean flag exists
+        where.startTime = started ? { lte: now } : { gt: now };
+      }
 
-    // Filter promotions for regular/Cashier users
-    if (userRole === "REGULAR" || userRole === "CASHIER") {
-      // Only promotions that have started (startTime <= now)
+      if (ended !== undefined) { // Check if the boolean flag exists
+        where.endTime = ended ? { lte: now } : { gt: now };
+      }
+    } else {
+      // Regular and CASHIER users see only active promotions.
       where.startTime = { lte: now };
-    } else {
-      if (started === "true") {
-        where.startTime = { lte: now };
-      } else if (started === "false") {
-        where.startTime = { gt: now };
-      }
-      if (type) {
-        where.type = type;
-      }
-    }
-    if (userRole === "REGULAR" || userRole === "CASHIER") {
-      // Only promotions that have not ended (now <= endTime)
       where.endTime = { gte: now };
-    } else {
-      // Filter by ended
-      if (ended === "true") {
-        where.endTime = { lte: now };
-      } else if (ended === "false") {
-        where.endTime = { gt: now };
-      }
     }
-    
 
     // Pagination
     const pageNum = parseInt(page as string, 10) || 1;

@@ -62,7 +62,7 @@ export default function PromotionsCard({
     // Card container triggers the onClick view details
     <div
       onClick={onClick}
-      className="flex cursor-pointer flex-col overflow-hidden rounded-lg bg-white shadow-md transition-shadow duration-200 hover:shadow-lg dark:bg-gray-800 aspect-square"
+      className="flex relative z-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-white shadow-md transition-shadow duration-200 hover:shadow-lg dark:bg-gray-800 aspect-square"
     >
       {/* Header */}
       <div className="relative h-28 flex-shrink-0 bg-slate-600 p-4 dark:bg-slate-500">
