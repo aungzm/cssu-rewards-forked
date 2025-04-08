@@ -26,11 +26,10 @@ const ViewUserModal: React.FC<ViewUserInfoModalProps> = ({
   user,
 }) => {
   const [detailedUser, setDetailedUser] = useState<DetailedUserData | null>(
-    null,
+    user as DetailedUserData,
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     if (isOpen && user?.id) {
       const fetchUserDetails = async () => {
@@ -47,6 +46,7 @@ const ViewUserModal: React.FC<ViewUserInfoModalProps> = ({
             );
           }
           const data: DetailedUserData = await response.json();
+          console.log('Fetched user details:', data);
           setDetailedUser(data);
         } catch (err) {
           console.error('Error fetching user details:', err);
@@ -60,7 +60,6 @@ const ViewUserModal: React.FC<ViewUserInfoModalProps> = ({
 
       fetchUserDetails();
     } else {
-      // Reset state if modal is closed or user is invalid
       setDetailedUser(null);
       setIsLoading(false);
       setError(null);
@@ -115,7 +114,7 @@ const ViewUserModal: React.FC<ViewUserInfoModalProps> = ({
               <div>
                 <p className="text-sm text-gray-500">Id: {detailedUser.id}</p>
                 <p className="text-lg font-medium text-gray-900">
-                  Utorid: {detailedUser.utorid}
+                  UtorId: {detailedUser.utorid}
                 </p>
               </div>
             </div>
@@ -210,8 +209,6 @@ const ViewUserModal: React.FC<ViewUserInfoModalProps> = ({
                 )}
               </div>
             )}
-
-            {/* No actions needed here */}
           </div>
         )}
       </div>

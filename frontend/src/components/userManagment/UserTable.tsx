@@ -1,17 +1,23 @@
-import { RefObject } from 'react';
-import { UserData } from '../../types/';
-import UserTableRow from './UserTableRow';
-import { Loader2 } from 'lucide-react'; // Import loader
+import React, { RefObject } from "react";
+import type { UserData } from "../../types";
+import UserTableRow from "./UserTableRow";
+import { Loader2 } from "lucide-react";
+
+type FetchedUser = Partial<UserData> &
+  Pick<UserData, "id" | "name" | "utorid" | "verified"> & {
+    email?: string;
+    avatarUrl?: string;
+  };
 
 interface UserTableProps {
-  users: UserData[];
-  isLoading: boolean; // Indicates loading more items
+  users: FetchedUser[]; // Use the partial user type
+  isLoading: boolean;
   error: string | null;
-  onViewInfo: (user: UserData) => void;
-  onEditUser: (user: UserData) => void;
-  // Add ref for intersection observer
+  onViewInfo: (user: FetchedUser) => void; 
+  onEditUser: (user: FetchedUser) => void; 
   loaderRef?: RefObject<HTMLDivElement | null>;
-  hasMore: boolean; // Indicates if there are more items to load
+  hasMore: boolean;
+  currentUserRole: "CASHIER" | "MANAGER" | "SUPERUSER" | "REGULAR"; // Add REGULAR for completeness
 }
 
 const UserTable: React.FC<UserTableProps> = ({
@@ -20,68 +26,89 @@ const UserTable: React.FC<UserTableProps> = ({
   error,
   onViewInfo,
   onEditUser,
-  loaderRef, // Receive the ref
-  hasMore, // Receive hasMore status
+  loaderRef,
+  hasMore,
+  currentUserRole, 
 }) => {
   if (!users || users.length === 0) {
-    return <div className="p-4 text-center text-gray-500">No users found matching criteria.</div>;
+    return (
+      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+        No users found matching criteria.
+      </div>
+    );
   }
 
+  // Determine if columns specific to Manager+ should be shown
+  const showFullDetails = ["MANAGER", "SUPERUSER"].includes(currentUserRole);
+
   return (
-    <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50 sticky top-0 z-10 justify-between">
+    <div className="overflow-x-auto max-h-[70vh] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-md">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
           <tr>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+              className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300"
             >
               User
             </th>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+              className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300"
             >
               Utorid / ID
             </th>
+            {/* Conditionally show Role column header */}
+            {showFullDetails && (
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300"
+              >
+                Role
+              </th>
+            )}
+            {/* Conditionally show Joined column header */}
+            {showFullDetails && (
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300"
+              >
+                Joined
+              </th>
+            )}
             <th
               scope="col"
-              className="px-10 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+              className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300"
             >
-              Role
+              Status
             </th>
             <th
               scope="col"
-              className="px-8 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+              className="relative px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300"
             >
-              Joined
-            </th>
-            <th
-              scope="col"
-              className="items-center pl-8 text-xs font-medium uppercase tracking-wider text-gray-500"
-            >
+              <span className="sr-only">Actions</span>
               Actions
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200 bg-white">
+        <tbody className="divide-y divide-gray-200 bg-white dark:bg-gray-800 dark:divide-gray-700">
           {users.map((user) => (
             <UserTableRow
               key={user.id}
               user={user}
               onViewInfo={onViewInfo}
               onEditUser={onEditUser}
+              currentUserRole={currentUserRole}
+              showFullDetails={showFullDetails} 
             />
           ))}
-          {/* Empty row or div to attach the ref for intersection observer */}
-          {/* This is where the loader will be placed when loading more items */}
           {hasMore && (
             <tr>
-              {/* Use a div inside td to avoid React hydration errors with refs on tr */}
-              <td colSpan={5} className="p-4 text-center">
+              {/* Adjust colspan based on visible columns */}
+              <td colSpan={showFullDetails ? 6 : 4} className="p-4 text-center">
                 <div ref={loaderRef}>
-                  {isLoading && ( // Show loader only when loading more
-                    <Loader2 className="h-6 w-6 animate-spin text-indigo-600 inline-block" />
+                  {isLoading && (
+                    <Loader2 className="h-6 w-6 animate-spin text-indigo-600 dark:text-indigo-400 inline-block" />
                   )}
                 </div>
               </td>
@@ -89,9 +116,8 @@ const UserTable: React.FC<UserTableProps> = ({
           )}
         </tbody>
       </table>
-      {/* Display error specific to loading more */}
       {error && !isLoading && (
-        <div className="p-4 text-center text-red-600">
+        <div className="p-4 text-center text-red-600 dark:text-red-400">
           Error loading more users: {error}
         </div>
       )}
