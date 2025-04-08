@@ -134,6 +134,9 @@ export async function getPromotions(req: Request, res: Response): Promise<void> 
       } else if (started === "false") {
         where.startTime = { gt: now };
       }
+      if (type) {
+        where.type = type;
+      }
     }
     if (userRole === "REGULAR" || userRole === "CASHIER") {
       // Only promotions that have not ended (now <= endTime)
