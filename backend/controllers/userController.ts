@@ -117,6 +117,7 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
         utorid: true,
         birthday: true,
         points: true,
+        avatar: true,
         avatarUrl: true,
         createdAt: true,
         verified: true,
@@ -324,6 +325,7 @@ export async function getCurrentUser(req: Request, res: Response): Promise<void>
         name: true,
         birthday: true,
         avatarUrl: true,
+        avatar: true,
         role: true,
         lastLogin: true,
         verified: true,
@@ -405,10 +407,12 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
     if (req.file) {
       try {
         const extension = path.extname(req.file.originalname);
-        const newFilename = `${currentUserId}${extension}`;
-        const newPath = path.join(req.file.destination, newFilename);
-        fs.renameSync(req.file.path, newPath);
-        updateData.avatarUrl = `/uploads/avatars/${currentUserId}`;
+        // const newFilename = `${currentUserId}${extension}`;
+        // const newPath = path.join(`../frontend/public/${req.file.destination}`, newFilename);
+        // fs.renameSync(req.file.path, newPath);
+        updateData.avatarUrl = `/uploads/avatars/${currentUserId}${extension}`;
+        updateData.avatar = req.file.buffer.toString('base64');
+        console.log(updateData.avatar)
       } catch (error) {
         console.error("Error renaming avatar file:", error);
       }
@@ -431,6 +435,7 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
         lastLogin: true,
         verified: true,
         avatarUrl: true,
+        avatar:true,
       },
     });
 
@@ -490,5 +495,75 @@ export async function updateCurrentUserPassword(req: Request, res: Response): Pr
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error." });
+  }
+}
+
+export async function getMyOrganizedEvents(req :Request, res: Response): Promise<void> {
+  try {
+    const currentUserId = (req as any).user?.id;
+    const {past = false, page = "1", limit = "10" } = req.query; // include past events or not (users probably would not want to filter out their currently organized events)
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    if (!currentUserId) {
+      res.status(401).json({ error: "Not authenticated" });
+      return;
+    }
+    const user = await prisma.user.findUnique({ where: { id: currentUserId } });
+    if (!user) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+    const events = await prisma.organizerEvent.findMany({
+      skip: (pageNum - 1) * limitNum,
+      take: limitNum,
+      where: {
+        organizerId: currentUserId,
+        event: {
+          endTime: {
+            gte: (past? undefined: new Date())
+          }
+        }
+      },
+      select: {
+        event: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            startTime: true,
+            endTime: true,
+            location: true,
+            capacity: true,
+            pointsRemain: true,
+            pointsAwarded: true,
+            published: true,
+            organizers: {
+              select: {
+                organizer: { select: { id: true, utorid: true, name: true } },
+              },
+            },
+            guests: {
+              include: {
+                user: { select: { id: true, utorid: true, name: true } },
+              },
+            },
+          }
+        },
+      }
+    });
+    const count = await prisma.organizerEvent.count({
+      where: {
+        organizerId: currentUserId,
+        event: {
+          endTime: {
+            gte: (past? undefined: new Date())
+          }
+        }
+      }
+    });
+    res.status(200).json({results: events, count: count})
+  } catch(error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error." }); 
   }
 }

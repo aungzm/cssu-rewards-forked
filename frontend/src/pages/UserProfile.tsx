@@ -5,15 +5,13 @@ import MyPromotions from "../components/userProfile/MyPromotions";
 import React, { useState } from "react";
 import { User, Pencil } from "lucide-react";
 import { useUser } from "../context/UserContext";
-// import { fetchWithAuth } from '../utils/authHelper';
-// import { API_BASE_URL } from '../utils/auth';
-
+import { fetchWithAuth } from '../utils/authHelper';
+import { API_BASE_URL } from '../utils/auth';
 const UserProfile: React.FC = () => {
   const { userData } = useUser();
   const [profilePicture, setProfilePicture] = useState<string | null>(
-    userData?.avatarUrl || null,
+    userData?.avatar || null,
   );
-
   // Update profile picture
   const updateProfilePicture = () => {
     // Create a hidden file input to open file picker
@@ -24,38 +22,33 @@ const UserProfile: React.FC = () => {
       const target = event.target as HTMLInputElement;
       if (target.files && target.files[0]) {
         const file = target.files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result;
-          if (result && typeof result === "string") {
-            // Update the profile picture locally for immediate feedback
-            setProfilePicture(result);
-            console.log("Local profile image updated", result);
-
-            // Create a FormData object and append the file with key "avatar"
-            const formData = new FormData();
-            formData.append("avatar", file);
-
-            /*
-            // Send a PATCH request to upload the file
-            fetchWithAuth(`${API_BASE_URL}/users/me`, {
+        console.log(file)
+        
+          const formData = new FormData();
+          formData.append("avatar", file);
+          const token = localStorage.getItem('authToken');
+          // Send a PATCH request to upload the file
+          console.log(formData)
+          try {
+            // cannot use fetch with auth here, since fetch with auth has application/json set in headers, but this requires multipart/form-data
+            // trying to set multipart/form-data will result in not having a default boundary and thus fetch fails
+            // backend cors settings allows localhost:5173 (and BASE_API_URL), for PATCH /users/me in order for this to be able to send a file.
+            fetch(`${API_BASE_URL}/users/me`, {
+              headers : {'Authorization': `Bearer ${token}`},
               method: "PATCH",
               body: formData
-            })
-              .then((response) => {
+            }).then((response) => {
                 if (!response.ok) {
                   console.error("Failed to update profile picture on server");
-                  // Revert the local update if needed
-                  setProfilePicture(userData?.avatarUrl || null);
                 } else {
                   console.log("Profile picture successfully updated on server");
                 }
-              })
+                return response.json()
+              }).then((data)=>setProfilePicture(data.avatar))
               .catch((error) => console.error("Error updating profile picture:", error));
-            */
+          } catch (e) {
+            console.log(e)
           }
-        };
-        reader.readAsDataURL(file);
       }
     };
     fileInput.click();
@@ -69,7 +62,6 @@ const UserProfile: React.FC = () => {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
       <Navbar activeLink={""} />
@@ -82,9 +74,12 @@ const UserProfile: React.FC = () => {
                        md:row-span-4 md:col-start-1 md:mr-[6rem] md:justify-self-end md:w-[16rem] md:h-[16rem] md:mb-0"
             onClick={updateProfilePicture}
           >
-            {profilePicture ? (
+            {/**for some reason, profilePicture is set to null on load, while userData.avatar actually has the content, this allows the page on load 
+             * to contain the user avatar using userData.avatar, and on update, uses profilePicture to get the most updated avatar
+             */}
+            {profilePicture || userData.avatar? (
               <img
-                src={profilePicture}
+                src={`data:image/png;base64,${(profilePicture ? profilePicture: userData.avatar )}`}
                 alt="Profile"
                 className="w-full h-full object-cover rounded-full"
               />

@@ -15,6 +15,7 @@ interface UserData {
   lastLogin: string;
   verified: boolean;
   avatarUrl?: string;
+  avatar?: string;
 }
 
 interface UserContextType {
