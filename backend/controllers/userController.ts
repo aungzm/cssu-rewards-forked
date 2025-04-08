@@ -385,7 +385,6 @@ export async function getCurrentUser(req: Request, res: Response): Promise<void>
  */
 export async function updateCurrentUser(req: Request, res: Response): Promise<void> {
   try {
-    console.log(req.file.buffer)
     const currentUserId = (req as any).user?.id;
     if (!currentUserId) {
       res.status(401).json({ error: "Not authenticated" });
