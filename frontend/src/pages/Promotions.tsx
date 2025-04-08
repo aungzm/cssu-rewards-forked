@@ -12,6 +12,7 @@ import PromotionDetailsModal from '../components/promotion/PromotionDetailsModal
 import { API_BASE_URL } from '../utils/auth';
 import { fetchWithAuth } from '../utils/authHelper';
 import { useDebounce } from '../hooks/useDebounce';
+import { useUser } from '../context/UserContext';
 
 // Interfaces (Promotion, ApiPromotionResponse) remain the same
 export interface Promotion { // Export if needed by PromotionDetailsModal
@@ -83,6 +84,8 @@ export default function PromotionsPage() {
   const hasMore = useMemo(() => {
     return !error && promotions.length < totalCount;
   }, [promotions.length, totalCount, error]);
+
+  const userRole = useUser().userData?.role; 
 
   // Data Fetching Logic
   const fetchPromotions = useCallback(
@@ -309,15 +312,15 @@ export default function PromotionsPage() {
 
           {/* Controls */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Create Button */}
-            <button
+            {/* Create Button only for Manager and Superuser*/}
+            {(userRole === "MANAGER" || userRole === "SUPERUSER") && (<button
               className="order-last mt-2 w-full rounded bg-slate-600 px-4 py-2 text-white hover:bg-slate-700 disabled:opacity-50 dark:bg-gray-700 dark:hover:bg-slate-600 md:order-first md:mt-0 md:w-auto"
               onClick={handleOpenCreateModal}
               aria-label="Create new promotion"
               disabled={isLoading}
             >
               Create New Promotion
-            </button>
+            </button>)}
 
             {/* Filter Criteria Dropdown */}
             <select

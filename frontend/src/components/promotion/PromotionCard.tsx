@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pencil } from 'lucide-react'; // Assuming you use lucide-react
+import { useUser } from '../../context/UserContext';
 
 interface PromotionCardProps {
   id: number;
@@ -39,6 +40,8 @@ export default function PromotionsCard({
     });
   };
 
+  const currentUserRole = useUser().userData?.role;
+
   // Calculate the bonus percentage from the rate
   const bonusPercentage = Math.round(rate * 100);
   // Determine tag color based on type
@@ -60,14 +63,14 @@ export default function PromotionsCard({
       {/* Header */}
       <div className="relative h-28 flex-shrink-0 bg-slate-600 p-4 dark:bg-slate-500">
         {/* Edit button container handles edit click */}
-        <div
+        {(currentUserRole === "MANAGER" || currentUserRole === "SUPERUSER") && (<div
           className="absolute right-2 top-2 z-10 cursor-pointer rounded-md bg-white p-2 hover:bg-gray-100 dark:bg-gray-200 dark:hover:bg-gray-300"
           onClick={handleEditClick} 
           title="Edit Promotion"
           aria-label="Edit Promotion"
         >
           <Pencil className="text-gray-600 dark:text-gray-800" size={16} />
-        </div>
+        </div>)}
 
         {/* Min Spending Tag */}
         {minSpending > 0 && (
