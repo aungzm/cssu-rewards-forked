@@ -933,6 +933,9 @@ export async function getUserTransactions(
       remark: transaction.remarks || "",
       createdBy:
         transaction.operatorId || transaction.senderId || transaction.userId,
+      createdAt: transaction.createdAt, // Added for Dashboard Transaction List entry
+      suspicious: transaction.suspicious,
+      operatorId: transaction.operatorId
     }));
 
     res.status(200).json({
