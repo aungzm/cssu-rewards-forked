@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute"; 
 import Signup from "./pages/Signup";
+import PromotionsPage from "./pages/Promotions";
 import { isAuthenticated } from "./utils/auth";
 import UserProfile from './pages/UserProfile';
 function App() {
@@ -30,6 +31,7 @@ function App() {
           <Route path="/profile" element={<UserProfile/>}/>
           {/* Add other protected routes here */}
           {/* e.g., <Route path="/profile" element={<ProfilePage />} /> */}
+          <Route path="/promotions" element={<PromotionsPage />} />
         </Route>
 
         {/* Default route */}
