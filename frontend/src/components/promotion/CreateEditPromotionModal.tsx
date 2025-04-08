@@ -1,7 +1,7 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { API_BASE_URL } from '../../utils/auth'; // Assuming auth utils are here
-import { fetchWithAuth } from '../../utils/authHelper'; // Assuming auth utils are here
-
+import { API_BASE_URL } from '../../utils/auth';
+import { fetchWithAuth } from '../../utils/authHelper';
+import { X } from 'lucide-react';
 
 interface Promotion {
   id: number;
@@ -15,24 +15,43 @@ interface Promotion {
   description: string;
 }
 
-// Props for the modal
 interface CreateEditPromotionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  promotionToEdit?: Promotion; // If present, we are editing
-  onSuccess: (promotion: Promotion) => void; // Callback on successful API call
+  promotionToEdit?: Promotion;
+  onSuccess: (promotion: Promotion) => void;
 }
 
-// Initial empty state for the form
 const initialFormData = {
   name: '',
   description: '',
   type: 'one-time' as 'one-time' | 'automatic',
-  startTime: '',
-  endTime: '', // Store as string initially, convert to null if empty on submit
-  minSpending: '0', // Store as string for input binding
-  rate: '0', // Store as string
-  points: '0', // Store as string
+  startTime: '', 
+  endTime: '', 
+  minSpending: '0',
+  rate: '0',
+  points: '0',
+};
+
+// Helper function to format ISO string (or Date object) for datetime-local input
+const formatISOForInput = (isoString: string | null | undefined): string => {
+  if (!isoString) return '';
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+    const day = date.getDate().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  } catch (e) {
+    console.error('Error formatting date for input:', e);
+    return ''; 
+  }
 };
 
 export default function CreateEditPromotionModal({
@@ -47,36 +66,33 @@ export default function CreateEditPromotionModal({
   const MAX_DESC_LENGTH = 300;
   const isEditing = Boolean(promotionToEdit);
 
-  // Effect to populate form when editing
   useEffect(() => {
     if (isEditing && promotionToEdit) {
       setFormData({
         name: promotionToEdit.name,
         description: promotionToEdit.description,
         type: promotionToEdit.type,
-        // Format dates for datetime-local input if needed, otherwise ensure ISO string
-        startTime: promotionToEdit.startTime, // Assuming it's already ISO
-        endTime: promotionToEdit.endTime ?? '', // Use empty string for input if null
+        startTime: formatISOForInput(promotionToEdit.startTime),
+        endTime: formatISOForInput(promotionToEdit.endTime),
         minSpending: String(promotionToEdit.minSpending),
         rate: String(promotionToEdit.rate),
         points: String(promotionToEdit.points),
       });
     } else {
-      // Reset form when opening for create or when promotionToEdit changes
       setFormData(initialFormData);
     }
-    // Reset error when modal opens or promotion changes
     setApiError(null);
-  }, [isOpen, promotionToEdit, isEditing]); // Rerun when these change
+  }, [isOpen, promotionToEdit, isEditing]);
 
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >,
   ) => {
-
-    // Prevent exceeding max length for description
-    if (e.target.name === 'description' && e.target.value.length > MAX_DESC_LENGTH) {
+    if (
+      e.target.name === 'description' &&
+      e.target.value.length > MAX_DESC_LENGTH
+    ) {
       return;
     }
     const { name, value } = e.target;
@@ -88,13 +104,10 @@ export default function CreateEditPromotionModal({
     setIsSubmitting(true);
     setApiError(null);
 
-    // --- Prepare Payload ---
-    // Convert string inputs to numbers, handle potential NaN
     const minSpendingNum = parseInt(formData.minSpending, 10);
     const rateNum = parseFloat(formData.rate);
     const pointsNum = parseInt(formData.points, 10);
 
-    // Basic validation example (add more as needed)
     if (
       isNaN(minSpendingNum) ||
       minSpendingNum < 0 ||
@@ -110,19 +123,19 @@ export default function CreateEditPromotionModal({
       return;
     }
 
-    // Validate dates (basic example: end time must be after start time if provided)
-    const start = new Date(formData.startTime);
+    const start = formData.startTime ? new Date(formData.startTime) : null;
     const end = formData.endTime ? new Date(formData.endTime) : null;
 
-    if (!formData.startTime || isNaN(start.getTime())) {
-        setApiError('Please provide a valid Start Time.');
-        setIsSubmitting(false);
-        return;
+    if (!start || isNaN(start.getTime())) {
+      setApiError('Please provide a valid Start Time.');
+      setIsSubmitting(false);
+      return;
     }
-     if (end && isNaN(end.getTime())) {
-        setApiError('End Time is not a valid date.');
-        setIsSubmitting(false);
-        return;
+    // No need to check end for NaN if it's null
+    if (end && isNaN(end.getTime())) {
+      setApiError('End Time is not a valid date.');
+      setIsSubmitting(false);
+      return;
     }
     if (end && start >= end) {
       setApiError('End Time must be after Start Time.');
@@ -134,49 +147,45 @@ export default function CreateEditPromotionModal({
       name: formData.name,
       description: formData.description,
       type: formData.type,
-      startTime: start.toISOString(), // Ensure ISO format
-      endTime: end ? end.toISOString() : null, // Send null if empty/invalid
+      startTime: start.toISOString(),
+      endTime: end ? end.toISOString() : null,
       minSpending: minSpendingNum,
       rate: rateNum,
       points: pointsNum,
     };
 
-    // --- Determine API Endpoint and Method ---
     const url = isEditing
       ? `${API_BASE_URL}/promotions/${promotionToEdit?.id}`
       : `${API_BASE_URL}/promotions`;
     const method = isEditing ? 'PATCH' : 'POST';
 
-    console.log(`Submitting to ${method} ${url}`, payload); // Debug log
+    console.log(`Submitting to ${method} ${url}`, payload);
 
     try {
       const response = await fetchWithAuth(url, {
         method: method,
         headers: {
           'Content-Type': 'application/json',
-          // Add cache control if needed, though less critical for POST/PATCH
-          // 'Cache-Control': 'no-cache',
         },
         body: JSON.stringify(payload),
       });
 
-      // --- Handle Response ---
       if (!response.ok) {
         let errorData;
-        let errorMessage = `Request failed with status ${response.status} (${response.statusText})`; // Default message
+        let errorMessage = `Request failed with status ${response.status} (${response.statusText})`;
         try {
           errorData = await response.json();
           if (errorData?.error && Array.isArray(errorData.error)) {
             errorMessage = errorData.error
-              .map((e: {path: string, message: string}) => `${e.path}: ${e.message}`) 
-              .join('; '); // Join multiple errors
+              .map((e: { path: string; message: string }) => `${e.path}: ${e.message}`)
+              .join('; ');
           } else if (errorData?.message) {
             errorMessage = errorData.message;
           } else if (errorData?.error && typeof errorData.error === 'string') {
-             errorMessage = errorData.error;
+            errorMessage = errorData.error;
           }
         } catch {
-          // Ignore if response is not JSON or parsing fails
+          // Ignore
         }
         console.error('API Error Response:', errorData || errorMessage);
         throw new Error(errorMessage);
@@ -184,8 +193,7 @@ export default function CreateEditPromotionModal({
 
       const resultPromotion: Promotion = await response.json();
       console.log('API Success Response:', resultPromotion);
-      onSuccess(resultPromotion); // Pass the actual result to the parent
-      // onClose(); // onSuccess should handle closing via the parent state update
+      onSuccess(resultPromotion);
     } catch (error) {
       console.error(`Failed to ${isEditing ? 'update' : 'create'} promotion:`, error);
       setApiError(error instanceof Error ? error.message : 'An unknown error occurred.');
@@ -199,39 +207,24 @@ export default function CreateEditPromotionModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm"
-      onClick={onClose} // Close if clicking outside modal content
+      onClick={onClose}
     >
       <div
         className="relative w-full max-w-lg rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800 m-4 max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 rounded-full p-1 text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-200"
           aria-label="Close modal"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
+          <X className="h-5 w-5" aria-hidden="true" /> 
         </button>
 
         <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
           {isEditing ? 'Edit Promotion' : 'Create New Promotion'}
         </h2>
 
-        {/* API Error Display */}
         {apiError && (
           <div
             className="mb-4 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-200"
@@ -242,7 +235,6 @@ export default function CreateEditPromotionModal({
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name */}
           <div>
@@ -282,7 +274,7 @@ export default function CreateEditPromotionModal({
               disabled={isSubmitting}
               className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
             />
-             <p className="mt-1 text-xs text-right text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-xs text-right text-gray-500 dark:text-gray-400">
               {formData.description.length} / {MAX_DESC_LENGTH} characters
             </p>
           </div>
@@ -318,10 +310,10 @@ export default function CreateEditPromotionModal({
               Start Time
             </label>
             <input
-              type="datetime-local" // Use datetime-local for easier input
+              type="datetime-local"
               id="startTime"
               name="startTime"
-              value={formData.startTime} // Bind directly if value is compatible
+              value={formData.startTime}
               onChange={handleChange}
               required
               disabled={isSubmitting}
@@ -335,12 +327,13 @@ export default function CreateEditPromotionModal({
               htmlFor="endTime"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
-              End Time
+              End Time (Optional)
             </label>
             <input
               type="datetime-local"
               id="endTime"
               name="endTime"
+              // Bind directly to the formatted string in formData
               value={formData.endTime}
               onChange={handleChange}
               disabled={isSubmitting}
@@ -361,7 +354,7 @@ export default function CreateEditPromotionModal({
               id="minSpending"
               name="minSpending"
               min="0"
-              step="0.01" // Allow cents if applicable, otherwise use step="1"
+              step="0.01"
               value={formData.minSpending}
               onChange={handleChange}
               required
@@ -376,19 +369,19 @@ export default function CreateEditPromotionModal({
               htmlFor="rate"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
-              Bonus Rate (e.g., 0.1 for 10%)
+              Bonus Rate
             </label>
             <input
               type="number"
               id="rate"
               name="rate"
               min="0"
-              step="0.01" // Adjust step as needed
+              step="0.01"
               value={formData.rate}
               onChange={handleChange}
               required
               disabled={isSubmitting}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
+              className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-600 dark:focus:border-blue-600 disabled:opacity-50"
             />
           </div>
 
@@ -405,7 +398,7 @@ export default function CreateEditPromotionModal({
               id="points"
               name="points"
               min="0"
-              step="1" // Points are usually integers
+              step="1"
               value={formData.points}
               onChange={handleChange}
               required
