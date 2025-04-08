@@ -276,16 +276,17 @@ const UserManagement: React.FC = () => {
     <>
       <Navbar activeLink="user-management" />
       <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+        {/* Main content card */}
         <div className="bg-white dark:bg-gray-800 px-4 py-5 shadow sm:rounded-lg sm:p-6">
-          <div className="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          {/* Header Section: Title and Add Button */}
+          <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <h2 className="text-xl font-semibold leading-6 text-gray-900 dark:text-white">
               User Management ({totalUsers})
             </h2>
-            {/* Add Users Button */}
             {canAddUsers && (
               <button
                 onClick={() => handleOpenModal("add")}
-                className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 whitespace-nowrap"
               >
                 <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                 Add New User
@@ -293,15 +294,20 @@ const UserManagement: React.FC = () => {
             )}
           </div>
 
-          {/* Search and Filters */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Filters Section */}
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {/* Search Input */}
             <div className="relative">
+              <label htmlFor="search-users" className="sr-only">
+                Search Users
+              </label>
               <input
+                id="search-users"
                 type="text"
                 value={searchTerm}
                 onChange={handleSearchChange}
-                placeholder="Search by name..." // Backend searches name field
-                className="block w-full rounded-md border-gray-300 px-4 py-2 pr-10 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                placeholder="Search by name..."
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 py-2 px-3 pr-10" // Added padding
                 aria-label="Search users"
               />
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
@@ -311,6 +317,10 @@ const UserManagement: React.FC = () => {
                 />
               </div>
             </div>
+
+            {/* Role Filter */}
+            {(currentUser.role === "MANAGER" ||
+              currentUser.role === "SUPERUSER") && (
             <div>
               <label htmlFor="roleFilter" className="sr-only">
                 Filter by Role
@@ -319,35 +329,37 @@ const UserManagement: React.FC = () => {
                 id="roleFilter"
                 value={roleFilter}
                 onChange={(e) => handleFilterChange(e, setRoleFilter)}
-                className="block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 pl-3 pr-10" // Consistent styling
               >
                 <option value="all">All Roles</option>
-                <option value="regular">Regular</option> 
-                <option value="cashier">Cashier</option>
-                <option value="manager">Manager</option>
-                <option value="superuser">Superuser</option>
+                <option value="REGULAR">Regular</option>
+                <option value="CASHIER">Cashier</option>
+                <option value="MANAGER">Manager</option>
+                <option value="SUPERUSER">Superuser</option>
               </select>
-            </div>
+            </div>)}
 
-            <div>
-              <label htmlFor="verifiedFilter" className="sr-only">
-                Filter by Verified Status
-              </label>
-              <select
-                id="verifiedFilter"
-                value={verifiedFilter}
-                onChange={(e) => handleFilterChange(e, setVerifiedFilter)}
-                className="block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="all">Any Verified Status</option>
-                <option value="true">Verified</option>
-                <option value="false">Unverified</option>
-              </select>
-            </div>
+            {/* Verified Filter */}
+            
+              <div>
+                <label htmlFor="verifiedFilter" className="sr-only">
+                  Filter by Verified Status
+                </label>
+                <select
+                  id="verifiedFilter"
+                  value={verifiedFilter}
+                  onChange={(e) => handleFilterChange(e, setVerifiedFilter)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 pl-3 pr-10" // Consistent styling
+                >
+                  <option value="all">Any Verified Status</option>
+                  <option value="true">Verified</option>
+                  <option value="false">Unverified</option>
+                </select>
+              </div>
 
-            {/* Only show Activated filter if user is Manager/Superuser */}
-            {(currentUser?.role === "MANAGER" ||
-              currentUser?.role === "SUPERUSER") && (
+            {/* Activated Filter (Manager/Superuser only) */}
+            {(currentUser.role === "MANAGER" ||
+              currentUser.role === "SUPERUSER") && (
               <div>
                 <label htmlFor="activatedFilter" className="sr-only">
                   Filter by Activated Status
@@ -356,7 +368,7 @@ const UserManagement: React.FC = () => {
                   id="activatedFilter"
                   value={activatedFilter}
                   onChange={(e) => handleFilterChange(e, setActivatedFilter)}
-                  className="block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 pl-3 pr-10" // Consistent styling
                 >
                   <option value="all">Any Activated Status</option>
                   <option value="true">Activated</option>
@@ -386,17 +398,16 @@ const UserManagement: React.FC = () => {
               isLoading={isLoading}
               error={error && !isInitialLoading ? error : null}
               onViewInfo={(user) => handleOpenModal("view", user)}
-              onEditUser={(user) => handleOpenModal("edit", user)} 
+              onEditUser={(user) => handleOpenModal("edit", user)}
               loaderRef={loaderRef}
               hasMore={hasMore}
-              currentUserRole={currentUser.role} 
+              currentUserRole={currentUser.role}
             />
           )}
         </div>
       </div>
 
       {/* Modals */}
-      {/* Add Modal */}
       {modalState.type === "add" && (
         <AddUserModal
           isOpen={modalState.type === "add"}
@@ -404,21 +415,19 @@ const UserManagement: React.FC = () => {
           onSuccess={handleSuccess}
         />
       )}
-      {/* Edit Modal - Only renders if opened, which Cashiers cannot do */}
       {modalState.type === "edit" && modalState.user && (
         <EditUserModal
           isOpen={modalState.type === "edit"}
           onClose={handleCloseModal}
           onSuccess={handleSuccess}
-          user={modalState.user as UserData} 
+          user={modalState.user as UserData} // Assuming Edit needs full data
         />
       )}
-      {/* View Modal */}
       {modalState.type === "view" && modalState.user && (
         <ViewUserModal
           isOpen={modalState.type === "view"}
           onClose={handleCloseModal}
-          user={modalState.user as UserData} 
+          user={modalState.user as UserData} // View modal fetches details
         />
       )}
     </>
