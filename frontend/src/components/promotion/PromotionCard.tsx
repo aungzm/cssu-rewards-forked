@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil } from 'lucide-react'; // Assuming you use lucide-react
+import { Pencil, Trash2 } from 'lucide-react'; // Assuming you use lucide-react
 import { useUser } from '../../context/UserContext';
 
 interface PromotionCardProps {
@@ -14,11 +14,11 @@ interface PromotionCardProps {
   description: string;
   onEdit: () => void;
   onClick: () => void; 
+  onDelete: () => void; // Optional delete function
 }
 
 export default function PromotionsCard({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  id,
   name,
   type,
   startTime,
@@ -29,6 +29,7 @@ export default function PromotionsCard({
   description,
   onEdit,
   onClick, // Use this prop for card click
+  onDelete, // Delete function
 }: PromotionCardProps) {
   // Format date to display "Month Day, Year"
   const formatDate = (dateString: string): string => {
@@ -41,10 +42,7 @@ export default function PromotionsCard({
   };
 
   const currentUserRole = useUser().userData?.role;
-
-  // Calculate the bonus percentage from the rate
   const bonusPercentage = Math.round(rate * 100);
-  // Determine tag color based on type
   const tagColorClass =
     type === 'automatic' ? 'bg-blue-400' : 'bg-yellow-400';
 
@@ -54,15 +52,20 @@ export default function PromotionsCard({
     onEdit();
   };
 
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevents the card click event from firing
+    onDelete();
+  }
+
   return (
     // Card container triggers the onClick view details
     <div
       onClick={onClick}
-      className="flex cursor-pointer flex-col overflow-hidden rounded-lg bg-white shadow-md transition-shadow duration-200 hover:shadow-lg dark:bg-gray-800 aspect-square"
+      className="flex relative z-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-white shadow-md transition-shadow duration-200 hover:shadow-lg dark:bg-gray-800 aspect-square"
     >
       {/* Header */}
       <div className="relative h-28 flex-shrink-0 bg-slate-600 p-4 dark:bg-slate-500">
-        {/* Edit button container handles edit click */}
+        {/* Edit button container handles edit click only for manager+ */}
         {(currentUserRole === "MANAGER" || currentUserRole === "SUPERUSER") && (<div
           className="absolute right-2 top-2 z-10 cursor-pointer rounded-md bg-white p-2 hover:bg-gray-100 dark:bg-gray-200 dark:hover:bg-gray-300"
           onClick={handleEditClick} 
@@ -74,16 +77,26 @@ export default function PromotionsCard({
 
         {/* Min Spending Tag */}
         {minSpending > 0 && (
-          <div className="absolute bottom-2 left-2 rounded-md bg-white px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-600 dark:text-white">
+          <div className="absolute top-2 left-2 rounded-md bg-white px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-600 dark:text-white">
             min: ${minSpending.toFixed(2)}
           </div>
         )}
         {/* Type Tag */}
         <div
-          className={`absolute bottom-2 right-2 rounded-md px-3 py-1 text-sm font-medium text-white ${tagColorClass}`}
+          className={`absolute bottom-2 left-2 rounded-md px-3 py-1 text-sm font-medium text-white ${tagColorClass}`}
         >
           {type === 'automatic' ? 'Automatic' : 'One time'}
         </div>
+
+        {/* Delete Button */}
+        {(currentUserRole === "MANAGER" || currentUserRole === "SUPERUSER") && (<div
+          className="absolute right-2 bottom-2 z-10 cursor-pointer rounded-md bg-white p-2 hover:bg-gray-100 dark:bg-gray-200 dark:hover:bg-gray-300"
+          onClick={handleDeleteClick} 
+          title="Edit Promotion"
+          aria-label="Edit Promotion"
+        >
+          <Trash2 className="text-gray-600 dark:text-gray-800" size={16} />
+        </div>)}
       </div>
 
       {/* Body */}

@@ -47,7 +47,7 @@ const LoginPage: React.FC = () => {
 
       // Try to parse the body regardless of status code
       const data: AuthTokenResponse | ApiError = await response.json();
-
+      console.log("Response data:", data); // Log the response data
       if (!response.ok) {
         // Check if the parsed data has a 'message' property
         const errorMessage =

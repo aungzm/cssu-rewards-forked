@@ -7,9 +7,9 @@ import {
   getPromotionById,
   updatePromotion,
   deletePromotion,
-} from "../controllers/promotionController";
-import { authenticateToken } from "../middlewares/authenticateToken";
-import { requireManagerOrHigher } from "../middlewares/authMiddleware";
+} from "../controllers/promotionController.js";
+import { authenticateToken } from "../middlewares/authenticateToken.js";
+import { requireManagerOrHigher } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 

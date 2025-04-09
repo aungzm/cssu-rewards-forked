@@ -4,7 +4,7 @@ import {
   requestPasswordReset,
   finalizePasswordReset,
   generateJWTToken,
-} from "../controllers/authController";
+} from "../controllers/authController.js";
 
 const router = express.Router();
 

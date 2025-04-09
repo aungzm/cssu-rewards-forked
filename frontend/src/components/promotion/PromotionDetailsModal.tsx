@@ -1,4 +1,5 @@
 import { Pencil, X } from "lucide-react";
+import { useUser } from "../../context/UserContext";
 
 interface PromotionDetailsModalProps {
   isOpen: boolean;
@@ -38,12 +39,13 @@ export default function PromotionDetailsModal({
   promotion,
   onEdit,
 }: PromotionDetailsModalProps) {
+  const { userData } = useUser();
   if (!isOpen || !promotion) return null;
-
   const bonusPercentage = Math.round(promotion.rate * 100);
   const tagColorClass =
     promotion.type === 'automatic' ? 'bg-blue-400' : 'bg-yellow-400';
   const typeText = promotion.type === 'automatic' ? 'Automatic' : 'One-Time';
+  const isManagerOrHigher = userData?.role === 'MANAGER' || userData?.role === 'SUPERUSER';
 
   return (
     // Backdrop
@@ -64,14 +66,14 @@ export default function PromotionDetailsModal({
         >
           < X size={24} />
         </button>
-        {/* Close Button */}
-        <button
+        {/* Edit Button */}
+        {(isManagerOrHigher) && (<button
           onClick={onEdit}
           className="absolute right-6 top-24 mt-2 rounded-full p-1 text-gray-500 transition hover:bg-gray-200 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-100"
           aria-label="Close modal"
         >
           < Pencil size={20} />
-        </button>
+        </button>)}
 
         {/* Header */}
         <div className="mb-4 border-b border-gray-200 pb-4 dark:border-gray-600">

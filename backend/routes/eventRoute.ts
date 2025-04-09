@@ -14,9 +14,9 @@ import {
   removeGuest,
   addSelfAsGuest,
   removeSelfAsGuest,
-} from "../controllers/eventController";
-import { authenticateToken } from "../middlewares/authenticateToken";
-import { requireManagerOrHigher } from "../middlewares/authMiddleware";
+} from "../controllers/eventController.js";
+import { authenticateToken } from "../middlewares/authenticateToken.js";
+import { requireManagerOrHigher } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 

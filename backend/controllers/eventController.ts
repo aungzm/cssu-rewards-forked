@@ -101,7 +101,6 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
     if (name) {
       where.name = {
         contains: name,
-        mode: "insensitive",
       };
     }
 

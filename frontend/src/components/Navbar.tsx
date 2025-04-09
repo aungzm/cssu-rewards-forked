@@ -34,14 +34,13 @@ interface NavbarProps {
 // Navigation Links Configuration 
 const navLinks: NavLink[] = [
   { name: "Dashboard", href: "/dashboard" },
-  { name: "Users", href: "#" },
   {
-    name: "Points ",
+    name: "Points",
     href: "#",
     hasDropdown: true,
     dropdownItems: [
-      { name: "Create Transactions", href: "#" }, // Transfer points, Redeem points and Create Purchase transaction
-      { name: "Transaction history", href: "#" }, // Has current balance as well 
+      { name: "Create Transactions", href: "#" },
+      { name: "Transaction History", href: "#" },
     ],
   },
   { name: "Promotions", href: "/promotions" },
@@ -56,9 +55,9 @@ const navLinks: NavLink[] = [
   },
   {
     name: "Role Management",
-    href: "#",
-    requiredRoles: ["MANAGER", "SUPERUSER"],
-  },
+    href: "user-management",
+    requiredRoles: ["MANAGER", "SUPERUSER", "CASHIER"],
+  }
 ];
 
 // Helper Function for Role Check
@@ -80,15 +79,22 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
   const renderAvatar = () => {
     return (
       <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-        {userData?.avatarUrl ? (
-          // If URL exists, use it
+        {userData?.avatar ? (
+          // If a base64 encoded avatar exists, display it
           <div
-            className="w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: `url(${userData.avatarUrl})` }}
-            aria-label={`${userData.utorid}'s avatar`} 
+        className="w-full h-full bg-cover bg-center"
+        style={{ backgroundImage: `url(data:image/png;base64,${userData.avatar})` }}
+        aria-label={`${userData.utorid}'s avatar`}
+          ></div>
+        ) : userData?.avatarUrl ? (
+          // Otherwise, use the avatar URL if available
+          <div
+        className="w-full h-full bg-cover bg-center"
+        style={{ backgroundImage: `url(${userData.avatarUrl})` }}
+        aria-label={`${userData.utorid}'s avatar`}
           ></div>
         ) : (
-          // Otherwise, render the icon component
+          // Fallback to icon component
           <User size={20} aria-label="Default user avatar" />
         )}
       </div>
