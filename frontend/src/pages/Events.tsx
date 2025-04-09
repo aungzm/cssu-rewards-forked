@@ -185,7 +185,7 @@ export default function EventsPage() {
   }, [loadMoreItems, isLoadingMore]);
   return (
     <div className="min-h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
-      <Navbar activeLink="Events" />
+      <Navbar activeLink="Promotions" />
 
       <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-16 ">
         {/* Sticky Header */}
@@ -197,25 +197,71 @@ export default function EventsPage() {
           `}
         >
           <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-300">
-            Events
+            Events ({!isLoading && !error ? totalCount : '...'})
           </h1>
-          {!isLoading && !error && (
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                      {events.map((event) => (
-                        <EventsCard
-                          key={event.id}
-                          {...event}
-                          endTime={event.endTime ?? undefined}
-                          onEdit={() => {}}
-                          onClick={() => {}}
-                        />
-                      ))}
-                    </div>
-                  )}
+
           
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="py-12 text-center">
+            <p className="text-gray-500 dark:text-gray-400">
+              Loading events...
+            </p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !isLoading && (
+          <div className="py-12 text-center text-red-600 dark:text-red-400">
+            <p>Error loading events: {error}</p>
+            <button
+              onClick={() => fetchEvents(1, debouncedFilters)}
+              className="mt-2 rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Promotion Grid */}
+        {!isLoading && !error && (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {events.map((event) => (
+              <EventsCard
+                key={event.id}
+                {...event}
+                endTime={event.endTime ?? undefined}
+                onEdit={() =>{}}
+                onClick={() => {}}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !error && totalCount === 0 && (
+          <div className="py-12 text-center">
+            <p className="text-gray-500 dark:text-gray-400">
+              No events found matching your criteria.
+            </p>
+          </div>
+        )}
+
+        {/* Infinite Scroll Target & Indicators */}
+        <div ref={observerTarget} className="h-10 py-4 text-center">
+          {isLoadingMore && (
+            <p className="text-gray-500 dark:text-gray-400">Loading more...</p>
+          )}
+          {!isLoadingMore && !hasMore && events.length > 0 && !error && (
+            <p className="text-gray-500 dark:text-gray-400">
+              No more events.
+            </p>
+          )}
+        </div>
       </div>
+
     </div>
 
 )}
