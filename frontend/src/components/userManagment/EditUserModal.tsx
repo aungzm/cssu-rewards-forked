@@ -75,9 +75,10 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     }
 
     try {
+      const apiPayload = { ...payload, role: payload.role ? payload.role.toLocaleLowerCase() : undefined }; // Prepare payload with role in lowercase for API compatibility
       const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}`, {
         method: 'PATCH',
-        body: JSON.stringify(payload),
+        body: JSON.stringify(apiPayload),
       });
 
       if (!response.ok) {
