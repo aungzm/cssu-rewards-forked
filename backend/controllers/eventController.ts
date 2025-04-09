@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { AuthenticatedRequest } from "middlewares/authMiddleware.js";
 
 const prisma = new PrismaClient();
 
@@ -76,7 +77,7 @@ export async function createEvent(req: Request, res: Response): Promise<void> {
  * - Regular clearance: can only see published events.
  * - Manager or higher: can see all events, optionally filter by `published`.
  */
-export async function getEvents(req: Request, res: Response): Promise<void> {
+export async function getEvents(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const {
       name,
@@ -130,7 +131,7 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
     }
 
     // Role-based filtering for published events.
-    const userRole: string = (req as any).user?.role || "REGULAR";
+    const userRole: string =  req.user?.role || "REGULAR";
     if (userRole === "REGULAR" || userRole === "CASHIER") {
       where.published = true;
     } else if (published !== undefined) {
@@ -143,28 +144,38 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
     const skipValue = showAll ? 0 : skip;
     const takeValue = showAll ? undefined : pageSize;
 
+    const currentUserId = (req as any).user?.id;
     const [totalCount, events] = await Promise.all([
       prisma.event.count({ where }),
       prisma.event.findMany({
-        where,
-        orderBy: { startTime: "asc" },
-        skip: skipValue,
-        take: takeValue,
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          location: true,
-          startTime: true,
-          endTime: true,
-          capacity: true,
-          pointsAwarded: (userRole === "MANAGER" || userRole === "SUPERUSER"? true: false),
-          pointsRemain: (userRole === "MANAGER" || userRole === "SUPERUSER"? true: false),
-          published: (userRole === "MANAGER" || userRole === "SUPERUSER"? true: false),
-          _count: {
-            select: { guests: true },
-          },
+      where,
+      orderBy: { startTime: "asc" },
+      skip: skipValue,
+      take: takeValue,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        location: true,
+        startTime: true,
+        endTime: true,
+        capacity: true,
+        pointsAwarded:
+        userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
+        pointsRemain:
+        userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
+        published:
+        userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
+        organizers: {
+        select: { organizerId: true },
         },
+        guests: {
+        select: { userId: true },
+        },
+        _count: {
+        select: { guests: true },
+        },
+      },
       }),
     ]);
     const results = events.map((event) => ({
@@ -179,6 +190,10 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
       pointsRemain: event.pointsRemain,
       numGuests: event._count.guests,
       published: event.published,
+      isOrganizer: event.organizers.some(
+        (org) => org.organizerId === currentUserId
+      ),
+      isGuest: event.guests.some((g) => g.userId === currentUserId),
     }));
 
     res.status(200).json({
