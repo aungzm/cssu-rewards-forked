@@ -20,11 +20,30 @@ import promotionRoutes from "./routes/promotionRoute.js";
 
 const app: Express = express();
 
+const allowedOrigins = [
+  'https://cssu-rewards.vercel.app', // Your Vercel frontend URL
+  'http://localhost:5173', // Default Vite dev port 
+];
+
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+          callback(null, true);
+      } else {
+          callback(new Error('Not allowed by CORS'));
+      }
+  },
+  credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // Specify allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization', ], // Specify allowed headers
+};
+
 // Essential Middleware 
 app.use(express.json());
 
 // CORS Middleware
-app.use(cors()); 
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Logging Middleware (Morgan)
 // Use 'dev' format for concise output colored by response status for development use
