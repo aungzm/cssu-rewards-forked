@@ -134,7 +134,7 @@ transactions, setTransactions}) => {
                     return 0;
             }
         });
-        setTransactions(sortedTransactions);
+        setTransactions(sortedTransactions.slice(0, 10));
     }, [transactions, sortOption]);
 
     return (
