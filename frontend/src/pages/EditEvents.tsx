@@ -9,6 +9,7 @@ import {
   Clock,
   Edit,
   AlertCircle,
+  Award,
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { fetchWithAuth } from "../utils/authHelper";
@@ -202,6 +203,16 @@ export default function EventDetailsPage() {
             <div className="mt-1 flex items-center text-gray-800 dark:text-gray-200">
               <MapPin className="mr-2 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
               <span className="text-sm">{event.location}</span>
+            </div>
+          </div>
+          {/* Points Awarded */}
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Points Awarded
+            </span>
+            <div className="mt-1 flex items-center text-gray-800 dark:text-gray-200">
+              <Award className="mr-2 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+              <span className="text-sm">{event.pointsAwarded ?? 0}</span>
             </div>
           </div>
           {/* Attendance */}
