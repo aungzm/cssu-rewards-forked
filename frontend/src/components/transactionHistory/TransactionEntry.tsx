@@ -68,7 +68,11 @@ const TransactionEntry: React.FC<TransactionEntryProps> = ({
                 {transaction.type === "event" && <p> Attended Event </p>}
 
 
-                <p className="text-gray-500"> {transaction.createdAt.slice(0, 10)} </p>
+                <div className="flex flex-row gap-2">
+                    <p className="text-gray-500"> {transaction.createdAt.slice(0, 10)} </p>
+                    <p className="text-gray-500"> Transaction ID: {transaction.id} </p>
+
+                </div>
                 {transaction.remarks && <p className="text-gray-500"> {transaction.remarks} </p>}
 
             </div>
