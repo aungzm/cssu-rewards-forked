@@ -131,7 +131,7 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
 
     // Role-based filtering for published events.
     const userRole: string = (req as any).user?.role || "REGULAR";
-    if (userRole === "Regular" || userRole === "CASHIER") {
+    if (userRole === "REGULAR" || userRole === "CASHIER") {
       where.published = true;
     } else if (published !== undefined) {
       where.published = published; // Note published is validated as a boolean
@@ -158,6 +158,8 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
           startTime: true,
           endTime: true,
           capacity: true,
+          pointsAwarded: (userRole === "MANAGER" || userRole === "SUPERUSER"? true: undefined),
+          pointsRemain: (userRole === "MANAGER" || userRole === "SUPERUSER"? true: undefined),
           _count: {
             select: { guests: true },
           },
@@ -172,6 +174,8 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
       startTime: event.startTime,
       endTime: event.endTime,
       capacity: event.capacity,
+      pointsAwarded: event.pointsAwarded,
+      pointsRemain: event.pointsRemain,
       numGuests: event._count.guests,
     }));
 

@@ -150,7 +150,6 @@ const updateEventSchema = z.object({
 const getEventsSchema = z.object({
   query: z.object({
     name: z.string().optional(),
-    description: z.string().optional(),
     location: z.string().optional(),
     started: z.coerce.boolean().optional(),
     ended: z.coerce.boolean().optional(),

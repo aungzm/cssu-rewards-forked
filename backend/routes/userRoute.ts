@@ -15,6 +15,7 @@ import {
   updateCurrentUser,
   updateCurrentUserPassword,
   getMyOrganizedEvents,
+  getMyGuestEvents
 } from "../controllers/userController.js";
 import {
   createTransferTransaction,
@@ -336,6 +337,17 @@ router.get(
   authenticateToken,
   validate(getMyOrganizedEventsSchema),
   getMyOrganizedEvents
+);
+
+/**
+ * @route   GET /users/me/events/guest
+ * @desc    Retrieve a list of eventIds that the user participated in
+ * @access  Regular user or higher
+ */
+router.get(
+  "/me/events/guest",
+  authenticateToken,
+  getMyGuestEvents
 );
 
 /**
