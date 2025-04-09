@@ -77,7 +77,7 @@ export async function createUser(req: Request, res: Response): Promise<void> {
  * Retrieve list of users with optional filters
  * Accessible by: manager, superuser
  */
-export async function getUsers(req: Request, res: Response): Promise<void> {
+export async function getUsers(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     // Destructure and convert query values as needed
     const { name, role, verified, activated, page = "1", limit = "10" } = req.query;
@@ -100,30 +100,55 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
       whereClause.activated = activated;
     }
 
+    const requestingUser =  req.user;
+
+    if (requestingUser?.role === undefined){
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
     // Count total matching users
     const count = await prisma.user.count({ where: whereClause });
-
+    let users;
+    
     // Retrieve paginated results
-    const users = await prisma.user.findMany({
-      where: whereClause,
-      skip: (pageNum - 1) * limitNum,
-      take: limitNum,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        utorid: true,
-        birthday: true,
-        points: true,
-        avatar: true,
-        avatarUrl: true,
-        createdAt: true,
-        verified: true,
-        lastLogin: true,
-      },
-    });
+    if (requestingUser.role === "CASHIER") {
+      users = await prisma.user.findMany({
+        where: whereClause,
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          utorid: true,
+          avatarUrl: true,
+          verified: true,
+        },
+      });
+    } else {
+      users = await prisma.user.findMany({
+        where: whereClause,
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          utorid: true,
+          birthday: true,
+          points: true,
+          avatarUrl: true,
+          activated: true,
+          createdAt: true,
+          verified: true,
+          lastLogin: true,
+        },
+      });
+    }
+    
 
     res.status(200).json({
       count,
@@ -195,9 +220,10 @@ export async function getUserById(req: AuthenticatedRequest, res: Response): Pro
         // For cashiers return limited data
         res.status(200).json({
           id: user.id,
-          email: user.email,
-          role: user.role,
+          utorid: user.utorid,
+          name: user.name,
           verified: user.verified,
+          points: user.points,
           promotions: allPromotions,
         });
       } else {

@@ -406,7 +406,7 @@ router.post(
 router.get(
   "/",
   authenticateToken,
-  requireManagerOrHigher,
+  requireCashierOrHigher,
   validate(getUsersSchema),
   getUsers
 );
