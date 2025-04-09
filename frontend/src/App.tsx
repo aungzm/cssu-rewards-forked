@@ -13,6 +13,7 @@ import { isAuthenticated } from "./utils/auth";
 import UserProfile from './pages/UserProfile';
 import EventsPage from "./pages/Events"
 import UserManagment from './pages/UserManagment';
+import EventDetailsPage from "./pages/EditEvents";
 function App() {
   return (
     <Router>
@@ -35,6 +36,7 @@ function App() {
           {/* e.g., <Route path="/profile" element={<ProfilePage />} /> */}
           <Route path="/promotions" element={<PromotionsPage />} />
           <Route path="/events" element={<EventsPage />} />
+          <Route path="/edit/events/:eventId" element={<EventDetailsPage />} />{" "}
         </Route>
 
         {/* Default route */}

@@ -4,11 +4,11 @@ import { fetchWithAuth } from '../utils/authHelper';
 import { API_BASE_URL } from '../utils/auth';
 import { useUser } from '../context/UserContext';
 import { QRCodeSVG } from 'qrcode.react';
-import DashboardPoints from '../components/Dashboard/DashboardPoints';
-import TransactionListEntry from '../components/Dashboard/TransactionListEntry';
-import EventListEntry from '../components/Dashboard/EventListEntry';
-import PromotionListEntry from '../components/Dashboard/PromotionListEntry';
-import RedemptionListEntry from '../components/Dashboard/RedemptionListEntry';
+import DashboardPoints from '../components/dashboard/DashboardPoints';
+import TransactionListEntry from '../components/dashboard/TransactionListEntry';
+import EventListEntry from '../components/dashboard/EventListEntry';
+import PromotionListEntry from '../components/dashboard/PromotionListEntry';
+import RedemptionListEntry from '../components/dashboard/RedemptionListEntry';
 
 interface EventData {
   id: string;

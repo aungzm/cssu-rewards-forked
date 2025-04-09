@@ -277,7 +277,7 @@ export default function EventsPage() {
   };
 
   const handleEditClick = (eventId: number) => {
-    window.location.href = `/events/edit/${eventId}`;
+    window.location.href = `/edit/events/${eventId}`;
   };
 
   const handleRsvpToggle = useCallback(
