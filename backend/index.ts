@@ -90,7 +90,6 @@ if (nodeEnv === 'production') {
 }
 
 // Mount Routers
-// Routes should come AFTER general middleware like cors() and express.json()
 app.use("/users", userRoutes);
 app.use("/auth", authRoutes);
 app.use("/transactions", transactionRoutes);
