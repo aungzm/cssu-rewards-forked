@@ -158,8 +158,9 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
           startTime: true,
           endTime: true,
           capacity: true,
-          pointsAwarded: (userRole === "MANAGER" || userRole === "SUPERUSER"? true: undefined),
-          pointsRemain: (userRole === "MANAGER" || userRole === "SUPERUSER"? true: undefined),
+          pointsAwarded: (userRole === "MANAGER" || userRole === "SUPERUSER"? true: false),
+          pointsRemain: (userRole === "MANAGER" || userRole === "SUPERUSER"? true: false),
+          published: (userRole === "MANAGER" || userRole === "SUPERUSER"? true: false),
           _count: {
             select: { guests: true },
           },
@@ -177,6 +178,7 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
       pointsAwarded: event.pointsAwarded,
       pointsRemain: event.pointsRemain,
       numGuests: event._count.guests,
+      published: event.published,
     }));
 
     res.status(200).json({
