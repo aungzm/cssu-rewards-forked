@@ -883,6 +883,12 @@ export async function getUserTransactions(
           filter.operatorId = Number(relatedId);
           break;
         // Add other cases if needed
+        case "EVENT":
+          filter.relatedEventId = Number(relatedId);
+          break;
+        case "ADJUSTMENT":
+          filter.relatedId = Number(relatedId);
+          break;
         default:
           break;
       }
@@ -896,9 +902,9 @@ export async function getUserTransactions(
       const amountValue = parseFloat(amount as string);
       if (!isNaN(amountValue)) {
         if (operator === "gte") {
-          filter.points = { gte: amountValue };
+          filter.amount = { gte: amountValue };
         } else if (operator === "lte") {
-          filter.points = { lte: amountValue };
+          filter.amount = { lte: amountValue };
         }
       }
     }
