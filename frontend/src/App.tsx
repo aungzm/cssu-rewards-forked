@@ -11,6 +11,7 @@ import Signup from "./pages/Signup";
 import PromotionsPage from "./pages/Promotions";
 import { isAuthenticated } from "./utils/auth";
 import UserProfile from './pages/UserProfile';
+import EventsPage from "./pages/Events"
 function App() {
   return (
     <Router>
@@ -32,6 +33,7 @@ function App() {
           {/* Add other protected routes here */}
           {/* e.g., <Route path="/profile" element={<ProfilePage />} /> */}
           <Route path="/promotions" element={<PromotionsPage />} />
+          <Route path="/events" element={<EventsPage />} />
         </Route>
 
         {/* Default route */}
