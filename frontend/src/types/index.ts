@@ -29,7 +29,7 @@ export interface EventDetails {
     startTime: string;
     endTime: string;
     capacity: number | null; // null means unlimited capacity
-    pointsRemain?: number;
+    pointsRemain?: number | null;
     pointsAwarded?: number;
     published?: boolean;
     organizers: Organizer[];
@@ -44,6 +44,7 @@ export interface Organizer {
 }
 
 export interface Guest {
+
     id: number;
     utorid: string;
     name: string;

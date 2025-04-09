@@ -31,7 +31,7 @@ export default function EventDetailsPage() {
   const [activeTabIndex, setActiveTabIndex] = useState(0);
 
   // Determine if the current user is a manager or superuser
-  const isManager =
+  const isManagerOrHigher =
     userData?.role === "MANAGER" || userData?.role === "SUPERUSER";
 
   // Fetch event data
@@ -102,7 +102,7 @@ export default function EventDetailsPage() {
   // Callback function for child components to update the event state
   // Implements optimistic updates
   const handleEventUpdate = (updatedEvent: EventDetails) => {
-    console.log("Event updated:", updatedEvent);
+    console.log("Updated event data:", updatedEvent);
     setEvent(updatedEvent);
   };
 
@@ -168,7 +168,7 @@ export default function EventDetailsPage() {
           </button>
         </div>
 
-        {/* Event Summary Card - Optimistically updated */}
+        {/* Event Summary Card */}
         <div className="mb-6 flex flex-row justify-between gap-4 rounded-lg bg-white p-6 shadow dark:bg-gray-800">
           {/* Date */}
           <div className="flex flex-col">
@@ -272,7 +272,7 @@ export default function EventDetailsPage() {
                 <EventDetailsTab
                   event={event}
                   onEventUpdate={handleEventUpdate}
-                  isManager={isManager}
+                  isManagerOrHigher={isManagerOrHigher}
                 />
               </TabPanel>
               {/* Panel for Attendees */}
@@ -280,7 +280,7 @@ export default function EventDetailsPage() {
                 <AttendeesList
                   event={event}
                   onEventUpdate={handleEventUpdate}
-                  isManager={isManager}
+                  isManager={isManagerOrHigher}
                   isOrganizer={isOrganizer}
                 />
               </TabPanel>
@@ -289,7 +289,7 @@ export default function EventDetailsPage() {
                 <OrganizersTab
                   event={event}
                   onEventUpdate={handleEventUpdate}
-                  isManager={isManager}
+                  isManager={isManagerOrHigher}
                 />
               </TabPanel>
             </TabPanels>
