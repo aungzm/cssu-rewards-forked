@@ -1,11 +1,11 @@
 import express, { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import multer from "multer";
-import { authenticateToken } from "../middlewares/authenticateToken";
+import { authenticateToken } from "../middlewares/authenticateToken.js";
 import {
   requireCashierOrHigher,
   requireManagerOrHigher,
-} from "../middlewares/authMiddleware";
+} from "../middlewares/authMiddleware.js";
 import {
   createUser,
   getUsers,
@@ -15,12 +15,12 @@ import {
   updateCurrentUser,
   updateCurrentUserPassword,
   getMyOrganizedEvents,
-} from "../controllers/userController";
+} from "../controllers/userController.js";
 import {
   createTransferTransaction,
   createRedemptionTransaction,
   getUserTransactions,
-} from "../controllers/transactionController";
+} from "../controllers/transactionController.js";
 import cors from "cors";
 const router = express.Router();
 const storage = multer.memoryStorage();
