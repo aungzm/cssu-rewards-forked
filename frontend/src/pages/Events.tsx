@@ -11,6 +11,7 @@ import { fetchWithAuth } from '../utils/authHelper';
 import { useDebounce } from '../hooks/useDebounce';
 import { useUser } from '../context/UserContext';
 import EventsCard from '../components/event/eventCard';
+import EventDetailsModal from '../components/event/eventDetailsModal';
 
 
 
@@ -21,7 +22,8 @@ export interface Event {
   startTime: string;
   endTime: string;
   location: string;
-  capacity: string;
+  numGuests: number;
+  capacity: number;
   pointsRemain: number;
   pointsAwarded: number;
   published: boolean;
@@ -54,6 +56,10 @@ export default function EventsPage() {
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<EventFilters>({});
   const debouncedFilters = useDebounce(filters, 500);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingEvent, setViewingEvent] = useState<Event | null>(
+    null,
+  );
   
   const observerTarget = useRef<HTMLDivElement | null>(null);
     const hasMore = useMemo(() => {
@@ -162,6 +168,16 @@ export default function EventsPage() {
     error,
   ]);
 
+  const handleOpenViewModal = (event: Event) => {
+      setViewingEvent(event);
+      setIsViewModalOpen(true);
+    };
+  
+    const handleCloseViewModal = () => {
+      setIsViewModalOpen(false);
+      setViewingEvent(null); // Clear data on close
+    };
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -185,7 +201,7 @@ export default function EventsPage() {
   }, [loadMoreItems, isLoadingMore]);
   return (
     <div className="min-h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
-      <Navbar activeLink="Promotions" />
+      <Navbar activeLink="Events" />
 
       <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-16 ">
         {/* Sticky Header */}
@@ -225,7 +241,7 @@ export default function EventsPage() {
           </div>
         )}
 
-        {/* Promotion Grid */}
+        {/* Event Grid */}
         {!isLoading && !error && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {events.map((event) => (
@@ -234,7 +250,7 @@ export default function EventsPage() {
                 {...event}
                 endTime={event.endTime ?? undefined}
                 onEdit={() =>{}}
-                onClick={() => {}}
+                onClick={() => {handleOpenViewModal(event)}}
               />
             ))}
           </div>
@@ -261,6 +277,13 @@ export default function EventsPage() {
           )}
         </div>
       </div>
+
+      <EventDetailsModal
+        isOpen={isViewModalOpen}
+        onClose={handleCloseViewModal}
+        event={viewingEvent}
+        onEdit={() => {}}
+      />
 
     </div>
 

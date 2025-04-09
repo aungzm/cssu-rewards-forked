@@ -154,6 +154,7 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
         select: {
           id: true,
           name: true,
+          description: true,
           location: true,
           startTime: true,
           endTime: true,
@@ -164,10 +165,10 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
         },
       }),
     ]);
-
     const results = events.map((event) => ({
       id: event.id,
       name: event.name,
+      description: event.description,
       location: event.location,
       startTime: event.startTime,
       endTime: event.endTime,
