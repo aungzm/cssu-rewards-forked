@@ -1,4 +1,3 @@
-// src/pages/UserManagement.tsx
 import React, {
   useState,
   useEffect,
@@ -15,13 +14,17 @@ import AddUserModal from "../components/userManagment/AddUserModal";
 import EditUserModal from "../components/userManagment/EditUserModal";
 import ViewUserModal from "../components/userManagment/ViewUserModal";
 import Navbar from "../components/Navbar";
-import { Plus, Search, Loader2 } from "lucide-react";
-import { useDebounce } from "../hooks/useDebounce";
+import FilterDropdown, {
+  UserManagementFilters,
+  defaultUserManagementFilters,
+} from "../components/userManagment/UserFilterDropDown"; 
+import { Plus, Loader2, Search } from "lucide-react"; 
+import { useDebounce } from "../hooks/useDebounce"; 
 
 // This reflects that Cashiers get fewer fields in the LIST view
 type FetchedUser = Partial<UserData> &
   Pick<UserData, "id" | "name" | "verified"> & {
-    email?: string; // Email might be present depending on backend logic for list
+    email?: string; // Only for Manager/Superuser
     avatarUrl?: string;
     activated?: boolean; // Only for Manager/Superuser
     birthdate?: string; // Only for Manager/Superuser
@@ -40,16 +43,21 @@ const UserManagement: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  // State variables (isLoading, isInitialLoading, error, filters, modalState, refs)
+  // State variables (isLoading, isInitialLoading, error, modalState, refs)
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [verifiedFilter, setVerifiedFilter] = useState<string>("all");
-  const [activatedFilter, setActivatedFilter] = useState<string>("all");
   const ITEMS_PER_PAGE = 10;
+
+  // Search State 
+  const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Dropdown Filter State uses the imported type
+  const [filters, setFilters] = useState<UserManagementFilters>(
+    defaultUserManagementFilters,
+  );
+
   const [modalState, setModalState] = useState<{
     type: "add" | "edit" | "view" | null;
     user: FetchedUser | null; // Use FetchedUser here too
@@ -57,30 +65,26 @@ const UserManagement: React.FC = () => {
   const observer = useRef<IntersectionObserver | null>(null);
   const loaderRef = useRef<HTMLDivElement | null>(null);
 
+  // Update queryParams
   const queryParams = useMemo(() => {
     const params = new URLSearchParams();
     params.append("page", page.toString());
     params.append("limit", ITEMS_PER_PAGE.toString());
-    if (debouncedSearchTerm) params.append("name", debouncedSearchTerm); // Backend searches 'name'
-    if (roleFilter !== "all") params.append("role", roleFilter);
-    if (verifiedFilter !== "all") params.append("verified", verifiedFilter);
-    // Only include activated filter if user is Manager/Superuser, as Cashiers don't get this field in list
+    // Use debouncedSearchTerm for name
+    if (debouncedSearchTerm) params.append("name", debouncedSearchTerm);
+    // Use filters state for dropdown values
+    if (filters.role !== "all") params.append("role", filters.role);
+    if (filters.verified !== "all") params.append("verified", filters.verified);
+    // Only include activated filter if user is Manager/Superuser
     if (
-      activatedFilter !== "all" &&
+      filters.activated !== "all" &&
       currentUser &&
       ["MANAGER", "SUPERUSER"].includes(currentUser.role)
     ) {
-      params.append("activated", activatedFilter);
+      params.append("activated", filters.activated);
     }
     return params;
-  }, [
-    page,
-    debouncedSearchTerm,
-    roleFilter,
-    verifiedFilter,
-    activatedFilter,
-    currentUser,
-  ]);
+  }, [page, debouncedSearchTerm, filters, currentUser]); // debounced user search
 
   const fetchUsers = useCallback(
     async (reset = false) => {
@@ -104,7 +108,7 @@ const UserManagement: React.FC = () => {
             `Failed to fetch users: ${response.status} ${response.statusText}`,
           );
         }
-        // Explicitly type the expected response structure
+        // Explicitly typing the response data
         const data: { count: number; results: FetchedUser[] } =
           await response.json();
         console.log("Fetched users data:", data);
@@ -147,7 +151,7 @@ const UserManagement: React.FC = () => {
       currentUser &&
       ["CASHIER", "MANAGER", "SUPERUSER"].includes(currentUser.role)
     ) {
-      setPage(1); // Reset page to 1 when filters change
+      setPage(1); // Reset page to 1 when filters or search change
       setHasMore(true);
       fetchUsers(true); // Reset users list
     } else if (
@@ -160,14 +164,7 @@ const UserManagement: React.FC = () => {
       setHasMore(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    debouncedSearchTerm,
-    roleFilter,
-    verifiedFilter,
-    activatedFilter,
-    currentUser, // Ensure currentUser is a dependency
-    isUserLoading,
-  ]);
+  }, [debouncedSearchTerm, filters, currentUser, isUserLoading]); // Add debouncedSearchTerm 
 
   // Effect for Intersection Observer (infinite scroll)
   useEffect(() => {
@@ -193,27 +190,26 @@ const UserManagement: React.FC = () => {
       observer.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, hasMore, isInitialLoading]); // Dependencies seem correct
+  }, [isLoading, hasMore, isInitialLoading]);
 
   // Effect to fetch data when page changes (after initial mount)
   useEffect(() => {
-    // Only fetch if page > 1 and not during the initial load triggered by filter changes
+    // Only fetch if page > 1 and not during the initial load triggered by filter/search changes
     if (page > 1 && !isInitialLoading) {
       fetchUsers(false); // Fetch next page, don't reset
     }
-    // fetchUsers is memoized by queryParams, page change updates queryParams
   }, [page, isInitialLoading, fetchUsers]);
 
-  // Event handlers (handleSearchChange, handleFilterChange, handleOpenModal, handleCloseModal, handleSuccess)
+  // Event handlers
+  // Handler for the search input
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
 
-  const handleFilterChange = (
-    event: React.ChangeEvent<HTMLSelectElement>,
-    setter: React.Dispatch<React.SetStateAction<string>>,
-  ) => {
-    setter(event.target.value);
+  // Handler for the FilterDropdown component (accepts updated type)
+  const handleApplyFilters = (newFilters: UserManagementFilters) => {
+    setFilters(newFilters);
+    // Page reset is handled by the useEffect hook that depends on 'filters'
   };
 
   const handleOpenModal = (
@@ -242,7 +238,6 @@ const UserManagement: React.FC = () => {
     fetchUsers(true); // Refetch and reset the list
   };
 
-  
   const canAddUsers =
     currentUser?.role === "CASHIER" ||
     currentUser?.role === "MANAGER" ||
@@ -278,26 +273,17 @@ const UserManagement: React.FC = () => {
       <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
         {/* Main content card */}
         <div className="bg-white dark:bg-gray-800 px-4 py-5 shadow sm:rounded-lg sm:p-6">
-          {/* Header Section: Title and Add Button */}
-          <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          {/* Header Section: Title */}
+          <div className="mb-4 border-b border-gray-200 pb-4 dark:border-gray-700">
             <h2 className="text-xl font-semibold leading-6 text-gray-900 dark:text-white">
               User Management ({totalUsers})
             </h2>
-            {canAddUsers && (
-              <button
-                onClick={() => handleOpenModal("add")}
-                className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 whitespace-nowrap"
-              >
-                <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                Add New User
-              </button>
-            )}
           </div>
 
-          {/* Filters Section */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {/* Controls Section: Search, Filters, Add Button */}
+          <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             {/* Search Input */}
-            <div className="relative">
+            <div className="relative w-full sm:max-w-xs">
               <label htmlFor="search-users" className="sr-only">
                 Search Users
               </label>
@@ -307,8 +293,8 @@ const UserManagement: React.FC = () => {
                 value={searchTerm}
                 onChange={handleSearchChange}
                 placeholder="Search by name..."
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 py-2 px-3 pr-10" // Added padding
-                aria-label="Search users"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 py-2 px-3 pr-10"
+                aria-label="Search users by name"
               />
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                 <Search
@@ -318,64 +304,23 @@ const UserManagement: React.FC = () => {
               </div>
             </div>
 
-            {/* Role Filter */}
-            {(currentUser.role === "MANAGER" ||
-              currentUser.role === "SUPERUSER") && (
-            <div>
-              <label htmlFor="roleFilter" className="sr-only">
-                Filter by Role
-              </label>
-              <select
-                id="roleFilter"
-                value={roleFilter}
-                onChange={(e) => handleFilterChange(e, setRoleFilter)}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 pl-3 pr-10" // Consistent styling
-              >
-                <option value="all">All Roles</option>
-                <option value="REGULAR">Regular</option>
-                <option value="CASHIER">Cashier</option>
-                <option value="MANAGER">Manager</option>
-                <option value="SUPERUSER">Superuser</option>
-              </select>
-            </div>)}
-
-            {/* Verified Filter */}
-            
-              <div>
-                <label htmlFor="verifiedFilter" className="sr-only">
-                  Filter by Verified Status
-                </label>
-                <select
-                  id="verifiedFilter"
-                  value={verifiedFilter}
-                  onChange={(e) => handleFilterChange(e, setVerifiedFilter)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 pl-3 pr-10" // Consistent styling
+            {/* Filter Dropdown and Add Button */}
+            <div className="flex items-center gap-3">
+              <FilterDropdown
+                activeFilters={filters} // Pass the dropdown-specific filters
+                onApplyFilters={handleApplyFilters}
+                currentUserRole={currentUser?.role}
+              />
+              {canAddUsers && (
+                <button
+                  onClick={() => handleOpenModal("add")}
+                  className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 whitespace-nowrap"
                 >
-                  <option value="all">Any Verified Status</option>
-                  <option value="true">Verified</option>
-                  <option value="false">Unverified</option>
-                </select>
-              </div>
-
-            {/* Activated Filter (Manager/Superuser only) */}
-            {(currentUser.role === "MANAGER" ||
-              currentUser.role === "SUPERUSER") && (
-              <div>
-                <label htmlFor="activatedFilter" className="sr-only">
-                  Filter by Activated Status
-                </label>
-                <select
-                  id="activatedFilter"
-                  value={activatedFilter}
-                  onChange={(e) => handleFilterChange(e, setActivatedFilter)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 pl-3 pr-10" // Consistent styling
-                >
-                  <option value="all">Any Activated Status</option>
-                  <option value="true">Activated</option>
-                  <option value="false">Not Activated</option>
-                </select>
-              </div>
-            )}
+                  <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                  Add User
+                </button>
+              )}
+            </div>
           </div>
 
           {/* User Table Area */}
@@ -420,7 +365,7 @@ const UserManagement: React.FC = () => {
           isOpen={modalState.type === "edit"}
           onClose={handleCloseModal}
           onSuccess={handleSuccess}
-          user={modalState.user as UserData} // Assuming Edit needs full data
+          user={modalState.user as UserData} // Edit needs full data as input
         />
       )}
       {modalState.type === "view" && modalState.user && (
