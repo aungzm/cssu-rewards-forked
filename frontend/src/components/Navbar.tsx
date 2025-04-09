@@ -35,12 +35,12 @@ interface NavbarProps {
 const navLinks: NavLink[] = [
   { name: "Dashboard", href: "/dashboard" },
   {
-    name: "Points ",
+    name: "Points",
     href: "#",
     hasDropdown: true,
     dropdownItems: [
-      { name: "Create Transactions", href: "#" }, // Transfer points, Redeem points and Create Purchase transaction
-      { name: "Transaction history", href: "#" }, // Has current balance as well 
+      { name: "Create Transactions", href: "#" },
+      { name: "Transaction History", href: "#" },
     ],
   },
   { name: "Promotions", href: "/promotions" },
@@ -56,8 +56,8 @@ const navLinks: NavLink[] = [
   {
     name: "Role Management",
     href: "user-management",
-    requiredRoles: ["MANAGER", "SUPERUSER", "CASHIER"],
-  },
+    requiredRoles: ["MANAGER", "SUPERUSER"],
+  }
 ];
 
 // Helper Function for Role Check
@@ -79,15 +79,22 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
   const renderAvatar = () => {
     return (
       <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-        {userData?.avatarUrl ? (
-          // If URL exists, use it
+        {userData?.avatar ? (
+          // If a base64 encoded avatar exists, display it
           <div
-            className="w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: `url(${userData.avatarUrl})` }}
-            aria-label={`${userData.utorid}'s avatar`} 
+        className="w-full h-full bg-cover bg-center"
+        style={{ backgroundImage: `url(data:image/png;base64,${userData.avatar})` }}
+        aria-label={`${userData.utorid}'s avatar`}
+          ></div>
+        ) : userData?.avatarUrl ? (
+          // Otherwise, use the avatar URL if available
+          <div
+        className="w-full h-full bg-cover bg-center"
+        style={{ backgroundImage: `url(${userData.avatarUrl})` }}
+        aria-label={`${userData.utorid}'s avatar`}
           ></div>
         ) : (
-          // Otherwise, render the icon component
+          // Fallback to icon component
           <User size={20} aria-label="Default user avatar" />
         )}
       </div>
@@ -213,7 +220,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
               className="absolute left-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-10"
               >
               <a
-                href="#profile" // Replace with actual profile link/route
+                href="/profile" // Replace with actual profile link/route
                 className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
               >
                 Profile Details

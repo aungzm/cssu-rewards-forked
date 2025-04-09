@@ -10,6 +10,7 @@ type FetchedUser = Partial<UserData> &
     email?: string;
     avatarUrl?: string;
     activated?: boolean;
+    avatar?: string;
   };
 
 interface UserTableRowProps {
@@ -46,11 +47,11 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
       <td className="whitespace-nowrap px-6 py-4">
         <div className="flex items-center">
           <div className="mr-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300">
-            {user.avatarUrl ? (
+            {user.avatar ? (
               <img
-                className="h-10 w-10 rounded-full object-cover" 
-                src={user.avatarUrl}
-                alt={user.name ?? "User avatar"} // Use nullish coalescing
+              className="h-10 w-10 rounded-full object-cover"
+              src={`data:image/png;base64,${user.avatar}`}
+              alt={user.name ?? "User avatar"}
               />
             ) : (
               <User size={24} />

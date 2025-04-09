@@ -32,6 +32,7 @@ type FetchedUser = Partial<UserData> &
     updatedAt?: string; // Only for Manager/Superuser
     lastLogin?: string; // Only for Manager/Superuser
     utorid?: string; // Only for Manager/Superuser
+    avatar?: string;
   };
 
 const UserManagement: React.FC = () => {

@@ -8,6 +8,7 @@ type FetchedUser = Partial<UserData> &
     utorid?: string;
     email?: string;
     avatarUrl?: string;
+    avatar?: string;
   };
 
 interface UserTableProps {
