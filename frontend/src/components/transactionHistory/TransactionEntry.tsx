@@ -62,6 +62,7 @@ const TransactionEntry: React.FC<TransactionEntryProps> = ({
                 {/* Print out title based on type*/}
                 {transaction.type === "purchase" && <p> Purchased Item </p>}
                 {transaction.type === "adjustment" && <p> Adjusted by Manager </p>}
+                {transaction.type === "redemption" && <p> Redeemed Points </p>}
                 {/* {transaction.type === "redemption" && <button className="hover:underline" onClick={handleRedemptionClick}> Redeemed Points </button>} */}
                 {transaction.type === "transfer" &&  transaction.amount > 0 && <p> Received Points from Transfer</p>}
                 {transaction.type === "transfer" &&  transaction.amount < 0 && <p> Sent Points in Transfer </p>}

@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from 'react';
+import React, { use, useEffect, useMemo, useState } from 'react';
 import { fetchWithAuth } from '../../utils/authHelper';
 import { API_BASE_URL } from '../../utils/auth';
 
@@ -9,7 +9,7 @@ interface TransactionFilterSortProps {
         type: string;
         amount: number;
         suspicious: boolean;
-        createdAt: string | null;
+        createdAt: string;
         operatorId: number | null;
     }[];
     setTransactions: Function;
@@ -19,8 +19,8 @@ type operatorType = "gte" | "lte";
 
 type SortOption =
   | 'default'
-  | 'nameAsc'
-  | 'nameDesc'
+  | 'typeAsc'
+  | 'typeDesc'
   | 'dateNewest'
   | 'dateOldest'
   | 'amountHighest'
@@ -112,8 +112,33 @@ transactions, setTransactions}) => {
         return -1;
     }
 
+    // Function to sort the transactions based on the selected option
+    const sortTransaction = useMemo(() => {
+        console.log("Sorting transactions", sortOption);
+        const sortedTransactions = [...transactions];
+        sortedTransactions.sort((a, b) => {
+            switch (sortOption) {
+                case 'typeAsc':
+                    return a.type.localeCompare(b.type);
+                case 'typeDesc':
+                    return b.type.localeCompare(a.type);
+                case 'dateNewest':
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                case 'dateOldest':
+                    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                case 'amountHighest':
+                    return b.amount - a.amount;
+                case 'amountLowest':
+                    return a.amount - b.amount;
+                default:
+                    return 0;
+            }
+        });
+        setTransactions(sortedTransactions);
+    }, [transactions, sortOption]);
+
     return (
-        <div className='bg-white shadow-md rounded-lg p-6 my-4  w-full flex flex-row gap-2'>
+        <div className='bg-white shadow-md rounded-lg p-6 my-4 w-full flex flex-row gap-2'>
 
             {/* Type */}
             <div className='flex flex-col w-1/6'>
@@ -194,13 +219,13 @@ transactions, setTransactions}) => {
             </div>
 
             <button 
-                className='bg-blue-500 text-white rounded py-2 px-4 mt-6'
+                className='bg-blue-500 text-white rounded py-2 px-2 mt-6'
                 onClick={() => setFiltering(true)}>
                     Filter
             </button>
 
             <button
-                className='bg-gray-500 text-white rounded py-2 px-4 mt-6'
+                className='bg-gray-500 text-white rounded py-2 px-2 mt-6'
                 onClick={resetFilters}>
                     Reset
             </button>
@@ -208,7 +233,7 @@ transactions, setTransactions}) => {
             {/* Sort */}
             <select value={sortOption}
              onChange={(e) => setSortOption(e.target.value as SortOption)} 
-             className='border rounded p-2 mt-6'>
+             className='border rounded p-2 mt-6 w-1/6'>
                 
                 <option value="default">Sort by Default</option>
                 <option value="nameAsc">Name (A-Z)</option>
@@ -217,7 +242,7 @@ transactions, setTransactions}) => {
                 <option value="dateOldest">Creation Date (Oldest)</option>
                 <option value="amountHighest">Points (Highest)</option>
                 <option value="amountLowest">Points (Lowest)</option>
-                
+
             </select>
         </div>
     )
