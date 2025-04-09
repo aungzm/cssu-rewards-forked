@@ -270,7 +270,7 @@ const UserManagement: React.FC = () => {
   return (
     <>
       <Navbar activeLink="user-management" />
-      <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+      <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto dark:bg-gray-900 min-h-screen">
         {/* Main content card */}
         <div className="bg-white dark:bg-gray-800 px-4 py-5 shadow sm:rounded-lg sm:p-6">
           {/* Header Section: Title */}
@@ -283,7 +283,7 @@ const UserManagement: React.FC = () => {
           {/* Controls Section: Search, Filters, Add Button */}
           <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             {/* Search Input */}
-            <div className="relative w-full sm:max-w-xs">
+            <div className="relative w-full sm:max-w-xs rounded border border-gray-400">
               <label htmlFor="search-users" className="sr-only">
                 Search Users
               </label>
@@ -296,9 +296,9 @@ const UserManagement: React.FC = () => {
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 py-2 px-3 pr-10"
                 aria-label="Search users by name"
               />
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 bg-">
                 <Search
-                  className="h-5 w-5 text-gray-400 dark:text-gray-500"
+                  className="h-5 w-5 text-gray-400 dark:text-gray-500 "
                   aria-hidden="true"
                 />
               </div>

@@ -45,7 +45,7 @@ const UserTable: React.FC<UserTableProps> = ({
   return (
     <div className="overflow-x-auto max-h-[70vh] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-md">
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
+        <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-1">
           <tr>
             <th
               scope="col"
