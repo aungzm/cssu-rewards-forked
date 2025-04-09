@@ -883,6 +883,12 @@ export async function getUserTransactions(
           filter.operatorId = Number(relatedId);
           break;
         // Add other cases if needed
+        case "EVENT":
+          filter.relatedEventId = Number(relatedId);
+          break;
+        case "ADJUSTMENT":
+          filter.relatedId = Number(relatedId);
+          break;
         default:
           break;
       }
