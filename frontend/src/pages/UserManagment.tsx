@@ -366,7 +366,7 @@ const UserManagement: React.FC = () => {
           isOpen={modalState.type === "edit"}
           onClose={handleCloseModal}
           onSuccess={handleSuccess}
-          user={modalState.user as UserData} // Edit needs full data as input
+          userId={modalState.user.id as number}
         />
       )}
       {modalState.type === "view" && modalState.user && (

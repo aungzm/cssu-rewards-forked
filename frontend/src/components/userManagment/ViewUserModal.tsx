@@ -5,6 +5,7 @@ import { API_BASE_URL } from '../../utils/auth';
 import { User as UserIcon, X, Loader2 } from 'lucide-react';
 
 interface DetailedUserData extends UserData {
+  suspicious?: boolean;
   promotions?: Array<{
     id: number;
     name: string;
@@ -134,6 +135,12 @@ const ViewUserModal: React.FC<ViewUserInfoModalProps> = ({
                   {detailedUser.verified ? 'True' : 'False'}
                 </p>
                 {/* Conditionally display fields based on availability (depends on fetching user's role) */}
+                {detailedUser.suspicious && (
+                  <p>
+                    <span className="font-medium text-gray-600">Suspicious:</span>{' '}
+                    {detailedUser.suspicious ? 'True' : 'False'}
+                  </p>
+                )}
                 {detailedUser.email && (
                   <p>
                     <span className="font-medium text-gray-600">Email:</span>{' '}
@@ -162,6 +169,7 @@ const ViewUserModal: React.FC<ViewUserInfoModalProps> = ({
                     {new Date(detailedUser.lastLogin).toLocaleString()}
                   </p>
                 )}
+                
               </div>
             </div>
 
