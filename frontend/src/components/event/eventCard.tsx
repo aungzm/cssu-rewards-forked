@@ -1,7 +1,10 @@
 import React from 'react';
-import { Pencil, MapPin, Clock } from 'lucide-react'; // Assuming you use lucide-react
+import { Pencil, MapPin, Clock, User } from 'lucide-react'; // Assuming you use lucide-react
 import { useUser } from '../../context/UserContext';
-
+import { fetchWithAuth } from '../../utils/authHelper';
+import { API_BASE_URL } from '../../utils/auth';
+import { EventRole } from '../../pages/Events'; 
+import { useState } from 'react';
 interface EventCardProps {
   id: number;
   name: string;
@@ -14,6 +17,7 @@ interface EventCardProps {
   pointsRemain: number;
   pointsAwarded: number;
   published: boolean;
+  type?: EventRole;
   onClick: () => void;
   onEdit: () => void;
 }
@@ -32,7 +36,9 @@ export default function EventsCard({
   published,
   onClick,
   onEdit,
+  type, // type of event related permission this user has ()
 } : EventCardProps) {
+  const [eventRole, setEventRole] = useState(type);
   // Format date to display "Month Day, Year"
   const formatDate = (dateString: string,timeOnly=false): string => {
     const date: Date = new Date(dateString);
@@ -59,10 +65,35 @@ export default function EventsCard({
   } else {
     tagColorClass='bg-green-400'
   }
+  const handleRsvpClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fetchWithAuth(`${API_BASE_URL}/events/${id}/guests/me`, {
+      method: "POST"
+    }).then((res)=>{
+      if (res.status===201) {
+        setEventRole(EventRole.GUEST)
+      } else if (res.status===410) {
+        alert("Event has ended or is full"); 
+      } else if (res.status===409) {
+        alert("You have already RSVPed to this event");
+      } else if (res.status===400) {
+        alert("You are an organizer for this event");
+      } else {
+        alert("something went wrong, you are not RSVPed to this event")
+      }
+    })
+  }
   const handleEditClick = (e: React.MouseEvent) => {
       e.stopPropagation(); // Stops click from bubbling up to the card
       onEdit();
     };
+  const isDisabled = (
+    new Date(endTime)<new Date() || 
+    type===EventRole.GUEST || 
+    eventRole===EventRole.GUEST||
+    type === EventRole.ORGANIZER || 
+    eventRole===EventRole.ORGANIZER||
+    (capacity && capacity<=numGuests))//a bunch of checks to confirm whether or not the RSVP should be disabled
   return (
     <div
       onClick={onClick}
@@ -108,7 +139,7 @@ export default function EventsCard({
           {/* Description */}
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
             {description.length > 30
-              ? description.substring(0, 200) + '...'
+              ? description.substring(0, 50) + '...'
               : description}
           </p>
           {/* Date Info */}
@@ -117,12 +148,26 @@ export default function EventsCard({
               <span className="ml-1">{formatDate(startTime,true)} - </span>
               <span className="ml-1">{formatDate(startTime)===formatDate(endTime)? "": formatDate(endTime)} {formatDate(endTime,true)}</span>
           </div>
-          
-
         </div>
         {/* Footer Info */}
+        
         <div className="flex items-end justify-between pt-3">
+          {currentUserRole==="MANAGER" || currentUserRole==="SUPERUSER"? 
+          <div className="mt-3 text-xs flex items-center text-gray-600 dark:text-gray-300">
+              points remain: {pointsRemain}<br></br>points awarded: {pointsAwarded}
+          </div>: <div></div>}
           
+          {isDisabled ?
+          <button className="bg-gray-400 py-2 px-4 rounded-md text-white" onClick={(e)=>{handleRsvpClick(e)}} disabled>
+            {type===EventRole.GUEST || 
+              eventRole===EventRole.GUEST||
+              type === EventRole.ORGANIZER || 
+              eventRole===EventRole.ORGANIZER?
+              "RSVPed": "RSVP"}
+          </button>:
+          <button className="bg-[#0063C6] py-2 px-4 rounded-md text-white" onClick={(e)=>{handleRsvpClick(e)}}>
+            RSVP
+          </button>}
         </div>
       </div>
     </div>

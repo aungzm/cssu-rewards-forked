@@ -13,7 +13,10 @@ import { useUser } from '../context/UserContext';
 import EventsCard from '../components/event/eventCard';
 import EventDetailsModal from '../components/event/eventDetailsModal';
 
-
+export enum EventRole {
+  GUEST,
+  ORGANIZER,
+}
 
 export interface Event {
   id: number;
@@ -45,6 +48,7 @@ interface EventFilters {
 const ITEMS_PER_PAGE = 12;
 
 export default function EventsPage() {
+  const [userEvents,setUserEvents] = useState<number[]>([])
   const stickyHeaderTopOffset = 'top-14'; // Or Navbar's height
   const user = useUser();
   const [events, setEvents] = useState<Event[]>([]);
@@ -66,7 +70,6 @@ export default function EventsPage() {
       return !error && events.length < totalCount;
     }, [events.length, totalCount, error]);
 
-  
   const fetchEvents = useCallback(
     async (
       page: number,
@@ -199,6 +202,27 @@ export default function EventsPage() {
       }
     };
   }, [loadMoreItems, isLoadingMore]);
+
+  useEffect(()=> {
+    let eventIds=[] as number[]
+    const fetchUserGuestEvents = fetchWithAuth(`${API_BASE_URL}/users/me/events/guest`)
+    .then((res)=>res.json()).then((data) => {
+    data.results.map((event: { eventId: number; })=>{eventIds.push(event.eventId) });
+      
+    });
+    const fetchUserOrganizerEvents = fetchWithAuth(`${API_BASE_URL}/users/me/events`)
+    .then((res)=>res.json()).then((data) => {
+      data.results.map((event: { event: { id: number; }; })=>{eventIds.push(event.event.id)});
+    });
+    Promise.all([fetchUserGuestEvents, fetchUserOrganizerEvents])
+    .then(() => {
+      setUserEvents(eventIds); 
+    })
+    .catch((error) => {
+      console.error("Error fetching events:", error);
+    });
+    setUserEvents(eventIds);
+  }, [])
   return (
     <div className="min-h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
       <Navbar activeLink="Events" />
@@ -245,12 +269,14 @@ export default function EventsPage() {
         {!isLoading && !error && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {events.map((event) => (
+
               <EventsCard
                 key={event.id}
                 {...event}
                 endTime={event.endTime ?? undefined}
                 onEdit={() =>{}}
                 onClick={() => {handleOpenViewModal(event)}}
+                type={(userEvents.includes(event.id)? EventRole.GUEST: undefined)}
               />
             ))}
           </div>
