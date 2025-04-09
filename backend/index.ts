@@ -23,6 +23,7 @@ const app: Express = express();
 const allowedOrigins = [
   'https://cssu-rewards.vercel.app', // Your Vercel frontend URL
   'http://localhost:5173', // Default Vite dev port 
+  'https://frontend-production-9895.up.railway.app' // Railway
 ];
 
 const corsOptions = {
