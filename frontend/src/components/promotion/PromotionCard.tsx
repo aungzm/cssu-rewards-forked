@@ -19,7 +19,6 @@ interface PromotionCardProps {
 
 export default function PromotionsCard({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  id,
   name,
   type,
   startTime,

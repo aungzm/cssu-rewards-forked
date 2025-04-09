@@ -5,8 +5,8 @@ import MyPromotions from "../components/userProfile/MyPromotions";
 import React, { useState } from "react";
 import { User, Pencil } from "lucide-react";
 import { useUser } from "../context/UserContext";
-import { fetchWithAuth } from '../utils/authHelper';
 import { API_BASE_URL } from '../utils/auth';
+import { fetchWithAuth } from "../utils/authHelper";
 const UserProfile: React.FC = () => {
   const { userData } = useUser();
   const [profilePicture, setProfilePicture] = useState<string | null>(
@@ -26,15 +26,13 @@ const UserProfile: React.FC = () => {
         
           const formData = new FormData();
           formData.append("avatar", file);
-          const token = localStorage.getItem('authToken');
           // Send a PATCH request to upload the file
           console.log(formData)
           try {
             // cannot use fetch with auth here, since fetch with auth has application/json set in headers, but this requires multipart/form-data
             // trying to set multipart/form-data will result in not having a default boundary and thus fetch fails
             // backend cors settings allows localhost:5173 (and BASE_API_URL), for PATCH /users/me in order for this to be able to send a file.
-            fetch(`${API_BASE_URL}/users/me`, {
-              headers : {'Authorization': `Bearer ${token}`},
+            fetchWithAuth(`${API_BASE_URL}/users/me`, {
               method: "PATCH",
               body: formData
             }).then((response) => {
