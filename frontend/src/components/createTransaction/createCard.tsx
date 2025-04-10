@@ -53,44 +53,43 @@ const CreateCard: React.FC<CreateCardProps> = (
                 remarks,
                 type,
             }),
-        }).then((res) => {
-            if (!res.ok) {
-                throw new Error("Network response was not ok");
-            }
-            return res.json();
-        }
-        ).then((data) => {
-            console.log(data);
-            alert(`Transaction created successfully!`);
-            setRecipientId(0);
-            setAmount(0);
-            setRemarks("");
         });
+        if (!response.ok) {
+            alert("Transaction creation failed");
+            throw new Error("Network response was not ok");
+        }
+        const data = await response.json();
+        console.log(data);
+        alert(`Transaction created successfully!`);
+        setRecipientId(0);
+        setAmount(0);
+        setRemarks("");
+        
     }
 
     return (
         <>
         <div className=' container bg-white shadow-md rounded-lg p-6 w-1/3 flex flex-col'>
 
-            <h1 className='text-2xl font-bold mb-4'>Create {type} Transaction </h1>
+            <h1 className='text-2xl font-bold 'style={{ color: "#002A5C" }}>Create {type} Transaction </h1>
             {type === "transfer" && (
-                <p>
+                <p className='text-gray-500 mb-4'>
                     Transfer points to another user.
                 </p>
             )}
 
-            {type === "redeem" && (
-                <p>
+            {type === "redemption" && (
+                <p className='text-gray-500 mb-4'>
                     Redeem your points.
                 </p>
             )}
 
-            <div className='flex flex-col items-center'>
+            <div className='flex flex-col '>
 
-                <div className='bg-gray-300 p-4 rounded-md mb-4 border'>
+                <div className=' flex flex-row bg-gray-100 p-4 rounded-md mb-4 border justify-between w-full'>
 
                     <p className='text-lg'>Available Points: </p>
-                    <p className='text-lg font-semibold'>{user.points}</p>
+                    <p className='text-lg font-semibold 'style={{ color: "#002A5C" }}>{user.points}</p>
 
                 </div>
 
@@ -138,7 +137,8 @@ const CreateCard: React.FC<CreateCardProps> = (
                 className='bg-blue-500 hover:bg-blue-700 text-white rounded p-2 w-full'
                 onClick={handleSubmit}>
 
-                    Create {type} Transaction
+                    {type === "transfer" && <p>Transfer Points</p>}
+                    {type === "redemption" && <p>Redeem Points</p>}
                 </button>
             </div>
 

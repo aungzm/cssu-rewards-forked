@@ -42,21 +42,21 @@ const RecentTransactionEntry: React.FC<RecentTransactionEntryProps> =
             </div>
 
             {transaction.type === "transfer" && transaction.amount > 0 &&(
-                    <p className="text-green-500">{transaction.amount}</p>
+                    <p className="text-green-500">{transaction.amount} Points</p>
                     
             )}
 
             {transaction.type === "transfer" && transaction.amount < 0 &&(
-                <p className="text-red-500">{transaction.amount}</p>
+                <p className="text-red-500">{transaction.amount} Points</p>
                 
             )}
 
             {transaction.type === "redemption" && transaction.operatorId === null && (
-                <p className="text-gray-500">Pending {transaction.amount} </p>
+                <p className="text-gray-500"> (Pending) {transaction.amount} Points </p>
             )}
 
             {transaction.type === "redemption" && transaction.operatorId !== null && (
-                <p className="text-red-500">Pending {transaction.amount} </p>
+                <p className="text-red-500"> {transaction.amount} Points </p>
             )}
 
         </div>
