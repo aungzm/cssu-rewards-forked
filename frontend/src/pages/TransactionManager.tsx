@@ -68,21 +68,41 @@ const TransactionManager: React.FC = () => {
 	  // Function to handle applying filters by adding them to the url
 	  const handleFilter = async (url: string, currentFilters: FilterOption) => {
   
-		  const { type, relatedId, amount, operator, eventName } = currentFilters;
+        // export interface FilterOption {
+        //     name: string;
+        //     createdBy: string;
+        //     suspicious: boolean | null;
+        //     type: transactionType;
+        //     relatedId: number | null;
+        //     eventName: string;
+        //     amount: number | null;
+        //     operator: operatorType | null;
+        // }
+		  const { type, relatedId, amount, operator, eventName, name, suspicious, createdBy } = currentFilters;
   
-		  if (type !== "") {
-			  url += `type=${type}&`;
-		  }
-  
-		  if (eventName !== "") {
-			  const eventId = await getEventId(eventName);
-			  url += `eventId=${eventId}&`;
-		  } else if (relatedId !== null) {
-			  url += `relatedId=${relatedId}&`;
-		  }
-		  if (amount !== null && operator !== null) {
-			  url += `amount=${amount}&operator=${operator}&`;
-		  }
+        if (type !== "") {
+            url += `type=${type}&`;
+        }
+
+        if (eventName !== "") {
+            const eventId = await getEventId(eventName);
+            url += `eventId=${eventId}&`;
+        } else if (relatedId !== null) {
+            url += `relatedId=${relatedId}&`;
+        }
+        if (amount !== null && operator !== null) {
+            url += `amount=${amount}&operator=${operator}&`;
+        }
+        if (name !== "") {
+            url += `name=${name}&`;
+        }
+        if (createdBy !== "") {
+            url += `createdBy=${createdBy}&`;
+        }
+        if (suspicious !== null) {
+            url += `suspicious=${suspicious}&`;
+        }
+
 		  return url;
 	  }
 	// Function to handle sorting
@@ -300,19 +320,12 @@ const TransactionManager: React.FC = () => {
     return (
     <>        
         <Navbar activeLink="dashboard" />
-        <div className='bg-gray-100 min-h-screen flex flex-col justify-center items-center'>
-
-            <div className="flex flex-col w-2/3 my-10">
-                <h1 className="text-3xl font-bold" style={{ color: "#002A5C" }}>Transaction History</h1>
+        <div className="bg-gray-100 min-h-screen flex flex-col items-center">
+            <div className="flex flex-col w-2/3 mt-10">
+                <h1 className="text-3xl font-bold mb-4" style={{ color: "#002A5C" }}>Transaction History</h1>
 
                 {/* Filters */}
-                <FiltersModal
-                    isOpen={isPopupOpen}
-                    onClose={handleFilersPopupClose}
-                    onSubmit={handleFiltersPopupSubmit}
-                />
-
-                <div className="flex justify-end mt-4">
+                <div className="flex justify-end mb-4">
                     <button
                         className="bg-blue-500 text-white px-8 py-2 rounded-sm"
                         style={{ width: "fit-content" }}
@@ -322,25 +335,37 @@ const TransactionManager: React.FC = () => {
                     </button>
                 </div>
 
-                {/* transaction history items */}
-                <div className="mt-4">
-                    {transactionHistory.map((transaction: Transaction, index: number) => (
-                        <TransactionEntry transaction={transaction} key={index} />
-                    ))}
-                </div>
+                <FiltersModal
+                    isOpen={isPopupOpen}
+                    onClose={handleFilersPopupClose}
+                    onSubmit={handleFiltersPopupSubmit}
+                />
+            </div>
+
+            {/* Transaction History Items */}
+            <div className="flex flex-col w-2/3">
+                {transactionHistory.length > 0 ? (
+                    <div className="mt-4">
+                        {transactionHistory.map((transaction: Transaction, index: number) => (
+                            <TransactionEntry transaction={transaction} key={index} />
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-gray-500 mt-4">No transactions found.</p>
+                )}
             </div>
 
             {/* Infinite Scroll Target & Indicators */}
-        <div ref={observerTarget} className="h-10 py-4 text-center">
-          {loading && (
-            <p className="text-gray-500 dark:text-gray-400">Loading more...</p>
-          )}
-          {!loading && !hasMore && transactionHistory.length > 0 && (
-            <p className="text-gray-500 dark:text-gray-400">
-              No more transactions.
-            </p>
-          )}
-        </div>
+            <div ref={observerTarget} className="h-10 py-4 text-center">
+                {loading && (
+                    <p className="text-gray-500 dark:text-gray-400">Loading more...</p>
+                )}
+                {!loading && !hasMore && transactionHistory.length > 0 && (
+                    <p className="text-gray-500 dark:text-gray-400">
+                        No more transactions.
+                    </p>
+                )}
+            </div>
         </div>
     </>
     );
