@@ -21,7 +21,6 @@ import CreateRedemption from "./pages/CreateRedemption";
 import TransactionManager from "./pages/TransactionManager";
 import CreateTransaction from "./pages/CreateTransaction";
 import ProcessRedemption from "./pages/ProcessRedemption";
-import UserManagment from './pages/UserManagment';
 
 function App() {
   return (
