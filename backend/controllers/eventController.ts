@@ -84,7 +84,7 @@ export async function getEvents(req: AuthenticatedRequest, res: Response): Promi
       location,
       started,
       ended,
-      showAll,
+      showFull,
       page = "1",
       limit = "10",
       published,
@@ -114,7 +114,7 @@ export async function getEvents(req: AuthenticatedRequest, res: Response): Promi
 
     // Filter events by startTime based on query
     if (started !== undefined) {
-      if (started === "true") {
+      if (started) {
         where.startTime = { lte: new Date() };
       } else {
         where.startTime = { gt: new Date() };
@@ -123,7 +123,7 @@ export async function getEvents(req: AuthenticatedRequest, res: Response): Promi
 
     // Filter by ended status
     if (ended !== undefined) {
-      if (ended === "true") {
+      if (ended) {
         where.endTime = { lte: new Date() };
       } else {
         where.endTime = { gt: new Date() };
@@ -141,43 +141,95 @@ export async function getEvents(req: AuthenticatedRequest, res: Response): Promi
     const pageNum = parseInt(page, 10) || 1;
     const pageSize = parseInt(limit, 10) || 10;
     const skip = (pageNum - 1) * pageSize;
-    const skipValue = showAll ? 0 : skip;
-    const takeValue = showAll ? undefined : pageSize;
 
     const currentUserId = (req as any).user?.id;
     const [totalCount, events] = await Promise.all([
       prisma.event.count({ where }),
       prisma.event.findMany({
-      where,
-      orderBy: { startTime: "asc" },
-      skip: skipValue,
-      take: takeValue,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        location: true,
-        startTime: true,
-        endTime: true,
-        capacity: true,
-        pointsAwarded:
-        userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
-        pointsRemain:
-        userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
-        published:
-        userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
-        organizers: {
-        select: { organizerId: true },
+        where,
+        orderBy: { startTime: "asc" },
+        skip, 
+        take: pageSize, 
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          location: true,
+          startTime: true,
+          endTime: true,
+          capacity: true,
+          pointsAwarded:
+            userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
+          pointsRemain:
+            userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
+          published:
+            userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
+          organizers: {
+            select: { organizerId: true },
+          },
+          guests: {
+            select: { userId: true },
+          },
+          _count: {
+            select: { guests: true },
+          },
         },
-        guests: {
-        select: { userId: true },
-        },
-        _count: {
-        select: { guests: true },
-        },
-      },
       }),
     ]);
+
+    const booleanShowFull = Boolean(showFull)
+    if (showFull !== undefined && booleanShowFull){
+      console.log("showFull is true");
+      const fullEvents = events.filter((event) => event.capacity !== null && event.guests.length === event.capacity);
+      const results = fullEvents.map((event) => ({
+        id: event.id,
+        name: event.name,
+        description: event.description,
+        location: event.location,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        capacity: event.capacity,
+        pointsAwarded: event.pointsAwarded,
+        pointsRemain: event.pointsRemain,
+        numGuests: event._count.guests,
+        published: event.published,
+        isOrganizer: event.organizers.some(
+          (org) => org.organizerId === currentUserId
+        ),
+        isGuest: event.guests.some((g) => g.userId === currentUserId),
+      }));
+      res.status(200).json({
+        count: fullEvents.length,
+        results,
+      });
+      return;
+    } else if (showFull !== undefined && booleanShowFull === false) {
+      const nonFullEvents = events.filter((event) => event.capacity === null || event.guests.length < event.capacity);
+      const results = nonFullEvents.map((event) => ({
+        id: event.id,
+        name: event.name,
+        description: event.description,
+        location: event.location,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        capacity: event.capacity,
+        pointsAwarded: event.pointsAwarded,
+        pointsRemain: event.pointsRemain,
+        numGuests: event._count.guests,
+        published: event.published,
+        isOrganizer: event.organizers.some(
+          (org) => org.organizerId === currentUserId
+        ),
+        isGuest: event.guests.some((g) => g.userId === currentUserId),
+      }));
+      res.status(200).json({
+        count: nonFullEvents.length,
+        results,
+      });
+      return;
+    }
+
+    // Default case: return all events regardless of capacity
     const results = events.map((event) => ({
       id: event.id,
       name: event.name,

@@ -16,7 +16,7 @@ interface EventCardProps {
   published?: boolean;
   onClick: () => void;
   onEdit: () => void;
-  onRsvp: () => void;
+  onRsvp?: () => void;
   isOrganizer: boolean;
   isGuest: boolean;
 }
@@ -68,6 +68,8 @@ export default function EventsCard({
 
   const handleRsvpClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
+    // Check if RSVP function is provided
+    if (!onRsvp) return;
     onRsvp();
   };
 

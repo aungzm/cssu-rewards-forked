@@ -152,11 +152,11 @@ const getEventsSchema = z.object({
   query: z.object({
     name: z.string().optional(),
     location: z.string().optional(),
-    started: z.coerce.boolean().optional(),
-    ended: z.coerce.boolean().optional(),
-    showAll: z.coerce.boolean().optional(),
+    started: z.preprocess(parseBoolean, z.boolean()).optional(),
+    ended: z.preprocess(parseBoolean, z.boolean()).optional(),
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().optional(),
+    showFull: z.preprocess(parseBoolean, z.boolean()).optional(),
     published: z.preprocess(parseBoolean, z.boolean()).optional(), // Manager+ only
   }),
 });

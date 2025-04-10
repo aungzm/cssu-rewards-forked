@@ -14,6 +14,7 @@ import UserProfile from './pages/UserProfile';
 import EventsPage from "./pages/Events"
 import UserManagment from './pages/UserManagment';
 import EventDetailsPage from "./pages/EditEvents";
+import MyOrganizedEvents from "./pages/MyOrganizedEvents";
 function App() {
   return (
     <Router>
@@ -33,7 +34,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<UserProfile/>}/>
           <Route path="/user-management" element={<UserManagment/>}/>
-          {/* e.g., <Route path="/profile" element={<ProfilePage />} /> */}
+          <Route path='/my-events' element={<MyOrganizedEvents/>}/>
           <Route path="/promotions" element={<PromotionsPage />} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/edit/events/:eventId" element={<EventDetailsPage />} />{" "}

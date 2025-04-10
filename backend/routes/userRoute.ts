@@ -225,6 +225,9 @@ const getMyOrganizedEventsSchema = z.object({
     past: z.coerce.boolean().optional(),
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().optional(),
+    showFull: z.preprocess(parseBoolean, z.boolean()).optional(),
+    ended: z.preprocess(parseBoolean, z.boolean()).optional(),
+    started: z.preprocess(parseBoolean, z.boolean()).optional(),
   })
 });
 
@@ -238,6 +241,9 @@ const getUsersSchema = z.object({
     activated: z.preprocess(parseBoolean, z.boolean()).optional(),
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().optional(),
+    showFull: z.preprocess(parseBoolean, z.boolean()).optional(),
+    ended: z.preprocess(parseBoolean, z.boolean()).optional(),
+    started: z.preprocess(parseBoolean, z.boolean()).optional(),
   }),
 });
 

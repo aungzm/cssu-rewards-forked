@@ -131,7 +131,7 @@ export default function EventsPage() {
       // Apply new boolean filters (only if not null)
       if (currentFilters.hasStarted !== null) params.append('started', String(currentFilters.hasStarted));
       if (currentFilters.hasEnded !== null) params.append('ended', String(currentFilters.hasEnded));
-      if (currentFilters.isFull !== null) params.append('full', String(currentFilters.isFull)); // Assuming API param is 'full'
+      if (currentFilters.isFull !== null) params.append('showFull', String(currentFilters.isFull)); // Assuming API param is 'full'
 
       // Handle 'published' filter based on role
       const isAdmin = currentUserRole === 'MANAGER' || currentUserRole === 'SUPERUSER';
