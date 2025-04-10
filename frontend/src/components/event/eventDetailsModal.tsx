@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Pencil, X, MapPin, Calendar, Clock, Users, Award } from "lucide-react";
 import { useUser } from "../../context/UserContext";
 import { fetchWithAuth } from "../../utils/authHelper";
