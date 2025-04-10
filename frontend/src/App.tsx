@@ -38,12 +38,12 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           {/* Available to all users */}
           <Route path="/transaction-history" element={<TransactionHistory />} />
-          <Route path="/create-redemption" element={<CreateRedemption />} />
-          <Route path="/create-transfer" element={<CreateTransfer />} />
+          <Route path="/redeem-points" element={<CreateRedemption />} />
+          <Route path="/transfer-points" element={<CreateTransfer />} />
           {/* Available to cashiers and above */}
           <Route path="/create-transaction" element={<CreateTransaction />} />
           <Route path="/process-redemption" element={<ProcessRedemption />} />
-          <Route path="/transactions" element={<TransactionManager />} />
+          <Route path="/points-history" element={<TransactionManager />} />
           <Route path="/profile" element={<UserProfile/>}/>
           <Route path="/user-management" element={<UserManagment/>}/>
           {/* e.g., <Route path="/profile" element={<ProfilePage />} /> */}
