@@ -39,9 +39,22 @@ const navLinks: NavLink[] = [
     href: "#",
     hasDropdown: true,
     dropdownItems: [
-      { name: "Create Transactions", href: "#" },
-      { name: "Transaction History", href: "#" },
+      { name: "Redeem Points", href: "/redeem-points" },
+      { name: "Transfer Points", href: "/transfer-points" },
+      { name: "Point History", href: "/points-history" },
     ],
+  },
+  { 
+    name: "Transactions",
+    href: "#",
+    hasDropdown: true,
+    requiredRoles: ["MANAGER", "SUPERUSER", "CASHIER"],
+    dropdownItems: [
+      { name: "Create Transaction", href: "/create-transaction" },
+      { name: "Process Redemption", href: "/process-redemption" },
+      { name: "Transaction History", href: "/transaction-history" },
+    ],
+
   },
   { name: "Promotions", href: "/promotions" },
   {
