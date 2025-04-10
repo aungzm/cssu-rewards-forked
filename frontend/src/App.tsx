@@ -11,7 +11,14 @@ import Signup from "./pages/Signup";
 import PromotionsPage from "./pages/Promotions";
 import { isAuthenticated } from "./utils/auth";
 import UserProfile from './pages/UserProfile';
+import TransactionHistory from "./pages/TransactionHistory";
+import CreateTransfer from "./pages/CreateTransfer";
+import CreateRedemption from "./pages/CreateRedemption";
+import TransactionManager from "./pages/TransactionManager";
+import CreateTransaction from "./pages/CreateTransaction";
+import ProcessRedemption from "./pages/ProcessRedemption";
 import UserManagment from './pages/UserManagment';
+
 function App() {
   return (
     <Router>
@@ -29,6 +36,14 @@ function App() {
         {/* Checks auth and has userProvider */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          {/* Available to all users */}
+          <Route path="/transaction-history" element={<TransactionHistory />} />
+          <Route path="/redeem-points" element={<CreateRedemption />} />
+          <Route path="/transfer-points" element={<CreateTransfer />} />
+          {/* Available to cashiers and above */}
+          <Route path="/create-transaction" element={<CreateTransaction />} />
+          <Route path="/process-redemption" element={<ProcessRedemption />} />
+          <Route path="/points-history" element={<TransactionManager />} />
           <Route path="/profile" element={<UserProfile/>}/>
           <Route path="/user-management" element={<UserManagment/>}/>
           {/* e.g., <Route path="/profile" element={<ProfilePage />} /> */}
