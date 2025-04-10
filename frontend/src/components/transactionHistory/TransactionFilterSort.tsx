@@ -1,6 +1,4 @@
-import React, { use, useEffect, useMemo, useState } from 'react';
-import { fetchWithAuth } from '../../utils/authHelper';
-import { API_BASE_URL } from '../../utils/auth';
+import React, { useEffect, useState } from 'react';
 
 
 interface Transaction {
@@ -44,7 +42,6 @@ export interface FilterOption {
 
   
 const TransactionFilterSort: React.FC<TransactionFilterSortProps> = ({
-transactions,
 updateFilters,
 updateSorts,
 }) => {

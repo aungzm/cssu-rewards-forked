@@ -1,4 +1,4 @@
-import React, { use, useEffect } from "react";
+import React, { useEffect } from "react";
 import Navbar from "../components/Navbar";
 import CreateCard from "../components/createTransaction/createCard";
 import { useUser } from "../context/UserContext";

@@ -1,11 +1,11 @@
 import React, {useState} from "react";
-import { useUser } from "../../context/UserContext";
 import { fetchWithAuth } from "../../utils/authHelper";
 import { API_BASE_URL } from "../../utils/auth";
+import { UserData } from "../../types"
 
 
 interface UserInfoProps {
-    setUser: Function;
+    setUser: (user: UserData) => void;
 }
 
 
