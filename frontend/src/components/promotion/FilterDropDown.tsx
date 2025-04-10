@@ -133,7 +133,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="absolute right-0 z-3 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-800 dark:ring-gray-700"
+          className="absolute sm:right-20 md:right-0 lg:right-0 z-3 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-800 dark:ring-gray-700"
           role="menu"
           aria-orientation="vertical"
           aria-labelledby="filter-menu-button"

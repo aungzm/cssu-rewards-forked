@@ -27,7 +27,7 @@ async function createUser(utorid: string,role: RoleType,activated: boolean,verif
 }
 
 async function createEvent(name: string,startTime: Date,endTime: Date,capacity: number,points: number,published: boolean,numGuests:number) {
-	await prisma.event.create({
+	const event = await prisma.event.create({
 		data: {
 			name,
 			description: name,
@@ -40,6 +40,7 @@ async function createEvent(name: string,startTime: Date,endTime: Date,capacity: 
 			pointsAwarded: 0,
 		},
 	})
+	return event;
 }
 
 async function createPurchaseTransaction(
@@ -162,6 +163,54 @@ async function createRedemptionTransaction(
 	});
 }
 
+async function createEventTransaction(
+	userId: number,
+	amount: number,
+	eventId: number,
+) {
+	const transaction = await prisma.transaction.create({
+		data: {
+			type: "EVENT",
+			relatedEventId: eventId,
+			amount: amount,
+			remarks: "",
+			userId: userId,
+		},
+	});
+	const event = await prisma.event.update({
+		where: {
+			id: eventId,
+		},
+		data:{
+			pointsAwarded: {
+				increment: amount,
+			},
+			pointsRemain: {
+				decrement: amount,
+			}
+		}
+	})
+}
+
+async function addUserToEvent(
+	userId: number,
+	eventId: number,
+) {
+	const updatedEvent = await prisma.event.update({
+		where: { id: eventId },
+		data: {
+			guests: {
+				create: { user: { connect: { id: userId } } },
+			},
+		},
+		include: {
+			guests: {
+				include: { user: { select: { id: true, utorid: true, name: true } } },
+			},
+		},
+	});
+}
+
 async function clearData() {
 	await prisma.user.deleteMany({});
 	await prisma.event.deleteMany({});
@@ -194,15 +243,19 @@ async function createPromotion(
 // Delete all existing data
 // await clearData();
 
-createEvent("a",new Date("2000-01-01"), new Date("2024-01-11"), 5000, 50000, true,0);
-createEvent("a",new Date("2005-01-01"), new Date("2025-02-12"), 5000, 50000, true,0);
-createEvent("a",new Date("2010-01-01"), new Date("2026-03-13"), 5000, 50000, true,0);
-createEvent("a",new Date("2015-01-01"), new Date("2026-04-14"), 5000, 50000, true,0);
-createEvent("a",new Date("2020-01-01"), new Date("2027-05-15"), 5000, 50000, true,0);
-createEvent("a",new Date("2030-01-01"), new Date("2037-05-15"), 5000, 50000, true,0);
-createEvent("a",new Date("2030-01-01"), new Date("2037-05-15"), 5000, 50000, false,0);
+await createEvent("a",new Date("2000-01-01"), new Date("2024-01-11"), 5000, 50000, true,0);
+await createEvent("a",new Date("2005-01-01"), new Date("2025-02-12"), 5000, 50000, true,0);
+await createEvent("a",new Date("2010-01-01"), new Date("2026-03-13"), 5000, 50000, true,0);
+await createEvent("a",new Date("2015-01-01"), new Date("2026-04-14"), 5000, 50000, true,0);
+const e = await createEvent("event with users",new Date("2020-01-01"), new Date("2027-05-15"), 5000, 50000, true,0);
+await createEvent("a",new Date("2030-01-01"), new Date("2037-05-15"), 5000, 50000, true,0);
+await createEvent("a",new Date("2030-01-01"), new Date("2037-05-15"), 5000, 50000, false,0);
+for (let i=0;i<30;i++) {
+	await createEvent(`scroll test ${i}`,new Date("2030-01-01"), new Date("2037-05-15"), 5000, 50000, true,0);
+}
 
-const regularUserIds=[]
+
+const regularUserIds=[] as number[];
 for (let i=0; i<10;i++) {
 	const user= await createUser(minUtorid.toString(), RoleType.REGULAR,true,true);
 	regularUserIds.push(user.id);
@@ -220,6 +273,11 @@ await createUser("cashier2",RoleType.CASHIER,true,true);
 await createUser("cashier3",RoleType.CASHIER,true,true);
 await createUser("cashier4",RoleType.CASHIER,true,true);
 await createUser("clive123",RoleType.SUPERUSER,true,true)
+
+await addUserToEvent(1,e.id);
+for (let i=0;i<5;i++) {
+	await createEventTransaction(1,100,e.id);
+}
 
 // create transactions
 const selectUsers = regularUserIds.slice(0,3);
@@ -253,3 +311,7 @@ await createPromotion("future promo", "2026/01/01","2027/01/01",0.03,60,40,"auto
 await createPromotion("infinite points", "2022/01/01","2026/01/01",0.03,0,999999999,"one-time");
 await createPromotion("past infinite points", "2022/01/01","2023/01/01",0.03,0,999999999,"one-time");
 await createPromotion("future infinite points", "2027/01/01","2028/01/01",0.03,0,999999999,"one-time");
+
+for (let i=0;i<30; i++ ) {
+	await createPromotion(`scroll test ${i} `, "2024/01/01","2028/01/01",0.02,69,500,"automatic");
+}
