@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient, RoleType, TransactionType } from "@prisma/client";
+import { create } from "domain";
 
 const prisma = new PrismaClient();
 /**
@@ -410,8 +411,8 @@ export async function getTransactions(
     // Filter by name — search in user's utorid or name.
     if (name) {
       filter.OR = [
-        { user: { utorid: { contains: name, mode: "insensitive" } } },
-        { user: { name: { contains: name, mode: "insensitive" } } },
+        { user: { utorid: { contains: name } } },
+        { user: { name: { contains: name } } },
       ];
     }
 
@@ -420,8 +421,8 @@ export async function getTransactions(
       filter.operator = {
         is: {
           OR: [
-            { utorid: { contains: createdBy, mode: "insensitive" } },
-            { name: { contains: createdBy, mode: "insensitive" } },
+            { utorid: { contains: createdBy } },
+            { name: { contains: createdBy } },
           ],
         },
       };
@@ -504,6 +505,7 @@ export async function getTransactions(
         suspicious: transaction.suspicious,
         remark: transaction.remarks || "",
         createdBy: transaction.operator?.utorid || null,
+        createdAt: transaction.createdAt,
       };
 
       if (transaction.type === "PURCHASE") {
