@@ -1,5 +1,5 @@
+import React from "react";
 import { HiOutlineArrowUpCircle, HiOutlineArrowDownCircle, HiOutlinePlusCircle, HiOutlineMinusCircle } from "react-icons/hi2";
-
 
 interface TransactionEntryProps {
     transaction: {
@@ -15,89 +15,110 @@ interface TransactionEntryProps {
     };
 }
 
-
 const TransactionEntry: React.FC<TransactionEntryProps> = ({
     transaction
 }) => {
+    const getTransactionIcon = () => {
+        if (transaction.suspicious || (transaction.type === "redemption" && transaction.operatorId === null)) {
+            return <HiOutlineMinusCircle className="text-gray-500 h-6 w-6 md:h-8 md:w-8" />;
+        } else if (transaction.type === "redemption" && transaction.operatorId !== null) {
+            return <HiOutlineMinusCircle className="text-red-500 h-6 w-6 md:h-8 md:w-8" />;
+        } else if (transaction.type === "purchase") {
+            return <HiOutlinePlusCircle className="text-green-500 h-6 w-6 md:h-8 md:w-8" />;
+        } else if (transaction.type === "adjustment" && transaction.amount > 0) {
+            return <HiOutlineArrowUpCircle className="text-green-500 h-6 w-6 md:h-8 md:w-8" />;
+        } else if (transaction.type === "adjustment" && transaction.amount < 0) {
+            return <HiOutlineArrowDownCircle className="text-red-500 h-6 w-6 md:h-8 md:w-8" />;
+        } else if (transaction.type === "transfer" && transaction.amount > 0) {
+            return <HiOutlineArrowUpCircle className="text-green-500 h-6 w-6 md:h-8 md:w-8" />;
+        } else if (transaction.type === "transfer" && transaction.amount < 0) {
+            return <HiOutlineArrowDownCircle className="text-red-500 h-6 w-6 md:h-8 md:w-8" />;
+        } else if (transaction.type === "event") {
+            return <HiOutlinePlusCircle className="text-green-500 h-6 w-6 md:h-8 md:w-8" />;
+        }
+        return null;
+    };
 
-    
+    const getTransactionTitle = () => {
+        if (transaction.type === "purchase") return "Purchased Item";
+        if (transaction.type === "adjustment") return "Adjusted by Manager";
+        if (transaction.type === "redemption") return "Redeemed Points";
+        if (transaction.type === "transfer" && transaction.amount > 0) return "Received Points from Transfer";
+        if (transaction.type === "transfer" && transaction.amount < 0) return "Sent Points in Transfer";
+        if (transaction.type === "event") return "Attended Event";
+        return "";
+    };
+
+    const getPointsDisplay = () => {
+        if (transaction.suspicious || (transaction.type === "redemption" && transaction.operatorId === null)) {
+            return <p className="text-gray-500 text-right">{transaction.amount} points (Pending)</p>;
+        } else if (transaction.amount > 0) {
+            return <p className="text-green-500 text-right font-medium">+{transaction.amount} points</p>;
+        } else if (transaction.amount < 0) {
+            return <p className="text-red-500 text-right font-medium">{transaction.amount} points</p>;
+        } else {
+            return <p className="text-gray-500 text-right">0 points</p>;
+        }
+    };
+
+    const formatDate = (dateStr: string) => {
+        return dateStr.slice(0, 10);
+    };
+
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 mb-4 flex flex-row">
-
-            {/* Icon */}
-            <div className="flex items-center justify-center mr-4">
-                {(() => {
-                    if (transaction.suspicious || (transaction.type === "redemption" && transaction.operatorId === null)) {
-                        return <HiOutlineMinusCircle className="text-gray-500 h-8 w-8" />;
-
-                    } else if (transaction.type === "redemption" && transaction.operatorId !== null) {
-                        return <HiOutlineMinusCircle className="text-red-500 h-8 w-8" />;
-
-                    } else if (transaction.type === "purchase") {
-                        return <HiOutlinePlusCircle className="text-green-500 h-8 w-8" />;
-
-                    } else if (transaction.type === "adjustment" && transaction.amount > 0) {
-                        return <HiOutlineArrowUpCircle className="text-green-500 h-8 w-8" />;
-
-                    } else if (transaction.type === "adjustment" && transaction.amount < 0) {
-                        return <HiOutlineArrowDownCircle className="text-red-500 h-8 w-8" />;
-                    
-                    } else if (transaction.type === "transfer" && transaction.amount > 0) {
-                        return <HiOutlineArrowUpCircle className="text-green-500 h-8 w-8" />;
-
-                    }
-                    else if (transaction.type === "transfer" && transaction.amount < 0) {
-                        return <HiOutlineArrowDownCircle className="text-red-500 h-8 w-8" />;
-                    }
-                    else if (transaction.type === "event") {
-                        return <HiOutlinePlusCircle className="text-green-500 h-8 w-8" />;
-                    }
-            })()}
-            </div>
-
-            <div className="justify-between items-center flex w-full">
-
-                {/* Content */}
-            <div className="flex flex-col">
-                {/* Print out title based on type*/}
-                {transaction.type === "purchase" && <p> Purchased Item </p>}
-                {transaction.type === "adjustment" && <p> Adjusted by Manager </p>}
-                {transaction.type === "redemption" && <p> Redeemed Points </p>}
-                {/* {transaction.type === "redemption" && <button className="hover:underline" onClick={handleRedemptionClick}> Redeemed Points </button>} */}
-                {transaction.type === "transfer" &&  transaction.amount > 0 && <p> Received Points from Transfer</p>}
-                {transaction.type === "transfer" &&  transaction.amount < 0 && <p> Sent Points in Transfer </p>}
-                {transaction.type === "event" && <p> Attended Event </p>}
-
-
-                <div className="flex flex-row gap-2">
-                    <p className="text-gray-500"> {transaction.createdAt.slice(0, 10)} </p>
-                    <p className="text-gray-500"> Transaction ID: {transaction.id} </p>
-
+        <div className="bg-white shadow-md rounded-lg p-3 md:p-6 mb-4">
+            {/* Mobile Layout (vertical) */}
+            <div className="md:hidden">
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center">
+                        <div className="mr-3">{getTransactionIcon()}</div>
+                        <p className="font-medium">{getTransactionTitle()}</p>
+                    </div>
+                    {getPointsDisplay()}
                 </div>
-                {transaction.remarks && <p className="text-gray-500"> {transaction.remarks} </p>}
-
+                
+                <div className="pl-9"> {/* Offset to align with icon */}
+                    <div className="flex flex-col text-sm">
+                        <div className="flex items-center space-x-2 text-gray-500">
+                            <p>{formatDate(transaction.createdAt)}</p>
+                            <p>·</p>
+                            <p>ID: {transaction.id}</p>
+                        </div>
+                        {transaction.remarks && (
+                            <p className="text-gray-500 mt-1 break-words">{transaction.remarks}</p>
+                        )}
+                    </div>
+                </div>
             </div>
 
-            {/* Points */}
-            {(() => {
-                if (transaction.suspicious || (transaction.type === "redemption" && transaction.operatorId === null)) {
-                    return <p className="text-gray-500">{transaction.amount} points (Pending)</p>;
-                } else if (transaction.amount > 0) {
-                    return <p className="text-green-500">+{transaction.amount} points</p>;
-                } else if (transaction.amount < 0) {
-                    return <p className="text-red-500">{transaction.amount} points</p>;
-                } else {
-                    return <p className="text-gray-500">{transaction.amount} 0</p>
-                }
-            })()}
+            {/* Desktop Layout (horizontal) */}
+            <div className="hidden md:flex md:flex-row">
+                {/* Icon */}
+                <div className="flex items-center justify-center mr-4">
+                    {getTransactionIcon()}
+                </div>
 
+                <div className="flex justify-between items-center w-full">
+                    {/* Content */}
+                    <div className="flex flex-col">
+                        <p className="font-medium">{getTransactionTitle()}</p>
 
+                        <div className="flex flex-row gap-2 text-gray-500">
+                            <p>{formatDate(transaction.createdAt)}</p>
+                            <p>Transaction ID: {transaction.id}</p>
+                        </div>
+                        
+                        {transaction.remarks && (
+                            <p className="text-gray-500">{transaction.remarks}</p>
+                        )}
+                    </div>
+
+                    {/* Points */}
+                    {getPointsDisplay()}
+                </div>
             </div>
-            
-
         </div>
-
-    )
-}
+    );
+};
 
 export default TransactionEntry;
