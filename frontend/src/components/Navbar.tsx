@@ -68,7 +68,7 @@ const navLinks: NavLink[] = [
   },
   {
     name: "Role Management",
-    href: "user-management",
+    href: "/user-management",
     requiredRoles: ["MANAGER", "SUPERUSER", "CASHIER"],
   }
 ];

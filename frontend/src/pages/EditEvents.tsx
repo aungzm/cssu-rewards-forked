@@ -169,33 +169,33 @@ export default function EventDetailsPage() {
         </div>
 
         {/* Event Summary Card */}
-        <div className="mb-6 flex flex-row justify-between gap-4 rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+        <div className="mb-6 flex flex-col sm:flex-row justify-between gap-4 rounded-lg bg-white p-6 shadow dark:bg-gray-800">
           {/* Date */}
-          <div className="flex flex-col">
+          <div className="flex flex-col flex-1">
             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
               Date
             </span>
             <div className="mt-1 flex items-center text-gray-800 dark:text-gray-200">
               <Calendar className="mr-2 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
               <span className="text-sm">
-                {formatDateRange(event.startTime, event.endTime)}
+          {formatDateRange(event.startTime, event.endTime)}
               </span>
             </div>
           </div>
           {/* Time */}
-          <div className="flex flex-col">
+          <div className="flex flex-col flex-1">
             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
               Time
             </span>
             <div className="mt-1 flex items-center text-gray-800 dark:text-gray-200">
               <Clock className="mr-2 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
               <span className="text-sm">
-                {formatTimeRange(event.startTime, event.endTime)}
+          {formatTimeRange(event.startTime, event.endTime)}
               </span>
             </div>
           </div>
           {/* Location */}
-          <div className="flex flex-col">
+          <div className="flex flex-col flex-1">
             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
               Location
             </span>
@@ -205,7 +205,7 @@ export default function EventDetailsPage() {
             </div>
           </div>
           {/* Points Awarded */}
-          <div className="flex flex-col">
+          <div className="flex flex-col flex-1">
             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
               Points Awarded
             </span>
@@ -215,14 +215,14 @@ export default function EventDetailsPage() {
             </div>
           </div>
           {/* Attendance */}
-          <div className="flex flex-col">
+          <div className="flex flex-col flex-1">
             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
               Attendance
             </span>
             <div className="mt-1 flex items-center text-gray-800 dark:text-gray-200">
               <Users className="mr-2 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
               <span className="text-sm">
-                {guestCount} / {capacityDisplay}
+          {guestCount} / {capacityDisplay}
               </span>
             </div>
           </div>
