@@ -6,12 +6,12 @@ import {
   getTransactionById,
   toggleTransactionSuspicious,
   markRedemptionAsProcessed,
-} from "../controllers/transactionController";
-import { authenticateToken } from "../middlewares/authenticateToken";
+} from "../controllers/transactionController.js";
+import { authenticateToken } from "../middlewares/authenticateToken.js";
 import {
   requireCashierOrHigher,
   requireManagerOrHigher,
-} from "../middlewares/authMiddleware";
+} from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
