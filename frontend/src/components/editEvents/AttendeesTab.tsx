@@ -66,15 +66,22 @@ export function AttendeesList({
         }
       );
       const data = await response.json();
-      setTransactions(data);
-      return data;
+      console.log("Transactions data:", data); // Log the response data
+
+      // If the API returns an object, e.g. { transactions: [...] }, use that.
+      const transactionsData: Transaction[] = Array.isArray(data)
+        ? data
+        : data.transactions || [];
+      setTransactions(transactionsData);
+      return transactionsData;
     } catch (err) {
       console.error("Failed to fetch transactions:", err);
       return [];
     }
   };
 
-  // Calculate points for each guest based on transactions
+  // Update calculateGuestPoints to ensure a case-insensitive comparison
+  // and that the awarded value is a number.
   const calculateGuestPoints = (
     utorid: string,
     allTransactions: Transaction[]
@@ -82,11 +89,11 @@ export function AttendeesList({
     return allTransactions
       .filter(
         (t) =>
-          t.recipient === utorid &&
+          t.recipient.toLowerCase() === utorid.toLowerCase() &&
           t.type === "event" &&
           t.relatedId === event.id
       )
-      .reduce((total, current) => total + current.awarded, 0);
+      .reduce((total, current) => total + Number(current.awarded), 0);
   };
 
   // Convert basic guest data to extended format with points info

@@ -959,7 +959,7 @@ export async function removeSelfAsGuest(
  * POST /events/:eventId/transactions
  * Award points for an event.
  */
-export async function awardPoints(req: Request, res: Response): Promise<void> {
+export async function awardPoints(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const eventId = req.params.eventId; // assume Zod has coerced this to a number if using middleware
     const { type, utorid, amount, remark } = req.body as {
@@ -986,9 +986,24 @@ export async function awardPoints(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const operatorId = (req as any).user?.id;
+    const operatorId = req.user?.id;
     if (!operatorId) {
       res.status(401).json({ error: "User not authenticated" });
+      return;
+    }
+
+    const isOrganizer = event.organizers.some(
+      (org) => org.organizerId === operatorId
+    );
+
+    const isManagerOrHigher =
+      req.user?.role === "MANAGER" ||  req.user?.role === "SUPERUSER"; 
+
+    const isOrganizerOrManagerOrHigher = isManagerOrHigher || isOrganizer;
+    if (!isOrganizerOrManagerOrHigher) {
+      res.status(403).json({
+        error: "Not authorized to award points for this event",
+      });
       return;
     }
 
@@ -1027,6 +1042,7 @@ export async function awardPoints(req: Request, res: Response): Promise<void> {
             user: { connect: { id: targetUser.id } },
             operator: { connect: { id: operatorId } },
             remarks: remark || "",
+            relatedEvent: { connect: { id: event.id } } 
           },
         }),
         prisma.event.update({
@@ -1047,7 +1063,7 @@ export async function awardPoints(req: Request, res: Response): Promise<void> {
         recipient: targetUser.utorid,
         awarded: amount,
         type: "event",
-        relatedId: event.id,
+        relatedId: operatorId,
         remark: remark || "",
         createdBy: (req as any).user?.utorid || "",
       };
@@ -1080,6 +1096,7 @@ export async function awardPoints(req: Request, res: Response): Promise<void> {
           amount,
           user: { connect: { id: rsvp.userId } },
           operator: { connect: { id: operatorId } },
+          relatedEvent: { connect: { id: event.id } },
           remarks: remark || "",
         },
       })
@@ -1123,6 +1140,64 @@ export async function awardPoints(req: Request, res: Response): Promise<void> {
     res.status(201).json(responseTransactions);
   } catch (error) {
     console.error("awardPoints error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+
+/**
+ * GET /events/:eventId/transactions
+ * Get transactions related to an event.
+ * Clearance: Manager or higher or Organizer of the event
+ */
+
+export async function getEventTransactions(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const  eventId = req.params.eventId;
+    const userId = req.user?.id;
+    const event = await prisma.event.findUnique({
+      where: { id: Number(eventId) },
+      include: {
+        organizers: true,
+      },
+    });
+
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+    const isManagerOrHigher = req.user?.role === "MANAGER" || req.user?.role === "SUPERUSER";
+    const isOrganizer = event?.organizers.some(
+      (org) => org.organizerId === userId
+    );
+    if (!isManagerOrHigher && !isOrganizer) {
+      res.status(403).json({ error: "Not authorized to view transactions" });
+      return;
+    }
+
+    const transactions = await prisma.transaction.findMany({
+      where: { relatedEventId: Number(eventId) },
+      include: {
+        operator: { select: { id: true, utorid: true, name: true } },
+        user: { select: { id: true, utorid: true, name: true } },
+      },
+    });
+    const formattedTransactions = transactions.map((transaction) => ({
+      id: transaction.id,
+      recipient: transaction.user?.utorid || "",
+      awarded: transaction.amount || 0,
+      type: transaction.type.toLowerCase(),
+      relatedId: transaction.relatedEventId || null,
+      remark: transaction.remarks || "",
+      createdBy: transaction.operator?.utorid || ""
+    }));
+    
+    res.status(200).json(formattedTransactions);
+  } catch (error) {
+    console.error("getEventTransactions error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 }

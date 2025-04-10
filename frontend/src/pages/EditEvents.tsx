@@ -103,7 +103,6 @@ export default function EventDetailsPage() {
   // Callback function for child components to update the event state
   // Implements optimistic updates
   const handleEventUpdate = (updatedEvent: EventDetails) => {
-    console.log("Updated event data:", updatedEvent);
     setEvent(updatedEvent);
   };
 
