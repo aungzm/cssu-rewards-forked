@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute"; 
 import Signup from "./pages/Signup";
+import PromotionsPage from "./pages/Promotions";
 import { isAuthenticated } from "./utils/auth";
 import UserProfile from './pages/UserProfile';
 import TransactionHistory from "./pages/TransactionHistory";
@@ -16,6 +17,8 @@ import CreateRedemption from "./pages/CreateRedemption";
 import TransactionManager from "./pages/TransactionManager";
 import CreateTransaction from "./pages/CreateTransaction";
 import ProcessRedemption from "./pages/ProcessRedemption";
+import UserManagment from './pages/UserManagment';
+
 function App() {
   return (
     <Router>
@@ -42,8 +45,9 @@ function App() {
           <Route path="/process-redemption" element={<ProcessRedemption />} />
           <Route path="/transactions" element={<TransactionManager />} />
           <Route path="/profile" element={<UserProfile/>}/>
-          {/* Add other protected routes here */}
+          <Route path="/user-management" element={<UserManagment/>}/>
           {/* e.g., <Route path="/profile" element={<ProfilePage />} /> */}
+          <Route path="/promotions" element={<PromotionsPage />} />
         </Route>
 
         {/* Default route */}

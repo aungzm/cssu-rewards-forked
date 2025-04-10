@@ -7,9 +7,9 @@ import {
   getPromotionById,
   updatePromotion,
   deletePromotion,
-} from "../controllers/promotionController";
-import { authenticateToken } from "../middlewares/authenticateToken";
-import { requireManagerOrHigher } from "../middlewares/authMiddleware";
+} from "../controllers/promotionController.js";
+import { authenticateToken } from "../middlewares/authenticateToken.js";
+import { requireManagerOrHigher } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
@@ -74,18 +74,18 @@ const createPromotionSchema = z.object({
     }),
     rate: z
       .number({ invalid_type_error: "rate must be a number" })
-      .positive("rate must be a positive number")
+      .nonnegative("rate must be 0 or a positive number")
       .nullable()
       .optional(),
     minSpending: z
       .number({ invalid_type_error: "minSpending must be a number" })
-      .positive("minSpending must be a positive number")
+      .nonnegative("rate must be 0 or a positive number")
       .nullable()
       .optional(),
     points: z
       .number({ invalid_type_error: "points must be a number" })
       .int("points must be an integer")
-      .nonnegative("points must be a positive integer")
+      .nonnegative("rate must be 0 or a positive number")
       .nullable()
       .optional(),
     type: z.enum(["automatic", "one-time"]),
@@ -119,12 +119,12 @@ const updatePromotionSchema = z.object({
       .optional(),
     rate: z
       .number({ invalid_type_error: "rate must be a number" })
-      .positive("rate must be a positive number")
+      .nonnegative("rate must be 0 or a positive number")
       .nullable()
       .optional(),
     minSpending: z
       .number({ invalid_type_error: "minSpending must be a number" })
-      .positive("minSpending must be a positive number")
+      .nonnegative("rate must be 0 or a positive number")
       .nullable()
       .optional(),
     points: z
@@ -133,7 +133,11 @@ const updatePromotionSchema = z.object({
       .nonnegative("points must be a positive integer")
       .nullable()
       .optional(),
-  }),
+    type: z.enum(["automatic", "one-time"]).nullable().optional(),
+  }).refine(data => Object.keys(data).length > 0, { // Ensure at least one field is provided
+    message: "At least one field must be provided for update",
+    path: ["body"], 
+}),
 });
 
 const getPromotionsSchema = z.object({
