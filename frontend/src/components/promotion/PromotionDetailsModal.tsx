@@ -1,6 +1,8 @@
-import { Pencil, X } from "lucide-react";
+import { Pencil, X, QrCode } from "lucide-react";
 import { useUser } from "../../context/UserContext";
 import { Promotion } from "../../types";
+import { useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 
 interface PromotionDetailsModalProps {
   isOpen: boolean;
@@ -29,12 +31,33 @@ export default function PromotionDetailsModal({
   onEdit,
 }: PromotionDetailsModalProps) {
   const { userData } = useUser();
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  
   if (!isOpen || !promotion) return null;
+  
   const bonusPercentage = Math.round(promotion.rate * 100);
   const tagColorClass =
     promotion.type === 'automatic' ? 'bg-blue-400' : 'bg-yellow-400';
   const typeText = promotion.type === 'automatic' ? 'Automatic' : 'One-Time';
   const isManagerOrHigher = userData?.role === 'MANAGER' || userData?.role === 'SUPERUSER';
+  
+  // Generate QR code value from promotion data
+  const qrCodeValue = {
+    id: promotion.id,
+    name: promotion.name,
+    type: promotion.type,
+    rate: promotion.rate,
+    points: promotion.points
+  };
+  
+  const openQRModal = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsQRModalOpen(true);
+  };
+  
+  const closeQRModal = () => {
+    setIsQRModalOpen(false);
+  };
 
   return (
     // Backdrop
@@ -53,16 +76,28 @@ export default function PromotionDetailsModal({
           className="absolute right-6 top-4 rounded-full p-1 text-gray-500 transition hover:bg-gray-200 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-100"
           aria-label="Close modal"
         >
-          < X size={24} />
+          <X size={24} />
         </button>
-        {/* Edit Button */}
-        {(isManagerOrHigher) && (<button
-          onClick={onEdit}
-          className="absolute right-6 top-24 mt-2 rounded-full p-1 text-gray-500 transition hover:bg-gray-200 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-100"
-          aria-label="Close modal"
+        
+        {/* QR Code Button */}
+        <button
+          onClick={openQRModal}
+          className="absolute left-40 top-6 rounded-full p-1 text-gray-500 transition hover:bg-gray-200 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-100"
+          aria-label="Show QR Code"
         >
-          < Pencil size={20} />
-        </button>)}
+          <QrCode size={48} />
+        </button>
+        
+        {/* Edit Button */}
+        {(isManagerOrHigher) && (
+          <button
+            onClick={onEdit}
+            className="absolute right-6 top-24 mt-2 rounded-full p-1 text-gray-500 transition hover:bg-gray-200 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-100"
+            aria-label="Edit promotion"
+          >
+            <Pencil size={20} />
+          </button>
+        )}
 
         {/* Header */}
         <div className="mb-4 border-b border-gray-200 pb-4 dark:border-gray-600">
@@ -124,6 +159,44 @@ export default function PromotionDetailsModal({
             </div>
           </div>
         </div>
+        
+        {/* QR Code Modal */}
+        {isQRModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 transition-opacity duration-300 ease-in-out"
+            onClick={closeQRModal}
+          >
+            <div
+              className="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={closeQRModal}
+                className="absolute right-6 top-4 rounded-full p-1 text-gray-500 transition hover:bg-gray-200 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-100"
+                aria-label="Close QR modal"
+              >
+                <X size={24} />
+              </button>
+
+              {/* Header */}
+              <div className="mb-6 border-b border-gray-200 pb-4 dark:border-gray-600">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                  Promotion QR Code
+                </h2>
+              </div>
+
+              {/* QR Code Content */}
+              <div className="flex justify-center">
+                <div className="bg-white p-4 rounded flex flex-col items-center">
+                  <h1 className="text-2xl font-bold text-center text-gray-800">Promotion ID: {qrCodeValue.id}</h1>
+                  <h2 className="text-center font-bold mb-2 text-gray-800">{qrCodeValue.name}</h2>
+                  <QRCodeSVG value={String(qrCodeValue.id)} size={256} />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
