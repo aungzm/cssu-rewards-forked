@@ -42,7 +42,7 @@ const navLinks: NavLink[] = [
     dropdownItems: [
       { name: "Redeem Points", href: "/redeem-points" },
       { name: "Transfer Points", href: "/transfer-points" },
-      { name: "Point History", href: "/points-history" },
+      { name: "Point History", href: "/transaction-history" },
     ],
   },
   { 
@@ -53,7 +53,7 @@ const navLinks: NavLink[] = [
     dropdownItems: [
       { name: "Create Transaction", href: "/create-transaction" },
       { name: "Process Redemption", href: "/process-redemption" },
-      { name: "Transaction History", href: "/transaction-history" },
+      { name: "Transaction History", href: "/points-history" },
     ],
   },
   { name: "Promotions", href: "/promotions" },
