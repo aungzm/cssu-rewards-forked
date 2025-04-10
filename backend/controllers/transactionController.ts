@@ -467,9 +467,9 @@ export async function getTransactions(
       const amountValue = parseFloat(amount as string);
       if (!isNaN(amountValue)) {
         if (operator === "gte") {
-          filter.points = { gte: amountValue };
+          filter.amount = { gte: amountValue };
         } else if (operator === "lte") {
-          filter.points = { lte: amountValue };
+          filter.amount = { lte: amountValue };
         }
       }
     }
