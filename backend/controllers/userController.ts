@@ -689,3 +689,35 @@ export async function getMyOrganizedEvents(
     res.status(500).json({ error: "Internal server error." });
   }
 }
+
+export async function getMyGuestEvents(req :Request, res: Response): Promise<void> {
+  try {
+    const currentUserId = (req as any).user?.id;
+    const {past = false, page = "1", limit = "10" } = req.query; // include past events or not (users probably would not want to filter out their currently organized events)
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    if (!currentUserId) {
+      res.status(401).json({ error: "Not authenticated" });
+      return;
+    }
+    const user = await prisma.user.findUnique({ where: { id: currentUserId } });
+    if (!user) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+    const events = await prisma.rsvp.findMany({
+      skip: (pageNum - 1) * limitNum,
+      take: limitNum,
+      where: {
+        userId: currentUserId,
+      },
+      select: {
+        eventId: true,
+      }
+    });
+    res.status(200).json({results: events})
+  } catch(error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error." }); 
+  }
+}

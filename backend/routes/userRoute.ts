@@ -15,7 +15,7 @@ import {
   updateCurrentUser,
   updateCurrentUserPassword,
   getMyOrganizedEvents,
-  getMyGuestEvents
+  getMyGuestEvents,
 } from "../controllers/userController.js";
 import {
   createTransferTransaction,
