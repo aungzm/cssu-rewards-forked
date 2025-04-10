@@ -1,23 +1,12 @@
 import { Pencil, X } from "lucide-react";
 import { useUser } from "../../context/UserContext";
+import { Promotion } from "../../types";
 
 interface PromotionDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onEdit: () => void; 
   promotion: Promotion | null;
-}
-
-interface Promotion {
-  id: number;
-    name: string;
-    description: string;
-    type: 'automatic' | 'one-time';
-    rate: number;
-    points: number;
-    minSpending: number;
-    startTime: string;
-    endTime: string | null;
 }
 
 // Helper function to format date
@@ -120,8 +109,8 @@ export default function PromotionDetailsModal({
                 Minimum Spending
               </h3>
               <p className="mt-1 text-gray-800 dark:text-gray-200">
-                {promotion.minSpending > 0
-                  ? `$${promotion.minSpending.toFixed(2)}`
+                {(promotion.minSpending ?? 0) > 0
+                  ? `$${(promotion.minSpending ?? 0).toFixed(2)}`
                   : 'None'}
               </p>
             </div>

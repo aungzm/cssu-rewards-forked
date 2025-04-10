@@ -20,6 +20,17 @@ export interface UserContextType {
   refetchUser: () => Promise<void>;
 }
 
+export interface Promotion {
+  id: number;
+  name: string;
+  description: string;
+  type: "automatic" | "one-time";
+  rate: number;
+  points: number;
+  endTime: string;
+  minSpending?: number | null;
+  startTime: string;
+}
 
 export interface EventDetails {
     id: number;

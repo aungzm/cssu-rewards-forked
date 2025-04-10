@@ -5,15 +5,14 @@ import React, {
   useRef,
   useCallback,
 } from 'react';
-import Navbar from '../components/Navbar'; // Adjust path as needed
-import EventsCard from '../components/event/eventCard'; // Adjust path as needed
-import EventDetailsModal from '../components/event/eventDetailsModal'; // Adjust path as needed
-// import EventFilterDropdown from '../components/event/EventFilterDropdown'; // Import when implemented
-import { API_BASE_URL } from '../utils/auth'; // Adjust path as needed
-import { fetchWithAuth } from '../utils/authHelper'; // Adjust path as needed
-import { useDebounce } from '../hooks/useDebounce'; // Adjust path as needed
-import { useUser } from '../context/UserContext'; // Adjust path as needed
-import { Search, ArrowUpDown } from 'lucide-react'; // Import icons
+import Navbar from '../components/Navbar'; 
+import EventsCard from '../components/event/eventCard'; 
+import EventDetailsModal from '../components/event/eventDetailsModal';
+import { API_BASE_URL } from '../utils/auth'; 
+import { fetchWithAuth } from '../utils/authHelper'; 
+import { useDebounce } from '../hooks/useDebounce'; 
+import { useUser } from '../context/UserContext'; 
+import { Search, ArrowUpDown } from 'lucide-react'; 
 import EventFilterDropdown from '../components/event/eventFilterDropDown';
 
 // --- Interfaces & Enums ---
