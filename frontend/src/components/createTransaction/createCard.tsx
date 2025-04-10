@@ -281,7 +281,7 @@ const CreateCard: React.FC<CreateCardProps> = ({ type, user }) => {
 
     return (
         <>
-            <div className='container bg-white shadow-md rounded-lg p-6 w-1/3 flex flex-col'>
+            <div className='container bg-white shadow-md rounded-lg p-6 sm:w-2/3 md:w-1/3 lg-1/3 flex flex-col '>
                 <h1 className='text-2xl font-bold' style={{ color: "#002A5C" }}>Create {type} Transaction</h1>
                 {type === "transfer" && (
                     <p className='text-gray-500 mb-4'>
