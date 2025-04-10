@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Search, Trash, Award, ChevronLeft, ChevronRight, User } from "lucide-react";
+import {
+  Search,
+  Trash,
+  Award,
+  User,
+  PlusCircle,
+  X,
+} from "lucide-react";
 import { fetchWithAuth } from "../../utils/authHelper";
 import { API_BASE_URL } from "../../utils/auth";
 import { EventDetails, Guest } from "../../types";
@@ -36,13 +43,18 @@ export function AttendeesList({
   const [attendees, setAttendees] = useState<GuestWithStatus[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [selectedAttendees, setSelectedAttendees] = useState<number[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [pointsToAward, setPointsToAward] = useState<number>(100);
-  const [remark, setRemark] = useState<string>("");
-  const itemsPerPage = 5;
+  const [newAttendees, setNewAttendees] = useState<string>("");
+  const [addingAttendees, setAddingAttendees] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null); // Success message for adding attendees
+  // State for the award modal
+  const [awardModalOpen, setAwardModalOpen] = useState(false);
+  // When awarding a single attendee, currentAttendee will be set; otherwise (bulk) it's null.
+  const [currentAttendee, setCurrentAttendee] =
+    useState<GuestWithStatus | null>(null);
+  const [modalPoints, setModalPoints] = useState(100);
+  const [modalRemark, setModalRemark] = useState("");
 
   // Fetch transactions for this event
   const fetchTransactions = async () => {
@@ -66,7 +78,10 @@ export function AttendeesList({
   const calculateGuestPoints = (utorid: string, allTransactions: Transaction[]) => {
     return allTransactions
       .filter(
-        (t) => t.recipient === utorid && t.type === "event" && t.relatedId === event.id
+        (t) =>
+          t.recipient === utorid &&
+          t.type === "event" &&
+          t.relatedId === event.id
       )
       .reduce((total, current) => total + current.awarded, 0);
   };
@@ -78,7 +93,6 @@ export function AttendeesList({
   ): GuestWithStatus[] => {
     return guests.map((guest) => {
       const points = calculateGuestPoints(guest.utorid, allTransactions);
-      
       return {
         ...guest,
         email: `${guest.utorid.toLowerCase()}@mail.utoronto.ca`,
@@ -93,9 +107,11 @@ export function AttendeesList({
       try {
         const txData = await fetchTransactions();
         if (event.guests) {
-          const convertedAttendees = convertGuestsToAttendees(event.guests, txData);
+          const convertedAttendees = convertGuestsToAttendees(
+            event.guests,
+            txData
+          );
           setAttendees(convertedAttendees);
-          setTotalPages(Math.ceil(convertedAttendees.length / itemsPerPage));
         }
       } catch (err) {
         console.error("Error loading data:", err);
@@ -108,25 +124,113 @@ export function AttendeesList({
     loadData();
   }, [event.guests, event.id]);
 
+  const handleAddAttendee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAttendees.trim() || (!isManager && !isOrganizer)) return;
+  
+    setAddingAttendees(true);
+    setError(null);
+    setSuccess(null);
+  
+    // Parse UTORIDs - split by commas or spaces
+    const utoridsToAdd = newAttendees
+      .split(/[,\s]+/)
+      .map((id) => id.trim())
+      .filter((id) => id.length > 0);
+  
+    if (utoridsToAdd.length === 0) {
+      setError("Please enter valid UTORIDs");
+      setAddingAttendees(false);
+      return;
+    }
+  
+    let successCount = 0;
+    const failedUtorids: string[] = [];
+    const newGuestsList = [...(event.guests || [])];
+  
+    try {
+      // Add each UTORID one by one
+      for (const utorid of utoridsToAdd) {
+        try {
+          const response = await fetchWithAuth(
+            `${API_BASE_URL}/events/${event.id}/guests`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ utorid }),
+            }
+          );
+          const data = await response.json();
+          // If response is not OK, capture the error message
+          if (!response.ok) {
+            failedUtorids.push(`${utorid}: "${data.error}"`);
+            continue;
+          }
+          // Add new guest if data.guestAdded exists
+          if (data.guestAdded) {
+            newGuestsList.push(data.guestAdded);
+            successCount++;
+          }
+        } catch {
+          failedUtorids.push(`${utorid}: "Unexpected error"`);
+        }
+      }
+  
+      // Update the event with the new guests
+      onEventUpdate({
+        ...event,
+        guests: newGuestsList,
+      });
+  
+      // Refresh the transactions and calculate points
+      const txData = await fetchTransactions();
+      const updatedAttendees = convertGuestsToAttendees(newGuestsList, txData);
+      setAttendees(updatedAttendees);
+  
+      if (successCount > 0) {
+        setSuccess(
+          `Successfully added ${successCount} attendee${
+            successCount !== 1 ? "s" : ""
+          }.`
+        );
+      }
+      if (failedUtorids.length > 0) {
+        setError(
+          `Failed to add the following UTORIDs:\n${failedUtorids.join("\n")}`
+        );
+      }
+  
+      // Clear the input field if at least some additions succeeded
+      if (successCount > 0) {
+        setNewAttendees("");
+      }
+    } catch (err) {
+      console.error("Error adding attendees:", err);
+      setError("Failed to add attendees. Please try again.");
+    } finally {
+      setAddingAttendees(false);
+    }
+  };
+
+  // Filter attendees based on search query
   const filteredAttendees = attendees.filter(
     (attendee) =>
       attendee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       attendee.utorid.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const paginatedAttendees = filteredAttendees.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const displayedAttendees = filteredAttendees;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setCurrentPage(1); // Reset to first page on new search
+    // No pagination to reset here.
   };
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedAttendees(paginatedAttendees.map((a) => a.id));
+      setSelectedAttendees(displayedAttendees.map((a) => a.id));
     } else {
       setSelectedAttendees([]);
     }
@@ -134,93 +238,115 @@ export function AttendeesList({
 
   const handleSelectAttendee = (id: number) => {
     if (selectedAttendees.includes(id)) {
-      setSelectedAttendees(selectedAttendees.filter((attendeeId) => attendeeId !== id));
+      setSelectedAttendees(
+        selectedAttendees.filter((attendeeId) => attendeeId !== id)
+      );
     } else {
       setSelectedAttendees([...selectedAttendees, id]);
     }
   };
 
-  const handleAwardPoints = async (attendee: GuestWithStatus) => {
-    if (!isManager && !isOrganizer) return;
-
-    setLoading(true);
-    try {
-      const response = await fetchWithAuth(
-        `${API_BASE_URL}/events/${event.id}/transactions`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            type: "event",
-            utorid: attendee.utorid,
-            amount: pointsToAward,
-            remark: remark || `Points for ${event.name}`,
-          }),
-        }
-      );
-
-      const newTransaction = await response.json();
-      setTransactions([...transactions, newTransaction]);
-
-      // Update attendee points in the list
-      const updatedAttendees = attendees.map((att) =>
-        att.id === attendee.id
-          ? {
-              ...att,
-              points: att.points + pointsToAward,
-            }
-          : att
-      );
-
-      setAttendees(updatedAttendees);
-      setError(null);
-    } catch (err) {
-      console.error("Failed to award points:", err);
-      setError("Failed to award points");
-    } finally {
-      setLoading(false);
-    }
+  // Open modal for awarding points to a specific attendee
+  const openAwardModalForSingle = (attendee: GuestWithStatus) => {
+    setCurrentAttendee(attendee);
+    setModalPoints(100);
+    setModalRemark(`Points for ${event.name}`);
+    setAwardModalOpen(true);
   };
 
-  const handleBulkAwardPoints = async () => {
-    if ((!isManager && !isOrganizer) || selectedAttendees.length === 0) return;
+  // Open modal for bulk awarding (when no single attendee is specified)
+  const openAwardModalBulk = () => {
+    setCurrentAttendee(null);
+    setModalPoints(100);
+    setModalRemark(`Points for ${event.name}`);
+    setAwardModalOpen(true);
+  };
 
+  const closeAwardModal = () => {
+    setAwardModalOpen(false);
+    setCurrentAttendee(null);
+  };
+
+  // Award points based on modal inputs
+  const handleAwardPointsFromModal = async () => {
     setLoading(true);
     try {
-      // Award points to all selected attendees
-      const selectedUTORIDs = selectedAttendees.map(
-        (id) => attendees.find((a) => a.id === id)?.utorid
-      ).filter(Boolean) as string[];
+      // If a single attendee is targeted...
+      if (currentAttendee) {
+        const response = await fetchWithAuth(
+          `${API_BASE_URL}/events/${event.id}/transactions`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              type: "event",
+              utorid: currentAttendee.utorid,
+              amount: modalPoints,
+              remark: modalRemark || `Points for ${event.name}`,
+            }),
+          }
+        );
 
-      for (const utorid of selectedUTORIDs) {
-        await fetchWithAuth(`${API_BASE_URL}/events/${event.id}/transactions`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            type: "event",
-            utorid: utorid,
-            amount: pointsToAward,
-            remark: remark || `Bulk points for ${event.name}`,
-          }),
-        });
+        const newTransaction = await response.json();
+        setTransactions([...transactions, newTransaction]);
+
+        // Update the attendee points in the list
+        const updatedAttendees = attendees.map((att) =>
+          att.id === currentAttendee.id
+            ? { ...att, points: att.points + modalPoints }
+            : att
+        );
+        setAttendees(updatedAttendees);
+      } else if (selectedAttendees.length > 0) {
+        // Bulk awarding to all selected attendees
+        const selectedUTORIDs = selectedAttendees
+          .map((id) => attendees.find((a) => a.id === id)?.utorid)
+          .filter(Boolean) as string[];
+
+        for (const utorid of selectedUTORIDs) {
+          await fetchWithAuth(`${API_BASE_URL}/events/${event.id}/transactions`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              type: "event",
+              utorid: utorid,
+              amount: modalPoints,
+              remark: modalRemark || `Bulk points for ${event.name}`,
+            }),
+          });
+        }
+      } else {
+        // If no attendee is specifically selected, apply to all attendees
+        for (const attendee of attendees) {
+          await fetchWithAuth(`${API_BASE_URL}/events/${event.id}/transactions`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              type: "event",
+              utorid: attendee.utorid,
+              amount: modalPoints,
+              remark: modalRemark || `Points for ${event.name}`,
+            }),
+          });
+        }
       }
 
-      // Refresh transactions and attendees
-      const newTransactions = await fetchTransactions();
-      const updatedAttendees = convertGuestsToAttendees(
-        event.guests || [],
-        newTransactions
-      );
+      // Refresh transactions and update attendees list
+      const txData = await fetchTransactions();
+      const updatedAttendees = convertGuestsToAttendees(event.guests || [], txData);
       setAttendees(updatedAttendees);
       setSelectedAttendees([]);
       setError(null);
+      closeAwardModal();
     } catch (err) {
-      console.error("Failed to award points in bulk:", err);
-      setError("Failed to award points to some or all attendees");
+      console.error("Failed to award points:", err);
+      setError("Failed to award points");
     } finally {
       setLoading(false);
     }
@@ -231,15 +357,18 @@ export function AttendeesList({
 
     setLoading(true);
     try {
-      await fetchWithAuth(`${API_BASE_URL}/events/${event.id}/guests/${attendeeId}`, {
-        method: "DELETE",
-      });
+      await fetchWithAuth(
+        `${API_BASE_URL}/events/${event.id}/guests/${attendeeId}`,
+        {
+          method: "DELETE",
+        }
+      );
 
-      // Remove from the list
+      // Remove the attendee from the local list
       const updatedAttendees = attendees.filter((a) => a.id !== attendeeId);
       setAttendees(updatedAttendees);
 
-      // Update the event
+      // Update the event with the new guest list
       if (event.guests) {
         onEventUpdate({
           ...event,
@@ -256,63 +385,6 @@ export function AttendeesList({
 
   return (
     <div className="w-full">
-      {/* Top navigation with tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <div className="flex">
-          <button className="px-4 py-2 text-gray-500 dark:text-gray-400">
-            Event Details
-          </button>
-          <button className="border-b-2 border-blue-500 px-4 py-2 text-blue-600 dark:text-blue-400">
-            Attendees ({attendees.length})
-          </button>
-        </div>
-      </div>
-
-      {/* Search and actions area */}
-      <div className="my-4 flex flex-wrap items-center gap-2">
-        <form onSubmit={handleSearch} className="flex">
-          <input
-            type="text"
-            placeholder="Search attendees..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="rounded-l-md border border-r-0 border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-          />
-          <button
-            type="submit"
-            className="rounded-r-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-          >
-            <Search size={18} />
-          </button>
-        </form>
-
-        {(isManager || isOrganizer) && selectedAttendees.length > 0 && (
-          <div className="ml-auto flex items-center gap-2">
-            <input
-              type="number"
-              min="1"
-              value={pointsToAward}
-              onChange={(e) => setPointsToAward(Number(e.target.value))}
-              className="w-24 rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-              placeholder="Points"
-            />
-            <input
-              type="text"
-              value={remark}
-              onChange={(e) => setRemark(e.target.value)}
-              className="w-40 rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-              placeholder="Remark (optional)"
-            />
-            <button
-              onClick={handleBulkAwardPoints}
-              className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-blue-300"
-            >
-              Award Points
-            </button>
-          </div>
-        )}
-      </div>
-
       {/* Error display */}
       {error && (
         <div className="mb-4 rounded-md bg-red-50 p-4 text-red-800 dark:bg-red-900/30 dark:text-red-400">
@@ -327,18 +399,81 @@ export function AttendeesList({
         </div>
       )}
 
-      {/* Attendees table */}
-      <div className="overflow-x-auto rounded-md border border-gray-200 dark:border-gray-700">
+      {/* Add attendee form */}
+      {(isManager || isOrganizer) && (
+        <form onSubmit={handleAddAttendee} className="mb-6">
+          <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-3 sm:space-y-0">
+            <div className="flex-grow">
+              <label htmlFor="newAttendees" className="sr-only">
+                UofT IDs (comma or space separated)
+              </label>
+              <input
+                type="text"
+                id="newAttendees"
+                placeholder="Enter UofT IDs (comma or space separated)"
+                value={newAttendees}
+                onChange={(e) => setNewAttendees(e.target.value)}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={addingAttendees || !newAttendees.trim()}
+              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70"
+            >
+              {addingAttendees ? (
+                "Adding..."
+              ) : (
+                <>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Attendees
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Controls: search and Award Points */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <form onSubmit={handleSearch} className="mr-auto flex">
+          <input
+            type="text"
+            placeholder="Search attendees..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="rounded-l-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          />
+          <button
+            type="submit"
+            className="rounded-r-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          >
+            <Search size={18} />
+          </button>
+        </form>
+        <button
+          onClick={openAwardModalBulk}
+          className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-blue-300"
+        >
+          Award Points
+        </button>
+      </div>
+
+      {/* Attendees table with vertical scroll */}
+      <div className="overflow-x-auto max-h-96 overflow-y-auto rounded-md border border-gray-200 dark:border-gray-700">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th scope="col" className="px-3 py-3">
+              <th colSpan={6} className="px-4 py-2"></th>
+            </tr>
+            <tr>
+              <th className="px-3 py-3">
                 <input
                   type="checkbox"
                   onChange={handleSelectAll}
                   checked={
-                    selectedAttendees.length === paginatedAttendees.length &&
-                    paginatedAttendees.length > 0
+                    selectedAttendees.length === displayedAttendees.length &&
+                    displayedAttendees.length > 0
                   }
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
                 />
@@ -376,8 +511,8 @@ export function AttendeesList({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-            {paginatedAttendees.length > 0 ? (
-              paginatedAttendees.map((attendee: GuestWithStatus) => (
+            {displayedAttendees.length > 0 ? (
+              displayedAttendees.map((attendee: GuestWithStatus) => (
                 <tr key={attendee.id}>
                   <td className="whitespace-nowrap px-3 py-4">
                     <input
@@ -400,34 +535,28 @@ export function AttendeesList({
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    {`${attendee.utorid.toLowerCase()}@mail.utoronto.ca`}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                     {attendee.utorid}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
                     <span className="font-medium text-green-600 dark:text-green-400">
-                      {attendee.points > 0 ? `+${attendee.points}` : attendee.points}
+                      {attendee.points > 0
+                        ? `+${attendee.points}`
+                        : attendee.points}
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                     <div className="flex space-x-2">
                       {(isManager || isOrganizer) && (
-                        <>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="number"
-                              min="1"
-                              defaultValue={pointsToAward}
-                              onChange={(e) => setPointsToAward(Number(e.target.value))}
-                              className="w-16 rounded-md border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                            <button
-                              onClick={() => handleAwardPoints(attendee)}
-                              className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
-                              title="Award Points"
-                            >
-                              <Award size={16} />
-                            </button>
-                          </div>
-                        </>
+                        <button
+                          onClick={() => openAwardModalForSingle(attendee)}
+                          className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
+                          title="Award Points"
+                        >
+                          <Award size={16} />
+                        </button>
                       )}
                       {isManager && (
                         <button
@@ -456,69 +585,76 @@ export function AttendeesList({
         </table>
       </div>
 
-      {/* Pagination */}
-      <div className="mt-4 flex items-center justify-between">
-        <div className="text-sm text-gray-700 dark:text-gray-300">
-          Showing{" "}
-          {filteredAttendees.length > 0
-            ? (currentPage - 1) * itemsPerPage + 1
-            : 0}
-          -{Math.min(currentPage * itemsPerPage, filteredAttendees.length)} of{" "}
-          {filteredAttendees.length} attendees
-        </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            className="flex items-center rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
-            <ChevronLeft size={16} />
-            <span>Previous</span>
-          </button>
-
-          {Array.from({ length: Math.min(totalPages, 5) }).map((_, idx) => {
-            const pageNum = idx + 1;
-            return (
+      {/* Award Points Modal */}
+      {awardModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                {currentAttendee
+                  ? `Award Points to ${currentAttendee.name}`
+                  : selectedAttendees.length > 0
+                  ? "Award Points to Selected Attendees"
+                  : "Award Points to All Attendees"}
+              </h3>
               <button
-                key={idx}
-                onClick={() => setCurrentPage(pageNum)}
-                className={`rounded-md px-3 py-1 text-sm font-medium ${
-                  currentPage === pageNum
-                    ? "bg-blue-600 text-white"
-                    : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                }`}
+                onClick={closeAwardModal}
+                className="text-gray-400 hover:text-gray-500 dark:text-gray-300 dark:hover:text-gray-200"
               >
-                {pageNum}
+                <X size={20} />
               </button>
-            );
-          })}
-
-          {totalPages > 5 && (
-            <>
-              <span className="text-gray-500 dark:text-gray-400">...</span>
-              <button
-                onClick={() => setCurrentPage(totalPages)}
-                className={`rounded-md px-3 py-1 text-sm font-medium ${
-                  currentPage === totalPages
-                    ? "bg-blue-600 text-white"
-                    : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                }`}
-              >
-                {totalPages}
-              </button>
-            </>
-          )}
-
-          <button
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-            className="flex items-center rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
-            <span>Next</span>
-            <ChevronRight size={16} />
-          </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="pointsAmount"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                >
+                  Points
+                </label>
+                <input
+                  type="number"
+                  id="pointsAmount"
+                  min="1"
+                  value={modalPoints}
+                  onChange={(e) => setModalPoints(Number(e.target.value))}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="remarkText"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                >
+                  Remark (optional)
+                </label>
+                <input
+                  type="text"
+                  id="remarkText"
+                  value={modalRemark}
+                  onChange={(e) => setModalRemark(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  placeholder="Reason for awarding points"
+                />
+              </div>
+              <div className="mt-5 flex justify-end space-x-3">
+                <button
+                  onClick={closeAwardModal}
+                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAwardPointsFromModal}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Award Points
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { AlertCircle, UserPlus, Trash, PlusCircle } from "lucide-react";
+import { AlertCircle, UserPlus, Trash, PlusCircle, Search } from "lucide-react";
 import { useState } from "react";
 import { fetchWithAuth } from "../../utils/authHelper";
 import { API_BASE_URL } from "../../utils/auth";
@@ -12,6 +12,7 @@ interface TabProps {
 
 export function OrganizersTab({ event, onEventUpdate, isManager }: TabProps) {
   const [newOrganizers, setNewOrganizers] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -31,6 +32,15 @@ export function OrganizersTab({ event, onEventUpdate, isManager }: TabProps) {
         </p>
       </div>
     );
+  }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    const filteredOrganizers = organizers.filter((organizer) =>
+      organizer.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setOrganizers(filteredOrganizers);
   }
 
   const handleAddOrganizer = async (e: React.FormEvent) => {
@@ -54,47 +64,45 @@ export function OrganizersTab({ event, onEventUpdate, isManager }: TabProps) {
       for (const utorid of utoridList) {
         try {
           const response = await fetchWithAuth(
-            `${API_BASE_URL}/events/${event.id}/organizers`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ utorid }),
-            }
+        `${API_BASE_URL}/events/${event.id}/organizers`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ utorid }),
+        }
           );
-
           const data = await response.json();
-          // Update the list of organizers
+          if (!response.ok) {
+        failedUtorids.push(`${utorid}: "${data.error}"`);
+        continue;
+          }
+          // Only update state if the addition was successful
           setOrganizers(data.organizers);
           onEventUpdate({
-            ...event,
-            organizers: data.organizers,
+        ...event,
+        organizers: data.organizers,
           });
           successCount++;
         } catch (err: unknown) {
           console.error(`Failed to add organizer ${utorid}:`, err);
-          failedUtorids.push(utorid);
         }
       }
 
       if (successCount > 0) {
         setSuccess(
-          `Successfully added ${successCount} organizer${
-            successCount !== 1 ? "s" : ""
-          }`
+          `Successfully added ${successCount} organizer${successCount !== 1 ? "s" : ""}`
         );
       }
 
       if (failedUtorids.length > 0) {
         setError(
-          `Failed to add the following UTORIDs: ${failedUtorids.join(
-            ", "
-          )}. They may be guests, not exist, or the event has ended.`
+          `Failed to add the following UTORIDs:\n${failedUtorids.join("\n")}`
         );
       }
 
-      // Clear the input field if at least some succeeded
+      // Clear the input field if at least some additions succeeded
       if (successCount > 0) {
         setNewOrganizers("");
       }
@@ -119,7 +127,7 @@ export function OrganizersTab({ event, onEventUpdate, isManager }: TabProps) {
         }
       );
 
-      // Update the list
+      // Remove from the list
       const updatedOrganizers = organizers.filter((o) => o.id !== organizerId);
       setOrganizers(updatedOrganizers);
       onEventUpdate({
@@ -183,7 +191,9 @@ export function OrganizersTab({ event, onEventUpdate, isManager }: TabProps) {
       }
       if (failCount > 0) {
         setError(
-          `Failed to remove ${failCount} organizer${failCount !== 1 ? "s" : ""}`
+          `Failed to remove ${failCount} organizer${
+            failCount !== 1 ? "s" : ""
+          }`
         );
       }
     } catch (err) {
@@ -215,7 +225,7 @@ export function OrganizersTab({ event, onEventUpdate, isManager }: TabProps) {
   return (
     <div>
       <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
-        Organizers ({organizers.length})
+        Organize Event - Organizers ({organizers.length})
       </h2>
 
       {error && (
@@ -230,7 +240,7 @@ export function OrganizersTab({ event, onEventUpdate, isManager }: TabProps) {
         </div>
       )}
 
-      {/* Add new organizer form */}
+      {/* Add New Organizer Form */}
       <form onSubmit={handleAddOrganizer} className="mb-6">
         <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-3 sm:space-y-0">
           <div className="flex-grow">
@@ -263,25 +273,44 @@ export function OrganizersTab({ event, onEventUpdate, isManager }: TabProps) {
         </div>
       </form>
 
-      {/* Bulk actions */}
+      {/* Bulk Remove Action */}
       {selectedOrganizers.length > 0 && (
         <div className="mb-4 flex justify-end">
           <button
             onClick={handleBulkRemove}
-            className="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
             disabled={loading}
+            className="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
           >
             <Trash className="mr-2 h-4 w-4" />
             Remove Selected ({selectedOrganizers.length})
           </button>
         </div>
       )}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <form onSubmit={handleSearch} className="flex mb-4 w-full ">
+          <input
+            type="text"
+            placeholder="Search attendees..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="rounded-l-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          />
+            <button
+              type="submit"
+              className="rounded-r-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            >
+              <Search size={18} />
+            </button>
+          </form>
+      </div>
+        
 
-      {/* Organizers list */}
+      {/* Organizers List */}
       {organizers.length > 0 ? (
         <div className="overflow-hidden rounded-md border border-gray-200 dark:border-gray-700">
+        
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
+            <thead className="bg-gray-50 dark:bg-gray-800 flex-co">
               <tr>
                 <th scope="col" className="px-4 py-3">
                   <input
@@ -314,6 +343,7 @@ export function OrganizersTab({ event, onEventUpdate, isManager }: TabProps) {
                 </th>
               </tr>
             </thead>
+            
             <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
               {organizers.map((organizer: Organizer) => (
                 <tr
@@ -343,7 +373,7 @@ export function OrganizersTab({ event, onEventUpdate, isManager }: TabProps) {
                       onClick={() => handleRemoveOrganizer(organizer.id)}
                       className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                     >
-                      Remove
+                      <Trash className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
