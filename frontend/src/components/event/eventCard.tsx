@@ -86,14 +86,14 @@ export default function EventsCard({
   return (
     <div
       onClick={onClick}
-      className="flex flex-col overflow-hidden rounded-lg bg-white shadow-md transition-shadow duration-200 hover:shadow-xl aspect-square cursor-pointer"
+      className="flex flex-col overflow-hidden rounded-lg bg-white dark:bg-slate-600 shadow-md transition-shadow duration-200 hover:shadow-xl aspect-square cursor-pointer"
     >
       {/* Event image with date badge */}
-      <div className="relative h-2/5 bg-gray-200 bg-cover bg-center">
+      <div className="relative h-2/5 bg-gray-200 dark:bg-slate-500 bg-cover bg-center">
         {/* Edit button for managers/superusers */}
         {(currentUserRole === "MANAGER" || currentUserRole === "SUPERUSER") && (
             <div
-            className="absolute right-2 top-4 z-10 flex cursor-pointer aspect-square w-9 rounded-lg bg-white p-2 shadow-sm hover:bg-gray-100 items-center justify-center"
+            className="absolute right-2 top-4 z-10 flex cursor-pointer aspect-square w-9 rounded-lg bg-white p-2 shadow-sm hover:bg-gray-100 items-center justify-center dark:bg-gray-200"
             onClick={handleEditClick}
             title="Edit Event"
             aria-label="Edit Event"
@@ -103,22 +103,22 @@ export default function EventsCard({
         )}
 
         {/* Date display */}
-        <div className="absolute left-4 top-4 flex w-16 aspect-square flex-col items-center rounded-lg bg-white p-2 text-center shadow-md">
-          <span className="text-xs font-semibold uppercase text-purple-700">
+        <div className="absolute left-4 top-4 flex w-16 aspect-square flex-col items-center rounded-lg bg-white p-2 text-center shadow-md dark:bg-slate-400">
+          <span className="text-xs font-semibold uppercase text-purple-700 dark:text-purple-600">
             {getMonthShort(startTime)}
           </span>
-          <span className="text-xl font-bold text-gray-800">
+          <span className="text-xl font-bold text-gray-800 dark:text-white">
             {getDayOfMonth(startTime)}
           </span>
         </div>
 
         {/* Published satus indicator*/}
         {(currentUserRole === "MANAGER" || currentUserRole === "SUPERUSER") && (published ? (
-          <div className="absolute right-4 bottom-2 flex items-center justify-center rounded-lg bg-green-500 px-2 py-1 text-xs font-semibold text-white shadow-md">
+          <div className="absolute right-4 bottom-2 flex items-center justify-center rounded-lg bg-green-500 px-2 py-1 text-xs font-semibold text-white shadow-md dark:bg-green-800">
             Published
           </div>
         ) : (
-          <div className="absolute right-4 bottom-2 flex items-center justify-center rounded-lg bg-red-500 px-2 py-1 text-xs font-semibold text-white shadow-md">
+          <div className="absolute right-4 bottom-2 flex items-center justify-center rounded-lg bg-red-500 px-2 py-1 text-xs font-semibold text-white shadow-md dark:bg-red-800">
             Unpublished
           </div>
         ))}
@@ -126,14 +126,14 @@ export default function EventsCard({
 
       {/* Event content */}
       <div className="flex flex-grow flex-col p-4">
-        <h3 className="mb-3 text-base font-semibold text-gray-800">
+        <h3 className="mb-3 text-base font-semibold text-gray-800 dark:text-white">
           {name}
         </h3>
 
         {/* Event details section */}
         <div className="mb-3 space-y-1.5">
           {/* Time */}
-          <div className="flex items-center text-sm text-gray-600">
+          <div className="flex items-center text-sm text-gray-600 dark:text-white">
             <Clock className="mr-2 h-4 w-4" />
             <span>
                 {formatDate(startTime) === formatDate(endTime) ? (
@@ -150,14 +150,14 @@ export default function EventsCard({
 
           {/* Location */}
           {location && (
-            <div className="flex items-center text-sm text-gray-600">
+            <div className="flex items-center text-sm text-gray-600 dark:text-white">
               <MapPin className="mr-2 h-4 w-4" />
               <span>{location}</span>
             </div>
           )}
 
           {/* Attendance */}
-          <div className="flex items-center text-sm text-gray-600">
+          <div className="flex items-center text-sm text-gray-600 dark:text-white">
             <User className="mr-2 h-4 w-4" />
             <span>
               {numGuests}
@@ -167,7 +167,7 @@ export default function EventsCard({
         </div>
 
         {/* Description */}
-        <p className="mb-4 text-sm text-gray-600 line-clamp-3">
+        <p className="mb-4 text-sm text-gray-600 line-clamp-3 dark:text-white">
           {(() => {
             const words = description.split(" ");
             return words.length > 40 ? words.slice(0, 40).join(" ") + "..." : description;
@@ -179,16 +179,16 @@ export default function EventsCard({
           {/* Points info */}
           {currentUserRole === "MANAGER" || currentUserRole === "SUPERUSER" ? (
            <div className='flex flex-col'>
-            <span className="font-semibold text-blue-600">
-              Points Remain: {pointsAwarded}  
+            <span className="font-semibold text-blue-600 dark:text-blue-200">
+              Points Remain: {pointsRemain}  
             </span>
-            <span className="font-semibold text-blue-600">
-              Points Awarded: {pointsRemain}
+            <span className="font-semibold text-blue-600 dark:text-blue-200">
+              Points Awarded: {pointsAwarded}
             </span>
             </div>
           ) : (
-            <span className="font-semibold text-blue-600">
-              {pointsAwarded ? `Earn ${pointsAwarded} points` : ""}
+            <span className="font-semibold text-blue-600 dark:text-blue-200">
+              {pointsAwarded ? `Earned ${pointsAwarded} points` : ""}
             </span>
           )}
 
@@ -199,8 +199,8 @@ export default function EventsCard({
               isDisabled
                 ? "bg-gray-400 cursor-not-allowed"
                 : isGuest
-                ? "bg-purple-600 hover:bg-purple-800"
-                : "bg-[#0063C6] hover:bg-[#002A5C]"
+                ? "bg-purple-600 hover:bg-purple-800 dark:bg-purple-600 dark:hover:bg-purple-500"
+                : "bg-[#0063C6] hover:bg-[#002A5C] dark:bg-blue-500 dark:hover:bg-blue-400"
               }`}
               onClick={handleRsvpClick}
             >
