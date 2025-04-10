@@ -3,21 +3,28 @@ import { fetchWithAuth } from '../../utils/authHelper';
 import { API_BASE_URL } from '../../utils/auth';
 
 
+interface Transaction {
+    id: number;
+    type: string;
+    amount: number;
+    spent: number;
+    createdAt: string;
+    remarks: string;
+    suspicious: boolean;
+    relatedId: number | null;
+    operatorId: number | null;
+}
+
 interface TransactionFilterSortProps {
-    transactions: {
-        id: number;
-        type: string;
-        amount: number;
-        suspicious: boolean;
-        createdAt: string;
-        operatorId: number | null;
-    }[];
-    setTransactions: Function;
+    transactions: Transaction[];
+    updateFilters: (filters: FilterOption) => void;
+    updateSorts: (sortOption: SortOption) => void;
 }
 
 type operatorType = "gte" | "lte";
+type transactionType = "redemption" | "purchase" | "transfer" | "adjustment" | "event" | "";
 
-type SortOption =
+export type SortOption =
   | 'default'
   | 'typeAsc'
   | 'typeDesc'
@@ -26,69 +33,103 @@ type SortOption =
   | 'amountHighest'
   | 'amountLowest';
 
+export interface FilterOption {
+    type: transactionType;
+    relatedId: number | null;
+    eventName: string;
+    amount: number | null;
+    operator: operatorType | null;
+}
+
+
   
 const TransactionFilterSort: React.FC<TransactionFilterSortProps> = ({
-transactions, setTransactions}) => {
+transactions,
+updateFilters,
+updateSorts,
+}) => {
 
     
-    const [type, setType] = useState<string>('');
+    const [type, setType] = useState<transactionType>('');
     const [relatedId, setRelatedId] = useState<number | null>(null);
     const [amount, setAmount] = useState<number | null>(null);
     const [operator, setOperator] = useState<operatorType | null>(null);
     const [filtering, setFiltering] = useState(false);  // State for when filter or reset button is clicked
     const [eventName, setEventName] = useState<string>(''); // State for the event name
     const [sortOption, setSortOption] = useState<SortOption>('default'); // State for the sort option
-    
-    const fetchData = async (url: string) => {
-        try {
-            const response = await fetchWithAuth(url);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch data: ${response.status}`);
-            }
-            const data = await response.json();
-            return data;
 
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            return null;
-        }
-        
+
+    useEffect(() => {
+        if (!filtering) return;
+        const filters: FilterOption = {
+            type,
+            relatedId,
+            eventName,
+            amount,
+            operator
+        };
+        console.log("Filters: ", filters);
+        updateFilters(filters);
+        setFiltering(false); // Reset filtering state
+
+    }, [filtering]);
+
+    const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedSortOption = e.target.value as SortOption;
+        setSortOption(selectedSortOption);
+        updateSorts(selectedSortOption);
     }
+    
+    // const fetchData = async (url: string) => {
+    //     try {
+    //         const response = await fetchWithAuth(url);
+    //         if (!response.ok) {
+    //             throw new Error(`Failed to fetch data: ${response.status}`);
+    //         }
+    //         const data = await response.json();
+    //         return data;
+
+    //     } catch (error) {
+    //         console.error('Error fetching data:', error);
+    //         return null;
+    //     }
+        
+    // }
 
     // Whenever the filters get updated, fetch the data
-    const handleFilter = async () => {
+    // const handleFilter = async () => {
 
-        let url = `${API_BASE_URL}/users/me/transactions?`;
+    //     let url = `${API_BASE_URL}/users/me/transactions?`;
 
-        if (type !== "") {
-            url += `type=${type}&`;
-        }
+    //     if (type !== "") {
+    //         url += `type=${type}&`;
+    //     }
 
-        if (eventName !== "") {
-            const eventId = await getEventId();
-            url += `eventId=${eventId}&`;
+    //     if (eventName !== "") {
+    //         const eventId = await getEventId();
+    //         url += `eventId=${eventId}&`;
 
-        } else if (relatedId !== null) {
+    //     } else if (relatedId !== null) {
 
-            console.log("Related ID: ", relatedId);
-            url += `relatedId=${relatedId}&`;
-        }
-        if (amount !== null && operator !== null) {
+    //         console.log("Related ID: ", relatedId);
+    //         url += `relatedId=${relatedId}&`;
+    //     }
+    //     if (amount !== null && operator !== null) {
             
-            url += `amount=${amount}&operator=${operator}`;
-        }
+    //         url += `amount=${amount}&operator=${operator}`;
+    //     }
 
-        const data = await fetchData(url);
-        setTransactions(data.results);
-    }
+    //     const data = await fetchData(url);
+    //     setTransactions(data.results);
+    // }
 
     // When filtering is set to true, call the handleFilter function
-    useEffect(() => {
-        if (filtering) {    // Done to prevent infinite loop
-            handleFilter();
-        }
-        setFiltering(false);
-    }, [filtering]);
+    // useEffect(() => {
+    //     if (filtering) {    // Done to prevent infinite loop
+    //         handleFilter();
+    //     }
+    //     setFiltering(false);
+    // }, [filtering]);
 
     // Handler for the reset Filters button
     const resetFilters = async () => {
@@ -101,41 +142,41 @@ transactions, setTransactions}) => {
     }
 
     // Function to get the event ID from the event name
-    const getEventId = async () => {
+    // const getEventId = async () => {
         
-        const response = await fetchData(`${API_BASE_URL}/events?name=${eventName}`);
-        if (response && response.results.length > 0) {
+    //     const response = await fetchData(`${API_BASE_URL}/events?name=${eventName}`);
+    //     if (response && response.results.length > 0) {
             
-            return response.results[0].id;
-        }
+    //         return response.results[0].id;
+    //     }
 
-        return -1;
-    }
+    //     return -1;
+    // }
 
     // Function to sort the transactions based on the selected option
-    const sortTransaction = useMemo(() => {
-        console.log("Sorting transactions", sortOption);
-        const sortedTransactions = [...transactions];
-        sortedTransactions.sort((a, b) => {
-            switch (sortOption) {
-                case 'typeAsc':
-                    return a.type.localeCompare(b.type);
-                case 'typeDesc':
-                    return b.type.localeCompare(a.type);
-                case 'dateNewest':
-                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-                case 'dateOldest':
-                    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-                case 'amountHighest':
-                    return b.amount - a.amount;
-                case 'amountLowest':
-                    return a.amount - b.amount;
-                default:
-                    return 0;
-            }
-        });
-        setTransactions(sortedTransactions.slice(0, 10));
-    }, [transactions, sortOption]);
+    // useMemo(() => {
+    //     console.log("Sorting transactions", sortOption);
+    //     const sortedTransactions = [...transactions];
+    //     sortedTransactions.sort((a, b) => {
+    //         switch (sortOption) {
+    //             case 'typeAsc':
+    //                 return a.type.localeCompare(b.type);
+    //             case 'typeDesc':
+    //                 return b.type.localeCompare(a.type);
+    //             case 'dateNewest':
+    //                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    //             case 'dateOldest':
+    //                 return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    //             case 'amountHighest':
+    //                 return b.amount - a.amount;
+    //             case 'amountLowest':
+    //                 return a.amount - b.amount;
+    //             default:
+    //                 return 0;
+    //         }
+    //     });
+    //     setTransactions(sortedTransactions.slice(0, 10));
+    // }, [transactions, sortOption]);
 
     return (
         <div className='bg-white shadow-md rounded-lg p-6 my-4 w-full flex flex-row gap-2'>
@@ -143,7 +184,7 @@ transactions, setTransactions}) => {
             {/* Type */}
             <div className='flex flex-col w-1/6'>
                 <label className='text-md font-bold'>Type</label>
-                <select value={type} onChange={(e) => setType(e.target.value)} className='border rounded p-2'>
+                <select value={type} onChange={(e) => setType(e.target.value as transactionType)} className='border rounded p-2'>
                     <option value="">All</option>
                     <option value="redemption">Redemption</option>
                     <option value="purchase">Purchase</option>
@@ -232,7 +273,7 @@ transactions, setTransactions}) => {
 
             {/* Sort */}
             <select value={sortOption}
-             onChange={(e) => setSortOption(e.target.value as SortOption)} 
+             onChange={(e) => handleSortChange(e)} 
              className='border rounded p-2 mt-6 w-1/6'>
                 
                 <option value="default">Sort by Default</option>

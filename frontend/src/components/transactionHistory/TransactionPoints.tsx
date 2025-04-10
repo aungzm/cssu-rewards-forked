@@ -1,4 +1,3 @@
-
 interface TransactionPointsProps {
     transactions: {
         id: number;
@@ -8,10 +7,11 @@ interface TransactionPointsProps {
         createdAt: string | null;
         operatorId: number | null;
     }[];
+    userPoints: number;
 }
 
 const TransactionPoints: React.FC<TransactionPointsProps> = ({
-    transactions
+    transactions, userPoints
 }) => {
 
     const points = transactions.reduce((acc, transaction) => {
@@ -21,35 +21,33 @@ const TransactionPoints: React.FC<TransactionPointsProps> = ({
             } else {
                 acc.negative += transaction.amount;
             }
-            acc.total += transaction.amount;
         }
         return acc;
 
-    }, { positive: 0, negative: 0, total: 0 });
+    }, { positive: 0, negative: 0});
 
 
 
     return (
         <div className="bg-white shadow-md rounded-lg p-6 my-4 max-w-4xl w-full">
-            <h2 className="text-xl font-semibold mb-4"> Points Summary</h2>
+            <h2 className="text-xl mb-4" style={{ color: "#002A5C" }}> Points Summary</h2>
             
-            <div className="flex flex-row justify-between items-center">
+            <div className="flex flex-row justify-around items-center w-full px-10">
 
                 <div className="flex flex-col">
-                    <span className="text-lg font-bold">Current Balance</span>
-                    <span className="text-2xl font-bold">{points.total}</span>
+                    <span className="text-2xl text-green-500">{points.positive}</span>
+                    <span className="text-mg text-gray-500">Positive Points</span>
                 </div>
 
                 <div className="flex flex-col">
-                    <span className="text-lg font-bold">Positive Points</span>
-                    <span className="text-2xl font-bold text-green-500">{points.positive}</span>
+                    <span className="text-2xl text-red-500">{points.negative}</span>
+                    <span className="text-mg text-gray-500">Negative Points</span>
                 </div>
 
                 <div className="flex flex-col">
-                    <span className="text-lg font-bold">Negative Points</span>
-                    <span className="text-2xl font-bold text-red-500">{points.negative}</span>
+                    <span className="text-2xl" style={{ color: "#002A5C" }}>{userPoints}</span>
+                    <span className="text-mg text-gray-500">Current Balance</span>
                 </div>
-
 
             </div>
 
