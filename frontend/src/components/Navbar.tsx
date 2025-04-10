@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import ThemeToggle from "./ThemeToggle";
-import { User } from "lucide-react";
+import { User, Menu, X } from "lucide-react";
 import { useUser } from "../context/UserContext"; 
 
 // Interfaces (move to a separate file later probably in types.ts)
@@ -11,6 +11,7 @@ interface UserData {
   points: number;
   verified: boolean;
   avatarUrl?: string;
+  avatar?: string; // For base64 encoded avatar
 }
 
 interface DropdownItem {
@@ -54,7 +55,6 @@ const navLinks: NavLink[] = [
       { name: "Process Redemption", href: "/process-redemption" },
       { name: "Transaction History", href: "/transaction-history" },
     ],
-
   },
   { name: "Promotions", href: "/promotions" },
   {
@@ -87,6 +87,19 @@ const userHasRequiredRole = (
 const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
   const { userData, isLoading, error, signout } = useUser();
   const isSuperUser = userData?.role === "SUPERUSER";
+  
+  // Mobile menu state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Track which dropdowns are open in mobile view
+  const [openMobileDropdowns, setOpenMobileDropdowns] = useState<Record<string, boolean>>({});
+
+  // Toggle mobile dropdown
+  const toggleMobileDropdown = (linkName: string) => {
+    setOpenMobileDropdowns(prev => ({
+      ...prev,
+      [linkName]: !prev[linkName]
+    }));
+  };
 
   // Avatar Rendering Logic
   const renderAvatar = () => {
@@ -95,16 +108,16 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
         {userData?.avatar ? (
           // If a base64 encoded avatar exists, display it
           <div
-        className="w-full h-full bg-cover bg-center"
-        style={{ backgroundImage: `url(data:image/png;base64,${userData.avatar})` }}
-        aria-label={`${userData.utorid}'s avatar`}
+            className="w-full h-full bg-cover bg-center"
+            style={{ backgroundImage: `url(data:image/png;base64,${userData.avatar})` }}
+            aria-label={`${userData.utorid}'s avatar`}
           ></div>
         ) : userData?.avatarUrl ? (
           // Otherwise, use the avatar URL if available
           <div
-        className="w-full h-full bg-cover bg-center"
-        style={{ backgroundImage: `url(${userData.avatarUrl})` }}
-        aria-label={`${userData.utorid}'s avatar`}
+            className="w-full h-full bg-cover bg-center"
+            style={{ backgroundImage: `url(${userData.avatarUrl})` }}
+            aria-label={`${userData.utorid}'s avatar`}
           ></div>
         ) : (
           // Fallback to icon component
@@ -117,7 +130,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
   // Loading State
   if (isLoading) {
     return (
-      <nav className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-6 py-4 shadow-md sticky top-0 z-50">
+      <nav className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-4 sm:px-6 py-4 shadow-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Simplified loading view */}
           <div className="flex items-center">
@@ -138,7 +151,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
   // Error State
   if (error || !userData) {
     return (
-      <nav className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 px-6 py-4 shadow-md sticky top-0 z-50">
+      <nav className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 px-4 sm:px-6 py-4 shadow-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-center">
           Error: {error || "User data not available."}
         </div>
@@ -148,107 +161,188 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
 
   // Render Full Navbar
   return (
-    <nav className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-6 py-4 shadow-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Logo Section */}
-        <div className="flex items-center">
-          <div className="w-8 h-8 rounded-full bg-gray-900 dark:bg-white flex items-center justify-center mr-3">
-            <span className="text-white dark:text-gray-900 font-bold">U</span>
+    <nav className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-4 sm:px-6 py-4 shadow-md sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between">
+          {/* Logo Section */}
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-full bg-gray-900 dark:bg-white flex items-center justify-center mr-3">
+              <span className="text-white dark:text-gray-900 font-bold">U</span>
+            </div>
+            <span className="font-bold text-lg">UofT Rewards</span>
           </div>
-          <span className="font-bold text-lg">UofT Rewards</span>
-        </div>
 
-        {/* Navigation Links Section */}
-        <div className="hidden md:flex items-center space-x-6">
-          {navLinks.map(
-            (link) =>
-              userHasRequiredRole(userData.role, link.requiredRoles) && (
-                <div key={link.name} className="relative group">
-                  {/* Nav Link Item */}
-                  <a
-                    href={link.href}
-                    className={`relative px-1 py-2 text-sm font-medium transition-colors ${
-                      link.name === activeLink
-                        ? "text-blue-600 dark:text-blue-400"
-                        : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                    }`}
-                  >
-                    {link.name}
-                    {link.hasDropdown && (
-                      <span className="ml-1 text-xs opacity-70">▼</span>
-                    )}
-                    {link.name === activeLink && (
-                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400"></span>
-                    )}
-                  </a>
-                  {/* Dropdown Menu for Nav Links */}
-                  {link.hasDropdown && link.dropdownItems && (
-                    <div
-                      className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg
-                                 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-10"
+          {/* Desktop Navigation Links - Hidden on Mobile */}
+          <div className="hidden md:flex items-center space-x-6">
+            {navLinks.map(
+              (link) =>
+                userHasRequiredRole(userData.role, link.requiredRoles) && (
+                  <div key={link.name} className="relative group">
+                    {/* Nav Link Item */}
+                    <a
+                      href={link.href}
+                      className={`relative px-1 py-2 text-sm font-medium transition-colors ${
+                        link.name === activeLink
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                      }`}
                     >
-                      {link.dropdownItems.map((item) => (
-                        <a
-                          key={item.name}
-                          href={item.href}
-                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-                        >
-                          {item.name}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ),
-          )}
-        </div>
+                      {link.name}
+                      {link.hasDropdown && (
+                        <span className="ml-1 text-xs opacity-70">▼</span>
+                      )}
+                      {link.name === activeLink && (
+                        <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400"></span>
+                      )}
+                    </a>
+                    {/* Dropdown Menu for Nav Links */}
+                    {link.hasDropdown && link.dropdownItems && (
+                      <div
+                        className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg
+                                   opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-10"
+                      >
+                        {link.dropdownItems.map((item) => (
+                          <a
+                            key={item.name}
+                            href={item.href}
+                            className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                          >
+                            {item.name}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ),
+            )}
+          </div>
 
-        {/* Right Section */}
-        <div className="flex items-center space-x-4">
-          <ThemeToggle />
+          {/* Right Section */}
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <ThemeToggle />
 
-          {/* User Menu with Dropdown */}
-          <div className="relative group">
-            {/* Trigger Area */}
-            <div className="flex items-center space-x-2 cursor-pointer">
-              {renderAvatar()} {/* Use the avatar rendering function */}
-              <div className="flex items-center">
-                <span className="text-sm font-medium mr-1">
-                  {userData?.utorid} {/* Display utorid */}
-                </span>
-                {isSuperUser && (
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-purple-600 text-white font-bold">
-                    SU
+            {/* User Menu with Dropdown (Visible on all screens) */}
+            <div className="relative group">
+              {/* Trigger Area */}
+              <div className="flex items-center space-x-2 cursor-pointer">
+                {renderAvatar()}
+                <div className="hidden sm:flex items-center">
+                  <span className="text-sm font-medium mr-1">
+                    {userData?.utorid}
                   </span>
-                )}
-                <span className="ml-1 text-xs opacity-70">▼</span>
+                  {isSuperUser && (
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-purple-600 text-white font-bold">
+                      SU
+                    </span>
+                  )}
+                  <span className="ml-1 text-xs opacity-70">▼</span>
+                </div>
+              </div>
+
+              {/* User Dropdown Menu */}
+              <div className="relative">
+                {/* Invisible wrapper to expand the hover area */}
+                <div className="absolute inset-0 -m-2" />
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-10">
+                  <a
+                    href="/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  >
+                    Profile Details
+                  </a>
+                  <button
+                    onClick={signout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  >
+                    Sign Out
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* User Dropdown Menu */}
-            <div className="relative">
-              {/* Invisible wrapper to expand the hover area */}
-              <div className="absolute inset-0 -m-2" />
-              <div
-              className="absolute left-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-10"
-              >
-              <a
-                href="/profile" // Replace with actual profile link/route
-                className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-              >
-                Profile Details
-              </a>
-              {/* Use button for actions like logout */}
-              <button
-                onClick={signout} // Call signout from useUser context
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-              >
-                Sign Out
-              </button>
+            {/* Mobile Menu Button - Only visible on mobile */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Menu - Only visible when menu is open */}
+        {mobileMenuOpen && (
+          <div className="md:hidden mt-4 py-2 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col space-y-1">
+              {navLinks.map(
+                (link) =>
+                  userHasRequiredRole(userData.role, link.requiredRoles) && (
+                    <div key={link.name} className="w-full">
+                      {/* Mobile Nav Link Item */}
+                      {link.hasDropdown ? (
+                        <button
+                          onClick={() => toggleMobileDropdown(link.name)}
+                          className={`flex justify-between items-center w-full px-2 py-3 text-sm font-medium ${
+                            link.name === activeLink
+                              ? "text-blue-600 dark:text-blue-400"
+                              : "text-gray-600 dark:text-gray-300"
+                          }`}
+                        >
+                          {link.name}
+                          <span className="text-xs opacity-70">
+                            {openMobileDropdowns[link.name] ? "▲" : "▼"}
+                          </span>
+                        </button>
+                      ) : (
+                        <a
+                          href={link.href}
+                          className={`block px-2 py-3 text-sm font-medium ${
+                            link.name === activeLink
+                              ? "text-blue-600 dark:text-blue-400"
+                              : "text-gray-600 dark:text-gray-300"
+                          }`}
+                        >
+                          {link.name}
+                        </a>
+                      )}
+                      
+                      {/* Mobile Dropdown Menu */}
+                      {link.hasDropdown && link.dropdownItems && openMobileDropdowns[link.name] && (
+                        <div className="bg-gray-100 dark:bg-gray-800 pl-4">
+                          {link.dropdownItems.map((item) => (
+                            <a
+                              key={item.name}
+                              href={item.href}
+                              className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
+                            >
+                              {item.name}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ),
+              )}
+              
+              {/* Additional Mobile Menu items - visible only in mobile menu */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
+                <a
+                  href="/profile"
+                  className="block px-2 py-3 text-sm font-medium text-gray-600 dark:text-gray-300"
+                >
+                  Profile Details
+                </a>
+                <button
+                  onClick={signout}
+                  className="block w-full text-left px-2 py-3 text-sm font-medium text-gray-600 dark:text-gray-300"
+                >
+                  Sign Out
+                </button>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </nav>
   );
