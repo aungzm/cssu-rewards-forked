@@ -14,6 +14,7 @@ import {
   removeGuest,
   addSelfAsGuest,
   removeSelfAsGuest,
+  getEventTransactions
 } from "../controllers/eventController.js";
 import { authenticateToken } from "../middlewares/authenticateToken.js";
 import { requireManagerOrHigher } from "../middlewares/authMiddleware.js";
@@ -151,11 +152,11 @@ const getEventsSchema = z.object({
   query: z.object({
     name: z.string().optional(),
     location: z.string().optional(),
-    started: z.coerce.boolean().optional(),
-    ended: z.coerce.boolean().optional(),
-    showAll: z.coerce.boolean().optional(),
+    started: z.preprocess(parseBoolean, z.boolean()).optional(),
+    ended: z.preprocess(parseBoolean, z.boolean()).optional(),
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().optional(),
+    showFull: z.preprocess(parseBoolean, z.boolean()).optional(),
     published: z.preprocess(parseBoolean, z.boolean()).optional(), // Manager+ only
   }),
 });
@@ -248,6 +249,17 @@ const awardPointsSchema = z.object({
   }),
 });
 
+const getEventsTransactionsSchema = z.object({
+  params: z.object({
+    eventId: z
+      .coerce
+      .number()
+      .int("eventId must be an integer")
+      .positive("eventId must be a positive integer"), // Maybe add  pagination in the future
+  }),
+});
+
+
 const createGuestMeSchema = z.object({
   params: z.object({
     eventId: z
@@ -273,14 +285,25 @@ const deleteGuestMeSchema = z.object({
 /**
  * POST /events/:eventId/transactions
  * Create a transaction for an event
- * Clearance: Manager or higher
+ * Clearance: Manager or higher or Organizer
  */
 router.post(
   "/:eventId/transactions",
   authenticateToken,
-  requireManagerOrHigher,
   validate(awardPointsSchema),
   awardPoints
+);
+
+/**
+ * GET /events/:eventId/transactions
+ * Retrieve transactions for an event
+ * Clearance: Manager or higher or Organizer
+ */
+router.get(
+  "/:eventId/transactions",
+  authenticateToken,
+  validate(getEventsTransactionsSchema),
+  getEventTransactions
 );
 
 /**

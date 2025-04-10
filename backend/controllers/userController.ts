@@ -524,7 +524,173 @@ export async function updateCurrentUserPassword(req: Request, res: Response): Pr
   }
 }
 
-export async function getMyOrganizedEvents(req :Request, res: Response): Promise<void> {
+
+/**
+ * GET /my-organized-events
+ * Retrieve a list of events organized by the current user.
+ * Supports filtering by start/end time and whether the event is full.
+ */
+export async function getMyOrganizedEvents(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const currentUserId = (req as any).user?.id;
+    if (!currentUserId) {
+      res.status(401).json({ error: "Not authenticated" });
+      return;
+    }
+
+    const {
+      past = "false",
+      page = "1",
+      limit = "10",
+      started,
+      ended,
+      showFull,
+    } = req.query as { [key: string]: string | undefined };
+
+    const pageNum = parseInt(page, 10) || 1;
+    const pageSize = parseInt(limit, 10) || 10;
+    const skip = (pageNum - 1) * pageSize;
+
+    // Build base where clause for events that the current user is organizing.
+    const where: any = {
+      organizers: {
+        some: {
+          organizerId: currentUserId,
+        },
+      },
+    };
+
+    // Disallow specifying both started and ended simultaneously.
+    if (started !== undefined && ended !== undefined) {
+      res.status(400).json({
+        error: 'Cannot specify both "started" and "ended" simultaneously.',
+      });
+      return;
+    }
+
+    // Filter by startTime if provided.
+    if (started !== undefined) {
+      where.startTime =
+        started === "true" ? { lte: new Date() } : { gt: new Date() };
+    }
+
+    // Filter by endTime if provided.
+    if (ended !== undefined) {
+      where.endTime =
+        ended === "true" ? { lte: new Date() } : { gt: new Date() };
+    }
+
+    // If the past filter is false (or not "true") and no ended filter is provided,
+    // restrict to upcoming events.
+    if (ended === undefined && past !== "true") {
+      where.endTime = { gt: new Date() };
+    }
+
+    // Execute both the count and the paginated query.
+    const [totalCount, events] = await Promise.all([
+      prisma.event.count({ where }),
+      prisma.event.findMany({
+        where,
+        orderBy: { startTime: "asc" },
+        skip,
+        take: pageSize,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          startTime: true,
+          endTime: true,
+          location: true,
+          capacity: true,
+          published: true,
+          _count: { select: { guests: true } },
+          organizers: {
+            select: {
+              organizerId: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    // If showFull parameter is provided, filter accordingly in-memory.
+    // (Remember that filtering in-memory may cause count changes on a per-page basis.)
+    if (showFull !== undefined) {
+      // Convince typescript that this is a boolean 
+      const showFullBool = Boolean(showFull);
+      if (showFullBool === true) {
+        const fullEvents = events.filter(
+          (event) =>
+            event.capacity !== null &&
+            event._count.guests === event.capacity
+        );
+        const results = fullEvents.map((event) => ({
+          id: event.id,
+          name: event.name,
+          description: event.description,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          location: event.location,
+          capacity: event.capacity,
+          published: event.published,
+          numGuests: event._count.guests,
+        }));
+        res.status(200).json({
+          count: fullEvents.length,
+          results,
+        });
+        return;
+      } else if (showFullBool === false) {
+        const nonFullEvents = events.filter(
+          (event) =>
+            event.capacity === null || event._count.guests < event.capacity
+        );
+        const results = nonFullEvents.map((event) => ({
+          id: event.id,
+          name: event.name,
+          description: event.description,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          location: event.location,
+          capacity: event.capacity,
+          published: event.published,
+          numGuests: event._count.guests,
+        }));
+        res.status(200).json({
+          count: nonFullEvents.length,
+          results,
+        });
+        return;
+      }
+    }
+
+    // Default case: return the paginated results without extra post-filtering.
+    const results = events.map((event) => ({
+      id: event.id,
+      name: event.name,
+      description: event.description,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      location: event.location,
+      capacity: event.capacity,
+      published: event.published,
+      numGuests: event._count.guests,
+    }));
+
+    res.status(200).json({
+      count: totalCount,
+      results,
+    });
+  } catch (error) {
+    console.error("getMyOrganizedEvents error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+}
+
+export async function getMyGuestEvents(req :Request, res: Response): Promise<void> {
   try {
     const currentUserId = (req as any).user?.id;
     const {past = false, page = "1", limit = "10" } = req.query; // include past events or not (users probably would not want to filter out their currently organized events)
@@ -539,55 +705,17 @@ export async function getMyOrganizedEvents(req :Request, res: Response): Promise
       res.status(404).json({ error: "User not found." });
       return;
     }
-    const events = await prisma.organizerEvent.findMany({
+    const events = await prisma.rsvp.findMany({
       skip: (pageNum - 1) * limitNum,
       take: limitNum,
       where: {
-        organizerId: currentUserId,
-        event: {
-          endTime: {
-            gte: (past? undefined: new Date())
-          }
-        }
+        userId: currentUserId,
       },
       select: {
-        event: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            startTime: true,
-            endTime: true,
-            location: true,
-            capacity: true,
-            pointsRemain: true,
-            pointsAwarded: true,
-            published: true,
-            organizers: {
-              select: {
-                organizer: { select: { id: true, utorid: true, name: true } },
-              },
-            },
-            guests: {
-              include: {
-                user: { select: { id: true, utorid: true, name: true } },
-              },
-            },
-          }
-        },
+        eventId: true,
       }
     });
-    const count = await prisma.organizerEvent.count({
-      where: {
-        organizerId: currentUserId,
-        event: {
-          endTime: {
-            gte: (past? undefined: new Date())
-          }
-        }
-      }
-    });
-    res.status(200).json({results: events, count: count})
+    res.status(200).json({results: events})
   } catch(error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error." }); 

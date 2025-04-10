@@ -15,6 +15,7 @@ import {
   updateCurrentUser,
   updateCurrentUserPassword,
   getMyOrganizedEvents,
+  getMyGuestEvents,
 } from "../controllers/userController.js";
 import {
   createTransferTransaction,
@@ -224,6 +225,9 @@ const getMyOrganizedEventsSchema = z.object({
     past: z.coerce.boolean().optional(),
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().optional(),
+    showFull: z.preprocess(parseBoolean, z.boolean()).optional(),
+    ended: z.preprocess(parseBoolean, z.boolean()).optional(),
+    started: z.preprocess(parseBoolean, z.boolean()).optional(),
   })
 });
 
@@ -237,6 +241,9 @@ const getUsersSchema = z.object({
     activated: z.preprocess(parseBoolean, z.boolean()).optional(),
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().optional(),
+    showFull: z.preprocess(parseBoolean, z.boolean()).optional(),
+    ended: z.preprocess(parseBoolean, z.boolean()).optional(),
+    started: z.preprocess(parseBoolean, z.boolean()).optional(),
   }),
 });
 
@@ -336,6 +343,17 @@ router.get(
   authenticateToken,
   validate(getMyOrganizedEventsSchema),
   getMyOrganizedEvents
+);
+
+/**
+ * @route   GET /users/me/events/guest
+ * @desc    Retrieve a list of eventIds that the user participated in
+ * @access  Regular user or higher
+ */
+router.get(
+  "/me/events/guest",
+  authenticateToken,
+  getMyGuestEvents
 );
 
 /**

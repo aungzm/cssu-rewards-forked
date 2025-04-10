@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { AuthenticatedRequest } from "middlewares/authMiddleware.js";
 
 const prisma = new PrismaClient();
 
@@ -76,14 +77,14 @@ export async function createEvent(req: Request, res: Response): Promise<void> {
  * - Regular clearance: can only see published events.
  * - Manager or higher: can see all events, optionally filter by `published`.
  */
-export async function getEvents(req: Request, res: Response): Promise<void> {
+export async function getEvents(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const {
       name,
       location,
       started,
       ended,
-      showAll,
+      showFull,
       page = "1",
       limit = "10",
       published,
@@ -113,7 +114,7 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
 
     // Filter events by startTime based on query
     if (started !== undefined) {
-      if (started === "true") {
+      if (started) {
         where.startTime = { lte: new Date() };
       } else {
         where.startTime = { gt: new Date() };
@@ -122,7 +123,7 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
 
     // Filter by ended status
     if (ended !== undefined) {
-      if (ended === "true") {
+      if (ended) {
         where.endTime = { lte: new Date() };
       } else {
         where.endTime = { gt: new Date() };
@@ -130,8 +131,8 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
     }
 
     // Role-based filtering for published events.
-    const userRole: string = (req as any).user?.role || "REGULAR";
-    if (userRole === "Regular" || userRole === "CASHIER") {
+    const userRole: string =  req.user?.role || "REGULAR";
+    if (userRole === "REGULAR" || userRole === "CASHIER") {
       where.published = true;
     } else if (published !== undefined) {
       where.published = published; // Note published is validated as a boolean
@@ -140,23 +141,35 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
     const pageNum = parseInt(page, 10) || 1;
     const pageSize = parseInt(limit, 10) || 10;
     const skip = (pageNum - 1) * pageSize;
-    const skipValue = showAll ? 0 : skip;
-    const takeValue = showAll ? undefined : pageSize;
 
+    const currentUserId = (req as any).user?.id;
     const [totalCount, events] = await Promise.all([
       prisma.event.count({ where }),
       prisma.event.findMany({
         where,
         orderBy: { startTime: "asc" },
-        skip: skipValue,
-        take: takeValue,
+        skip, 
+        take: pageSize, 
         select: {
           id: true,
           name: true,
+          description: true,
           location: true,
           startTime: true,
           endTime: true,
           capacity: true,
+          pointsAwarded:
+            userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
+          pointsRemain:
+            userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
+          published:
+            userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
+          organizers: {
+            select: { organizerId: true },
+          },
+          guests: {
+            select: { userId: true },
+          },
           _count: {
             select: { guests: true },
           },
@@ -164,14 +177,75 @@ export async function getEvents(req: Request, res: Response): Promise<void> {
       }),
     ]);
 
+    const booleanShowFull = Boolean(showFull)
+    if (showFull !== undefined && booleanShowFull){
+      console.log("showFull is true");
+      const fullEvents = events.filter((event) => event.capacity !== null && event.guests.length === event.capacity);
+      const results = fullEvents.map((event) => ({
+        id: event.id,
+        name: event.name,
+        description: event.description,
+        location: event.location,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        capacity: event.capacity,
+        pointsAwarded: event.pointsAwarded,
+        pointsRemain: event.pointsRemain,
+        numGuests: event._count.guests,
+        published: event.published,
+        isOrganizer: event.organizers.some(
+          (org) => org.organizerId === currentUserId
+        ),
+        isGuest: event.guests.some((g) => g.userId === currentUserId),
+      }));
+      res.status(200).json({
+        count: fullEvents.length,
+        results,
+      });
+      return;
+    } else if (showFull !== undefined && booleanShowFull === false) {
+      const nonFullEvents = events.filter((event) => event.capacity === null || event.guests.length < event.capacity);
+      const results = nonFullEvents.map((event) => ({
+        id: event.id,
+        name: event.name,
+        description: event.description,
+        location: event.location,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        capacity: event.capacity,
+        pointsAwarded: event.pointsAwarded,
+        pointsRemain: event.pointsRemain,
+        numGuests: event._count.guests,
+        published: event.published,
+        isOrganizer: event.organizers.some(
+          (org) => org.organizerId === currentUserId
+        ),
+        isGuest: event.guests.some((g) => g.userId === currentUserId),
+      }));
+      res.status(200).json({
+        count: nonFullEvents.length,
+        results,
+      });
+      return;
+    }
+
+    // Default case: return all events regardless of capacity
     const results = events.map((event) => ({
       id: event.id,
       name: event.name,
+      description: event.description,
       location: event.location,
       startTime: event.startTime,
       endTime: event.endTime,
       capacity: event.capacity,
+      pointsAwarded: event.pointsAwarded,
+      pointsRemain: event.pointsRemain,
       numGuests: event._count.guests,
+      published: event.published,
+      isOrganizer: event.organizers.some(
+        (org) => org.organizerId === currentUserId
+      ),
+      isGuest: event.guests.some((g) => g.userId === currentUserId),
     }));
 
     res.status(200).json({
@@ -937,7 +1011,7 @@ export async function removeSelfAsGuest(
  * POST /events/:eventId/transactions
  * Award points for an event.
  */
-export async function awardPoints(req: Request, res: Response): Promise<void> {
+export async function awardPoints(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const eventId = req.params.eventId; // assume Zod has coerced this to a number if using middleware
     const { type, utorid, amount, remark } = req.body as {
@@ -964,9 +1038,24 @@ export async function awardPoints(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const operatorId = (req as any).user?.id;
+    const operatorId = req.user?.id;
     if (!operatorId) {
       res.status(401).json({ error: "User not authenticated" });
+      return;
+    }
+
+    const isOrganizer = event.organizers.some(
+      (org) => org.organizerId === operatorId
+    );
+
+    const isManagerOrHigher =
+      req.user?.role === "MANAGER" ||  req.user?.role === "SUPERUSER"; 
+
+    const isOrganizerOrManagerOrHigher = isManagerOrHigher || isOrganizer;
+    if (!isOrganizerOrManagerOrHigher) {
+      res.status(403).json({
+        error: "Not authorized to award points for this event",
+      });
       return;
     }
 
@@ -1005,6 +1094,7 @@ export async function awardPoints(req: Request, res: Response): Promise<void> {
             user: { connect: { id: targetUser.id } },
             operator: { connect: { id: operatorId } },
             remarks: remark || "",
+            relatedEvent: { connect: { id: event.id } } 
           },
         }),
         prisma.event.update({
@@ -1025,7 +1115,7 @@ export async function awardPoints(req: Request, res: Response): Promise<void> {
         recipient: targetUser.utorid,
         awarded: amount,
         type: "event",
-        relatedId: event.id,
+        relatedId: operatorId,
         remark: remark || "",
         createdBy: (req as any).user?.utorid || "",
       };
@@ -1058,6 +1148,7 @@ export async function awardPoints(req: Request, res: Response): Promise<void> {
           amount,
           user: { connect: { id: rsvp.userId } },
           operator: { connect: { id: operatorId } },
+          relatedEvent: { connect: { id: event.id } },
           remarks: remark || "",
         },
       })
@@ -1101,6 +1192,64 @@ export async function awardPoints(req: Request, res: Response): Promise<void> {
     res.status(201).json(responseTransactions);
   } catch (error) {
     console.error("awardPoints error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+
+/**
+ * GET /events/:eventId/transactions
+ * Get transactions related to an event.
+ * Clearance: Manager or higher or Organizer of the event
+ */
+
+export async function getEventTransactions(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const  eventId = req.params.eventId;
+    const userId = req.user?.id;
+    const event = await prisma.event.findUnique({
+      where: { id: Number(eventId) },
+      include: {
+        organizers: true,
+      },
+    });
+
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+    const isManagerOrHigher = req.user?.role === "MANAGER" || req.user?.role === "SUPERUSER";
+    const isOrganizer = event?.organizers.some(
+      (org) => org.organizerId === userId
+    );
+    if (!isManagerOrHigher && !isOrganizer) {
+      res.status(403).json({ error: "Not authorized to view transactions" });
+      return;
+    }
+
+    const transactions = await prisma.transaction.findMany({
+      where: { relatedEventId: Number(eventId) },
+      include: {
+        operator: { select: { id: true, utorid: true, name: true } },
+        user: { select: { id: true, utorid: true, name: true } },
+      },
+    });
+    const formattedTransactions = transactions.map((transaction) => ({
+      id: transaction.id,
+      recipient: transaction.user?.utorid || "",
+      awarded: transaction.amount || 0,
+      type: transaction.type.toLowerCase(),
+      relatedId: transaction.relatedEventId || null,
+      remark: transaction.remarks || "",
+      createdBy: transaction.operator?.utorid || ""
+    }));
+    
+    res.status(200).json(formattedTransactions);
+  } catch (error) {
+    console.error("getEventTransactions error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 }

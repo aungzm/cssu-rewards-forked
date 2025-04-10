@@ -62,8 +62,8 @@ const navLinks: NavLink[] = [
     href: "#",
     hasDropdown: true,
     dropdownItems: [
-      { name: "All Events", href: "#" },
-      { name: "My Organized Events", href: "#" },
+      { name: "All Events", href: "/events" },
+      { name: "My Organized Events", href: "/my-events" },
     ],
   },
   {

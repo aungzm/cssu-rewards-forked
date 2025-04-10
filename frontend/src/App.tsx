@@ -11,6 +11,10 @@ import Signup from "./pages/Signup";
 import PromotionsPage from "./pages/Promotions";
 import { isAuthenticated } from "./utils/auth";
 import UserProfile from './pages/UserProfile';
+import EventsPage from "./pages/Events"
+import UserManagment from './pages/UserManagment';
+import EventDetailsPage from "./pages/EditEvents";
+import MyOrganizedEvents from "./pages/MyOrganizedEvents";
 import TransactionHistory from "./pages/TransactionHistory";
 import CreateTransfer from "./pages/CreateTransfer";
 import CreateRedemption from "./pages/CreateRedemption";
@@ -46,8 +50,10 @@ function App() {
           <Route path="/points-history" element={<TransactionManager />} />
           <Route path="/profile" element={<UserProfile/>}/>
           <Route path="/user-management" element={<UserManagment/>}/>
-          {/* e.g., <Route path="/profile" element={<ProfilePage />} /> */}
+          <Route path='/my-events' element={<MyOrganizedEvents/>}/>
           <Route path="/promotions" element={<PromotionsPage />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/edit/events/:eventId" element={<EventDetailsPage />} />{" "}
         </Route>
 
         {/* Default route */}

@@ -19,3 +19,44 @@ export interface UserContextType {
   signout: () => void;
   refetchUser: () => Promise<void>;
 }
+
+export interface Promotion {
+  id: number;
+  name: string;
+  description: string;
+  type: "automatic" | "one-time";
+  rate: number;
+  points: number;
+  endTime: string;
+  minSpending?: number | null;
+  startTime: string;
+}
+
+export interface EventDetails {
+    id: number;
+    name: string;
+    description: string;
+    location: string;
+    startTime: string;
+    endTime: string;
+    capacity: number | null; // null means unlimited capacity
+    pointsRemain?: number | null;
+    pointsAwarded?: number;
+    published?: boolean;
+    organizers: Organizer[];
+    guests?: Guest[];
+    isGuest: boolean;
+}
+
+export interface Organizer {
+    id: number;
+    utorid: string;
+    name: string;
+}
+
+export interface Guest {
+
+    id: number;
+    utorid: string;
+    name: string;
+}
