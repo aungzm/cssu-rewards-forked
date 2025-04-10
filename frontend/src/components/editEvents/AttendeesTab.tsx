@@ -43,11 +43,11 @@ export function AttendeesList({
   const [attendees, setAttendees] = useState<GuestWithStatus[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [selectedAttendees, setSelectedAttendees] = useState<number[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [newAttendees, setNewAttendees] = useState<string>("");
   const [addingAttendees, setAddingAttendees] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null); // Success message for adding attendees
   // State for the award modal
   const [awardModalOpen, setAwardModalOpen] = useState(false);
   // When awarding a single attendee, currentAttendee will be set; otherwise (bulk) it's null.
@@ -75,7 +75,10 @@ export function AttendeesList({
   };
 
   // Calculate points for each guest based on transactions
-  const calculateGuestPoints = (utorid: string, allTransactions: Transaction[]) => {
+  const calculateGuestPoints = (
+    utorid: string,
+    allTransactions: Transaction[]
+  ) => {
     return allTransactions
       .filter(
         (t) =>
@@ -127,27 +130,27 @@ export function AttendeesList({
   const handleAddAttendee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAttendees.trim() || (!isManager && !isOrganizer)) return;
-  
+
     setAddingAttendees(true);
     setError(null);
     setSuccess(null);
-  
+
     // Parse UTORIDs - split by commas or spaces
     const utoridsToAdd = newAttendees
       .split(/[,\s]+/)
       .map((id) => id.trim())
       .filter((id) => id.length > 0);
-  
+
     if (utoridsToAdd.length === 0) {
       setError("Please enter valid UTORIDs");
       setAddingAttendees(false);
       return;
     }
-  
+
     let successCount = 0;
     const failedUtorids: string[] = [];
     const newGuestsList = [...(event.guests || [])];
-  
+
     try {
       // Add each UTORID one by one
       for (const utorid of utoridsToAdd) {
@@ -177,18 +180,13 @@ export function AttendeesList({
           failedUtorids.push(`${utorid}: "Unexpected error"`);
         }
       }
-  
+
       // Update the event with the new guests
       onEventUpdate({
         ...event,
         guests: newGuestsList,
       });
-  
-      // Refresh the transactions and calculate points
-      const txData = await fetchTransactions();
-      const updatedAttendees = convertGuestsToAttendees(newGuestsList, txData);
-      setAttendees(updatedAttendees);
-  
+
       if (successCount > 0) {
         setSuccess(
           `Successfully added ${successCount} attendee${
@@ -201,7 +199,7 @@ export function AttendeesList({
           `Failed to add the following UTORIDs:\n${failedUtorids.join("\n")}`
         );
       }
-  
+
       // Clear the input field if at least some additions succeeded
       if (successCount > 0) {
         setNewAttendees("");
@@ -389,6 +387,12 @@ export function AttendeesList({
       {error && (
         <div className="mb-4 rounded-md bg-red-50 p-4 text-red-800 dark:bg-red-900/30 dark:text-red-400">
           <p>{error}</p>
+        </div>
+      )}
+      {/* Success display */}
+      {success && (
+        <div className="mb-4 rounded-md bg-green-50 p-4 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+          <p>{success}</p>
         </div>
       )}
 
