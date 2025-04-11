@@ -281,24 +281,24 @@ const CreateCard: React.FC<CreateCardProps> = ({ type, user }) => {
 
     return (
         <>
-            <div className='container bg-white shadow-md rounded-lg p-6 sm:w-2/3 md:w-1/3 lg-1/3 flex flex-col '>
-                <h1 className='text-2xl font-bold' style={{ color: "#002A5C" }}>Create {type} Transaction</h1>
+            <div className='container bg-white shadow-md rounded-lg p-6 sm:w-2/3 md:w-1/3 lg-1/3 flex flex-col dark:text-white dark:bg-slate-600'>
+                <h1 className='text-2xl font-bold text-[#002A5C] dark:text-white'>Create {type} Transaction</h1>
                 {type === "transfer" && (
-                    <p className='text-gray-500 mb-4'>
+                    <p className='text-gray-500 mb-4 dark:text-gray-200'>
                         Transfer points to another user.
                     </p>
                 )}
 
                 {type === "redemption" && (
-                    <p className='text-gray-500 mb-4'>
+                    <p className='text-gray-500 mb-4 dark:text-gray-200'>
                         Redeem your points.
                     </p>
                 )}
 
                 <div className='flex flex-col'>
-                    <div className='flex flex-row bg-gray-100 p-4 rounded-md mb-4 border justify-between w-full'>
-                        <p className='text-lg'>Available Points: </p>
-                        <p className='text-lg font-semibold' style={{ color: "#002A5C" }}>{user.points}</p>
+                    <div className='flex flex-row bg-gray-100 p-4 rounded-md mb-4 border justify-between w-full dark:bg-slate-500 dark:border-none'>
+                        <p className='text-lg dark:text-white'>Available Points: </p>
+                        <p className='text-lg font-semibold text-[#002A5C] dark:text-white'>{user.points}</p>
                     </div>
 
                     {type === "transfer" && (
@@ -306,14 +306,14 @@ const CreateCard: React.FC<CreateCardProps> = ({ type, user }) => {
                             <label className='mb-2'>
                                 Recipient ID
                             </label>
-                            <div className="flex items-center w-full mb-4">
+                            <div className="flex items-center w-full mb-4 ">
                                 <input 
                                     type="number" 
                                     id="userId" 
                                     value={recipientId || ""}
                                     onChange={(e) => setRecipientId(Number(e.target.value))}
                                     placeholder='Enter recipient ID'
-                                    className='border border-gray-300 rounded p-2 w-full' 
+                                    className='border border-gray-300 rounded p-2 w-full ' 
                                 />
                                 <button 
                                     onClick={startScanner} 
@@ -335,7 +335,7 @@ const CreateCard: React.FC<CreateCardProps> = ({ type, user }) => {
                         value={amount || ""}
                         onChange={(e) => setAmount(Number(e.target.value))}
                         placeholder='Enter amount'
-                        className='border border-gray-300 rounded p-2 mb-4 w-full' 
+                        className='border border-gray-300 rounded p-2 mb-4 w-full dark:bg-slate-500 dark:border-none dark:text-white' 
                     />
 
                     <label className='mb-2'>
@@ -346,13 +346,13 @@ const CreateCard: React.FC<CreateCardProps> = ({ type, user }) => {
                         id="remarks"
                         value={remarks}
                         onChange={(e) => setRemarks(e.target.value)}
-                        className='border border-gray-300 rounded p-2 mb-4 w-full'
+                        className='border border-gray-300 rounded p-2 mb-4 w-full dark:bg-slate-500 dark:border-none dark:text-white'
                         rows={1}
                         placeholder='Add any notes here'
                     />
                     
                     <button
-                        className='bg-blue-500 hover:bg-blue-700 text-white rounded p-2 w-full'
+                        className='bg-blue-500 hover:bg-blue-700 text-white rounded p-2 w-full dark:bg-blue-500 dark:hover:bg-blue-600'
                         onClick={handleSubmit}
                     >
                         {type === "transfer" && <p>Transfer Points</p>}
