@@ -172,7 +172,7 @@ const Dashboard: React.FC = () => {
               <ListHeader heading="Your QR Code" link="profile" />
               <div className="flex flex-col justify-center items-center pt-2 mt-2 border-t border-gray-300 " >
                 <QRCodeSVG value={String(useUser().userData?.id || "")} />
-                <p className="text-gray-500 text-sm mt-2">
+                <p className="text-gray-500 text-sm mt-2 dark:text-white">
                   Show this to transfer points
                 </p>
               </div>
