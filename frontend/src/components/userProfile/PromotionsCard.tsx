@@ -28,16 +28,16 @@ const PromotionsCard: React.FC<PromotionsCardProps> = ({
     return (
       <div key={id as React.Key} className="bg-gray-100 w-[21rem] dark:bg-gray-800 dark:text-gray-100 p-1 m-2 rounded-md">
         <p className="font-bold ml-2 text-sm">{name}</p>
-        <p className="ml-2 text-gray-600 text-xs italic whitespace-nowrap text-ellipsis overflow-hidden "> {bonus}</p>
-        <p className="ml-2 text-gray-600 text-xs mb-2">{"Active until "+endTime.slice(0,10)}</p>
+        <p className="ml-2 text-gray-600 text-xs italic whitespace-nowrap text-ellipsis overflow-hidden dark:text-gray-100"> {bonus}</p>
+        <p className="ml-2 text-gray-600 text-xs mb-2 dark:text-gray-100">{"Active until "+endTime.slice(0,10)}</p>
       </div>
     )
   } else {
     return (
       <div key={id as React.Key} className="bg-gray-100 w-[21rem] dark:bg-gray-800 dark:text-gray-100 p-1 m-2 rounded-md">
         <p className="font-bold ml-2 text-sm">{name}</p>
-        <p className="ml-2 text-gray-600 text-xs italic whitespace-nowrap text-ellipsis overflow-hidden"> {bonus}</p>
-        <p className="ml-2 text-gray-600 text-xs mb-2">{"Expires at "+endTime.slice(0,10)}</p>
+        <p className="ml-2 text-gray-600 text-xs italic whitespace-nowrap text-ellipsis overflow-hidden dark:text-gray-100"> {bonus}</p>
+        <p className="ml-2 text-gray-600 text-xs mb-2 dark:text-gray-100">{"Expires at "+endTime.slice(0,10)}</p>
       </div>
     )
   }
