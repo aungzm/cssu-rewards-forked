@@ -272,7 +272,6 @@ useEffect(()=> {
 
                 {/* transaction history items */}
                 <div className="mt-4">
-                    <p> Transaction History</p>
                     {transactionHistory.map((transaction: Transaction, index: number) => (
                         <TransactionEntry transaction={transaction} key={index} />
                     ))}

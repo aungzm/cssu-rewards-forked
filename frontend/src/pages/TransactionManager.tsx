@@ -40,7 +40,8 @@ const TransactionManager: React.FC = () => {
         relatedId: null,
         eventName: "",
         amount: null,
-        operator: null
+        operator: null,
+        promotionId: null
     } as FilterOption;
 
     const [filters, setFilters] = useState<FilterOption>(defaultFilter);
@@ -78,7 +79,7 @@ const TransactionManager: React.FC = () => {
         //     amount: number | null;
         //     operator: operatorType | null;
         // }
-		  const { type, relatedId, amount, operator, eventName, name, suspicious, createdBy } = currentFilters;
+		  const { type, relatedId, amount, operator, eventName, name, suspicious, createdBy, promotionId } = currentFilters;
   
         if (type !== "") {
             url += `type=${type}&`;
@@ -101,6 +102,10 @@ const TransactionManager: React.FC = () => {
         }
         if (suspicious !== null) {
             url += `suspicious=${suspicious}&`;
+        }
+
+        if (promotionId !== null) {
+            url += `promotionId=${promotionId}&`;
         }
 
 		  return url;
