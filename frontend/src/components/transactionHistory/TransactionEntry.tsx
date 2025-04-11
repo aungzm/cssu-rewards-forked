@@ -66,7 +66,7 @@ const TransactionEntry: React.FC<TransactionEntryProps> = ({
     };
 
     return (
-        <div className="bg-white shadow-md rounded-lg p-3 md:p-6 mb-4">
+        <div className="bg-white shadow-md rounded-lg p-3 md:p-6 mb-4 dark:bg-slate-600">
             {/* Mobile Layout (vertical) */}
             <div className="md:hidden">
                 <div className="flex items-center justify-between mb-2">

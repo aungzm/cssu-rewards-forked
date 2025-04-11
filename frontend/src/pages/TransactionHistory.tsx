@@ -258,10 +258,10 @@ useEffect(()=> {
     return (
     <>
         <Navbar activeLink="dashboard" />
-        <div className='bg-gray-100 min-h-screen flex flex-col justify-center items-center'>
+        <div className='bg-gray-100 min-h-screen flex flex-col justify-center items-center dark:bg-gray-900'>
 
             <div className=" flex flex-col w-2/3 my-10">
-                <h1 className="text-3xl font-bold" style={{ color: "#002A5C" }} >Transaction History</h1>
+                <h1 className="text-3xl font-bold text-[#002A5C] dark: text-blue-500">Transaction History</h1>
 
                 <TransactionPoints transactions={allTransacitions} userPoints={user.userData?.points || 0}/>
     
@@ -281,7 +281,7 @@ useEffect(()=> {
           </div>
 
             {/* Infinite Scroll Target & Indicators */}
-        <div ref={observerTarget} className="h-10 py-4 text-center">
+        <div ref={observerTarget} className="h-10 py-4 text-center ">
           {loading && (
             <p className="text-gray-500 dark:text-gray-400">Loading more...</p>
           )}

@@ -80,12 +80,12 @@ updateSorts,
     }
 
     return (
-        <div className='bg-white shadow-md rounded-lg p-4 my-4 w-full'>
+        <div className='bg-white shadow-md rounded-lg p-4 my-4 w-full dark:bg-slate-600'>
             {/* Mobile toggle button */}
             <div className="md:hidden w-full mb-3">
                 <button 
                     onClick={() => setShowFilters(!showFilters)}
-                    className="w-full bg-blue-500 text-white rounded py-2 px-4 flex items-center justify-center"
+                    className="w-full bg-blue-500 text-white rounded py-2 px-4 flex items-center justify-center "
                 >
                     {showFilters ? 'Hide Filters' : 'Show Filters'} 
                     <span className="ml-2">{showFilters ? '▲' : '▼'}</span>
@@ -93,14 +93,14 @@ updateSorts,
             </div>
 
             {/* Filter container - responsive layout */}
-            <div className={`${showFilters ? 'block' : 'hidden'} md:flex md:flex-row md:flex-nowrap md:gap-2 md:items-`}>
+            <div className={`${showFilters ? 'block' : 'hidden'} md:flex md:flex-row md:flex-nowrap md:gap-2 md:items- dark:text-white`}>
                 {/* Type */}
                 <div className='flex flex-col w-full md:w-1/7 mb-3 md:mb-0'>
                     <label className='text-md font-bold mb-1'>Type</label>
                     <select 
                         value={type} 
                         onChange={(e) => setType(e.target.value as transactionType)} 
-                        className='border rounded p-2'
+                        className='border rounded p-2 dark:bg-gray-400 dark: border-none'
                     >
                         <option value="">All</option>
                         <option value="redemption">Redemption</option>
