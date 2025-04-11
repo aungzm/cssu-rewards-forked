@@ -225,6 +225,47 @@ npm run lint
 | `npm run lint` | Run ESLint for code quality checks |
 
 * * * * *
+## Installed Packages
+
+###  Frontend Dependencies
+
+The following key packages are used in the frontend (`/frontend`):
+
+- **React** (`react`, `react-dom`) — Core UI library
+- **React Router DOM v7** (`react-router-dom`) — Client-side routing
+- **Headless UI** (`@headlessui/react`) — Accessible UI primitives
+- **Lucide React** (`lucide-react`) — Icon library
+- **QR Code Utilities**:
+  - `qrcode.react` — Generate QR codes
+  - `react-qr-code` — SVG-based QR rendering
+  - `jsqr` — QR code decoding
+- **Date Picker**: `react-datepicker`
+- **Icons**: `react-icons`
+- **Type Definitions**: `@types/react`, `@types/react-dom`, `@types/react-router-dom`
+- **Development Tools**:
+  - `vite` — Fast build tool
+  - `eslint` — Linting
+  - `tailwindcss` — Utility-first CSS
+  - `typescript` — Static typing
+
+### Backend Dependencies
+
+The backend (`/backend`) is built using the following packages:
+
+- **Prisma** (`@prisma/client`, `prisma`) — ORM for database access
+- **SQLite** (`sqlite3`) — Lightweight database for development/testing
+- **Express** — HTTP server framework
+- **Middleware**:
+  - `cors` — CORS policy configuration
+  - `morgan` — Logging middleware
+  - `multer` — File uploads
+  - `express-jwt`, `jsonwebtoken` — Authentication with JWT
+- **User Authentication**:
+  - `bcrypt` — Password hashing
+  - `uuid` — Unique identifier generation
+- **Validation**: `zod` — Schema validation
+- **Environment**: `dotenv` — Load `.env` variables
+
 
 ### Notes
 
