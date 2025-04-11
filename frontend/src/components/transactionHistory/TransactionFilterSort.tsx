@@ -126,7 +126,7 @@ updateSorts,
                         <label className='text-md font-bold mb-1'>Event Name</label>
                     )}
                     {(type === "purchase" || type === "") && (
-                        <label className='text-md font-bold mb-1'>Related ID</label>
+                        <label className='text-md font-bold mb-1 '>Related ID</label>
                     )}
 
                     {type === "event" ? (
@@ -134,7 +134,7 @@ updateSorts,
                             type="text" 
                             value={eventName || ''} 
                             onChange={(e) => setEventName(e.target.value)}
-                            className='border rounded p-2 w-full'
+                            className='border rounded p-2 w-full dark:bg-gray-400 dark:border-none'
                         />
                     ) : (
                         <input
@@ -142,32 +142,32 @@ updateSorts,
                             value={relatedId || ''} 
                             onChange={(e) => setRelatedId(Number(e.target.value))}
                             disabled={type === "purchase" || type === ""}
-                            className={`border rounded p-2 w-full ${
-                                type === "purchase" || type === "" ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
+                            className={`border rounded p-2 w-full  dark:border-none ${
+                                type === "purchase" || type === "" ? "bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-200 dark:border-none" : "dark:bg-gray-400"
                             }`}
                         />
                     )}
                 </div>
 
                 {/* Amount */}
-                <div className='flex flex-col w-full md:w-1/7 mb-3 md:mb-0'>
-                    <label className='text-md font-bold mb-1'>Amount</label>
+                <div className='flex flex-col w-full md:w-1/7 mb-3 md:mb-0 '>
+                    <label className='text-md font-bold mb-1 '>Amount</label>
                     <input 
                         type="number" 
                         value={amount || ''} 
                         onChange={(e) => setAmount(Number(e.target.value))} 
-                        className='border rounded p-2 w-full' 
+                        className='border rounded p-2 w-full dark:bg-gray-400 dark:border-none' 
                     />
                 </div>
 
                 {/* Operator */}
-                <div className='flex flex-col w-full md:w-1/7 mb-3 md:mb-0'>
-                    <label className='text-md font-bold mb-1'>Operator</label>
+                <div className='flex flex-col w-full md:w-1/7 mb-3 md:mb-0 '>
+                    <label className='text-md font-bold mb-1 '>Operator</label>
                     <select 
                         value={operator || ''} 
                         onChange={(e) => setOperator(e.target.value as operatorType)} 
-                        className={`border rounded p-2 w-full ${
-                            amount === null ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
+                        className={`border rounded p-2 w-full  ${
+                            amount === null ? "bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-200 dark:text-black" : ""
                         }`}
                         disabled={amount === null}
                     >
@@ -199,7 +199,7 @@ updateSorts,
                     <select 
                         value={sortOption}
                         onChange={handleSortChange} 
-                        className='border rounded p-2 w-full md:mt-6'
+                        className='border rounded p-2 w-full md:mt-6 dark:bg-gray-400 dark:border-none'
                     >
                         <option value="default">Sort by Default</option>
                         <option value="typeAsc">Type (A-Z)</option>
