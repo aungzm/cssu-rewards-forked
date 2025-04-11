@@ -101,7 +101,7 @@ const TransactionEntry: React.FC<TransactionEntryProps> = ({
                 <div className="flex justify-between items-center w-full">
                     {/* Content */}
                     <div className="flex flex-col">
-                        <p className="font-medium">{getTransactionTitle()}</p>
+                        <p className="font-medium dark:text-white">{getTransactionTitle()}</p>
 
                         <div className="flex flex-row gap-2 text-gray-500 dark:text-gray-200">
                             <p>{formatDate(transaction.createdAt)}</p>

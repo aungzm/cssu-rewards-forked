@@ -134,7 +134,7 @@ updateSorts,
                             type="text" 
                             value={eventName || ''} 
                             onChange={(e) => setEventName(e.target.value)}
-                            className='border rounded p-2 w-full dark:bg-gray-400 dark:border-none'
+                            className='border rounded p-2 w-full'
                         />
                     ) : (
                         <input
@@ -167,7 +167,7 @@ updateSorts,
                         value={operator || ''} 
                         onChange={(e) => setOperator(e.target.value as operatorType)} 
                         className={`border rounded p-2 w-full  ${
-                            amount === null ? "bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-200 dark:text-black" : ""
+                            amount === null ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
                         }`}
                         disabled={amount === null}
                     >
