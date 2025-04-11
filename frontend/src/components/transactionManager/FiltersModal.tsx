@@ -15,6 +15,7 @@ export interface FilterOption {
     eventName: string;
     amount: number | null;
     operator: operatorType | null;
+    promotionId: number | null;
 }
 export type SortOption =
   | 'default'
@@ -45,7 +46,8 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
             relatedId: null,
             eventName: "",
             amount: null,
-            operator: null
+            operator: null,
+            promotionId: null
         }
     )
     const [sortOption, setSortOption] = useState<SortOption>('default');
@@ -63,7 +65,8 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
             relatedId: null,
             eventName: "",
             amount: null,
-            operator: null
+            operator: null,
+            promotionId: null
         });
         setSortOption('default');
     }
@@ -104,10 +107,10 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
                     </div>
 
                     <div className="flex flex-col w-full">
-                        <label className="text-gray-700 font-semibold">Promotion</label>
+                        <label className="text-gray-700 font-semibold">Promotion ID</label>
                         <input id="field3" type="text"
-                        value={filters.createdBy}
-                        onChange={(e) => setFilters({ ...filters, createdBy: e.target.value })}
+                        value={filters.promotionId || ''}
+                        onChange={(e) => setFilters({ ...filters, promotionId: Number(e.target.value) })}
                         className="border rounded-md p-2 w-full" />
                     </div>
 
