@@ -6,7 +6,6 @@ import React, { useState } from "react";
 import { User, Pencil } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { API_BASE_URL } from '../utils/auth';
-import { fetchWithAuth } from "../utils/authHelper";
 const UserProfile: React.FC = () => {
   const { userData } = useUser();
   const [profilePicture, setProfilePicture] = useState<string | null>(
@@ -22,13 +21,9 @@ const UserProfile: React.FC = () => {
       const target = event.target as HTMLInputElement;
       if (target.files && target.files[0]) {
         const file = target.files[0];
-        console.log(file)
-        
           const formData = new FormData();
           formData.append("avatar", file);
           const token = localStorage.getItem('authToken');
-          // Send a PATCH request to upload the file
-          console.log(formData)
           try {
             // cannot use fetch with auth here, since fetch with auth has application/json set in headers, but this requires multipart/form-data
             // trying to set multipart/form-data will result in not having a default boundary and thus fetch fails

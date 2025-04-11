@@ -2,6 +2,7 @@ import React, {useState,useEffect} from "react";
 import PromotionsCard from "./PromotionsCard";
 import { fetchWithAuth } from "../../utils/authHelper";
 import { API_BASE_URL } from "../../utils/auth";
+import { useNavigate } from "react-router-dom";
 
 interface PromotionParams {
   id: number
@@ -18,6 +19,7 @@ interface GetPromotionsResponse {
 }
 
 const MyPromotions: React.FC = () => {
+  const navigate = useNavigate();
   const [autoPromotions, setAutoPromotions] = useState<GetPromotionsResponse>({ 
     results: [], 
     count: 0 
@@ -38,7 +40,7 @@ const MyPromotions: React.FC = () => {
     <div className="rounded-md bg-white dark:bg-gray-700 dark:text-gray-100 row flex flex-col p-2 mb-2 drop-shadow-lg">
       <div className="flex justify-between border-b">
         <span className="m-2 mb-0">Your Promotions</span>
-        <a className="m-2 mb-0" href={`${API_BASE_URL}/promotions/me`}>View All</a> {/**Doesn't exist yet */}
+        <a className="m-2 mb-0 cursor-pointer" onClick={() => navigate('/promotions')}>View All</a> 
       </div>
       <div className="mt-2 flex flex-col items-center">
         <div className="flex items-start gap-2 items-center"> 
