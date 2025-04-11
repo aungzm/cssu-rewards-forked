@@ -3,7 +3,6 @@ import { Save } from "lucide-react";
 import { fetchWithAuth } from "../../utils/authHelper";
 import { API_BASE_URL } from "../../utils/auth";
 import { EventDetails } from "../../types";
-import { useNavigate } from "react-router-dom";
 
 
 interface EventDetailsTabProps {
@@ -46,8 +45,6 @@ export function EventDetailsTab({
     organizers: event.organizers,
     guests: event.guests || [],
   });
-
-  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -199,7 +196,7 @@ export function EventDetailsTab({
         setLoading(false);
       }
       // Go back to events page
-      navigate("/events");
+      window.location.href = "/events";
       return;
     }
   
