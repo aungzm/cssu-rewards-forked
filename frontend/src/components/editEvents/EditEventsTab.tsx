@@ -3,6 +3,7 @@ import { Save } from "lucide-react";
 import { fetchWithAuth } from "../../utils/authHelper";
 import { API_BASE_URL } from "../../utils/auth";
 import { EventDetails } from "../../types";
+import { useNavigate } from "react-router-dom";
 
 
 interface EventDetailsTabProps {
@@ -30,6 +31,7 @@ export function EventDetailsTab({
   isManagerOrHigher,
   isCreateMode = false,
 }: EventDetailsTabProps) {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<EventDetails>({
     id: event.id,
     name: event.name,
@@ -545,15 +547,10 @@ export function EventDetailsTab({
         <div className="flex justify-end space-x-3 pt-5">
           <button
             type="button"
+            onClick={() => navigate("/events")}
             className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             Cancel
-          </button>
-          <button
-            type="button"
-            className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 shadow-sm hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-          >
-            Delete Event
           </button>
           <button
             type="submit"
