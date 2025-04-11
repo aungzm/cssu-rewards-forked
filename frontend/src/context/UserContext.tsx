@@ -52,7 +52,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signout = () => {
-    window.location.href = '/login'; // Redirect to login page
+    window.location.href = '/login'; // Redirect to login page on signout reload the window too
     clearAuth();
     setUserData(null);
     setError(null);
