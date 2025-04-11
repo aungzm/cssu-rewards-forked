@@ -60,6 +60,18 @@ export function OrganizersTab({ event, onEventUpdate, isManager }: TabProps) {
     let successCount = 0;
     const failedUtorids: string[] = [];
 
+    // Check if utoridList of utorid are exactly 8 characters long
+    const invalidUtorids = utoridList.filter((id) => id.length !== 8);
+    if (invalidUtorids.length > 0) {
+      setError(
+        `Invalid UTORIDs: ${invalidUtorids.join(", ")}. Each UTORID must be exactly 8 characters.`
+      );
+      // Reset the input field
+      setNewOrganizers("");
+      setLoading(false);
+      return;
+    }
+   
     try {
       for (const utorid of utoridList) {
         try {

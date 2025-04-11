@@ -154,6 +154,17 @@ export function AttendeesList({
       return;
     }
 
+
+    // Check for each utorid length is exactly 8 characters
+    const invalidUtorids = utoridsToAdd.filter((id) => id.length !== 8);
+    if (invalidUtorids.length > 0) {
+      setError(
+        `Invalid UTORIDs: ${invalidUtorids.join(", ")}. Each UTORID must be exactly 8 characters.`
+      );
+      setAddingAttendees(false);
+      return;
+    }
+
     let successCount = 0;
     const failedUtorids: string[] = [];
     const newGuestsList = [...(event.guests || [])];
@@ -173,11 +184,28 @@ export function AttendeesList({
             }
           );
           const data = await response.json();
-          // If response is not OK, capture the error message
+          console.log("Add attendee response:", data); // Log the response data 
           if (!response.ok) {
-            failedUtorids.push(`${utorid}: "${data.error}"`);
+            let errorMessage = "";
+            if (Array.isArray(data.error)) {
+              // data.error is an array of objects. Extract their 'message' properties.
+              interface ErrorObject {
+                message: string;
+              }
+              errorMessage = (data.error as ErrorObject[]).map((errObj: ErrorObject) => errObj.message).join(", ");
+            } else if (data.error && typeof data.error === "object" && data.error.message) {
+              // data.error might be a single object with .message
+              errorMessage = data.error.message;
+            } else {
+              // Fallback if data.error is just a string or we can't parse it
+              errorMessage = data.error || "Unknown error";
+            }
+
+            // Push that error message into the array
+            failedUtorids.push(`${utorid}: "${errorMessage}"`);
             continue;
           }
+
           // Add new guest if data.guestAdded exists
           if (data.guestAdded) {
             newGuestsList.push(data.guestAdded);
@@ -196,8 +224,7 @@ export function AttendeesList({
 
       if (successCount > 0) {
         setSuccess(
-          `Successfully added ${successCount} attendee${
-            successCount !== 1 ? "s" : ""
+          `Successfully added ${successCount} attendee${successCount !== 1 ? "s" : ""
           }.`
         );
       }
@@ -605,8 +632,8 @@ export function AttendeesList({
                 {currentAttendee
                   ? `Award Points to ${currentAttendee.name}`
                   : selectedAttendees.length > 0
-                  ? "Award Points to Selected Attendees"
-                  : "Award Points to All Attendees"}
+                    ? "Award Points to Selected Attendees"
+                    : "Award Points to All Attendees"}
               </h3>
               <button
                 onClick={closeAwardModal}
