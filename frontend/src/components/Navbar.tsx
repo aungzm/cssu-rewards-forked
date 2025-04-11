@@ -1,18 +1,9 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 import { User, Menu, X } from "lucide-react";
-import { useUser } from "../context/UserContext"; 
-
-// Interfaces (move to a separate file later probably in types.ts)
-interface UserData {
-  id: number;
-  utorid: string;
-  role: "REGULAR" | "CASHIER" | "MANAGER" | "SUPERUSER";
-  points: number;
-  verified: boolean;
-  avatarUrl?: string;
-  avatar?: string; // For base64 encoded avatar
-}
+import { useUser } from "../context/UserContext";
+import { UserData } from "../types"; 
 
 interface DropdownItem {
   name: string;
@@ -45,7 +36,7 @@ const navLinks: NavLink[] = [
       { name: "Point History", href: "/transaction-history" },
     ],
   },
-  { 
+  {
     name: "Transactions",
     href: "#",
     hasDropdown: true,
@@ -70,13 +61,13 @@ const navLinks: NavLink[] = [
     name: "Role Management",
     href: "/user-management",
     requiredRoles: ["MANAGER", "SUPERUSER", "CASHIER"],
-  }
+  },
 ];
 
 // Helper Function for Role Check
 const userHasRequiredRole = (
   userRole: UserData["role"] | undefined,
-  requiredRoles: UserData["role"][] | undefined,
+  requiredRoles: UserData["role"][] | undefined
 ): boolean => {
   if (!requiredRoles || requiredRoles.length === 0) return true;
   if (!userRole) return false;
@@ -87,17 +78,19 @@ const userHasRequiredRole = (
 const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
   const { userData, isLoading, error, signout } = useUser();
   const isSuperUser = userData?.role === "SUPERUSER";
-  
+
   // Mobile menu state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // Track which dropdowns are open in mobile view
-  const [openMobileDropdowns, setOpenMobileDropdowns] = useState<Record<string, boolean>>({});
+  const [openMobileDropdowns, setOpenMobileDropdowns] = useState<
+    Record<string, boolean>
+  >({});
 
   // Toggle mobile dropdown
   const toggleMobileDropdown = (linkName: string) => {
-    setOpenMobileDropdowns(prev => ({
+    setOpenMobileDropdowns((prev) => ({
       ...prev,
-      [linkName]: !prev[linkName]
+      [linkName]: !prev[linkName],
     }));
   };
 
@@ -109,7 +102,9 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
           // If a base64 encoded avatar exists, display it
           <div
             className="w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: `url(data:image/png;base64,${userData.avatar})` }}
+            style={{
+              backgroundImage: `url(data:image/png;base64,${userData.avatar})`,
+            }}
             aria-label={`${userData.utorid}'s avatar`}
           ></div>
         ) : userData?.avatarUrl ? (
@@ -166,10 +161,14 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
         <div className="flex items-center justify-between">
           {/* Logo Section */}
           <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-gray-900 dark:bg-white flex items-center justify-center mr-3">
-              <span className="text-white dark:text-gray-900 font-bold">C</span>
-            </div>
-            <span className="font-bold text-lg">CSSU Rewards</span>
+            <Link to="/dashboard" className="flex items-center">
+              <div className="w-8 h-8 rounded-full bg-gray-900 dark:bg-white flex items-center justify-center mr-3">
+                <span className="text-white dark:text-gray-900 font-bold">
+                  U
+                </span>
+              </div>
+              <span className="font-bold text-lg">UofT Rewards</span>
+            </Link>
           </div>
 
           {/* Desktop Navigation Links - Hidden on Mobile */}
@@ -179,8 +178,8 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
                 userHasRequiredRole(userData.role, link.requiredRoles) && (
                   <div key={link.name} className="relative group">
                     {/* Nav Link Item */}
-                    <a
-                      href={link.href}
+                    <Link
+                      to={link.href}
                       className={`relative px-1 py-2 text-sm font-medium transition-colors ${
                         link.name === activeLink
                           ? "text-blue-600 dark:text-blue-400"
@@ -194,7 +193,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
                       {link.name === activeLink && (
                         <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400"></span>
                       )}
-                    </a>
+                    </Link>
                     {/* Dropdown Menu for Nav Links */}
                     {link.hasDropdown && link.dropdownItems && (
                       <div
@@ -202,18 +201,18 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
                                    opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-10"
                       >
                         {link.dropdownItems.map((item) => (
-                          <a
+                          <Link
                             key={item.name}
-                            href={item.href}
+                            to={item.href}
                             className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                           >
                             {item.name}
-                          </a>
+                          </Link>
                         ))}
                       </div>
                     )}
                   </div>
-                ),
+                )
             )}
           </div>
 
@@ -244,12 +243,12 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
                 {/* Invisible wrapper to expand the hover area */}
                 <div className="absolute inset-0 -m-2" />
                 <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-10">
-                  <a
-                    href="/profile"
+                  <Link
+                    to="/profile"
                     className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                   >
                     Profile Details
-                  </a>
+                  </Link>
                   <button
                     onClick={signout}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
@@ -261,7 +260,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
             </div>
 
             {/* Mobile Menu Button - Only visible on mobile */}
-            <button 
+            <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
@@ -295,8 +294,8 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
                           </span>
                         </button>
                       ) : (
-                        <a
-                          href={link.href}
+                        <Link
+                          to={link.href}
                           className={`block px-2 py-3 text-sm font-medium ${
                             link.name === activeLink
                               ? "text-blue-600 dark:text-blue-400"
@@ -304,35 +303,37 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
                           }`}
                         >
                           {link.name}
-                        </a>
+                        </Link>
                       )}
-                      
+
                       {/* Mobile Dropdown Menu */}
-                      {link.hasDropdown && link.dropdownItems && openMobileDropdowns[link.name] && (
-                        <div className="bg-gray-100 dark:bg-gray-800 pl-4">
-                          {link.dropdownItems.map((item) => (
-                            <a
-                              key={item.name}
-                              href={item.href}
-                              className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
-                            >
-                              {item.name}
-                            </a>
-                          ))}
-                        </div>
-                      )}
+                      {link.hasDropdown &&
+                        link.dropdownItems &&
+                        openMobileDropdowns[link.name] && (
+                          <div className="bg-gray-100 dark:bg-gray-800 pl-4">
+                            {link.dropdownItems.map((item) => (
+                              <Link
+                                key={item.name}
+                                to={item.href}
+                                className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
+                              >
+                                {item.name}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
                     </div>
-                  ),
+                  )
               )}
-              
+
               {/* Additional Mobile Menu items - visible only in mobile menu */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
-                <a
-                  href="/profile"
+                <Link
+                  to="/profile"
                   className="block px-2 py-3 text-sm font-medium text-gray-600 dark:text-gray-300"
                 >
                   Profile Details
-                </a>
+                </Link>
                 <button
                   onClick={signout}
                   className="block w-full text-left px-2 py-3 text-sm font-medium text-gray-600 dark:text-gray-300"
