@@ -1,9 +1,9 @@
-📦 Backend Deployment Instructions
+Backend Deployment Instructions
 ----------------------------------
 
 Follow the steps below to deploy the backend server in a production environment.
 
-### 🔧 Prerequisites
+### Prerequisites
 
 Ensure the following dependencies are installed on your system:
 
@@ -17,7 +17,7 @@ Ensure the following dependencies are installed on your system:
 
 * * * * *
 
-### 🛠️ Setup
+### Setup
 
 1.  **Clone the Repository**
 
@@ -61,7 +61,7 @@ Ensure the following dependencies are installed on your system:
 
 * * * * *
 
-### 🚀 Build & Start
+### Build & Start
 
 1.  **Build the Project**\
     Compile TypeScript into JavaScript:
@@ -88,7 +88,7 @@ Ensure the following dependencies are installed on your system:
 
 * * * * *
 
-### 🧪 Running Tests
+### Running Tests
 
 To execute the test suite:
 
@@ -101,7 +101,7 @@ This includes setup, running, and teardown automatically.
 
 * * * * *
 
-### 🔁 Useful Scripts
+### Useful Scripts
 
 | Command | Description |
 | --- | --- |
@@ -114,7 +114,7 @@ This includes setup, running, and teardown automatically.
 
 * * * * *
 
-### 📝 Notes
+### Notes
 
 -   Make sure to replace `<your_jwt_secret>` with a secure, random string.
 
@@ -124,7 +124,7 @@ This includes setup, running, and teardown automatically.
 
 
 
-🌐 Frontend Deployment Instructions
+Frontend Deployment Instructions
 -----------------------------------
 
 Follow these steps to set up and deploy the frontend in a production environment.
@@ -167,11 +167,11 @@ Ensure your system has the following installed:
 
     ```
 
-    > ⚠️ Vite requires all env variables to be prefixed with `VITE_` to be exposed to the client.
+    > Vite requires all env variables to be prefixed with `VITE_` to be exposed to the client.
 
 * * * * *
 
-### 🚧 Development
+### Development
 
 To start the development server with hot module reloading:
 
@@ -184,7 +184,7 @@ The app should be available at <http://localhost:5173> by default.
 
 * * * * *
 
-### 🚀 Production Build
+### Production Build
 
 To create a production-ready build:
 
@@ -204,7 +204,7 @@ npm run preview
 
 * * * * *
 
-### 🧹 Code Quality
+### Code Quality
 
 Run ESLint to analyze code for potential issues:
 
@@ -215,7 +215,7 @@ npm run lint
 
 * * * * *
 
-### 🔁 Useful Scripts
+### Useful Scripts
 
 | Command | Description |
 | --- | --- |
@@ -226,7 +226,7 @@ npm run lint
 
 * * * * *
 
-### 📝 Notes
+### Notes
 
 -   Ensure that the API base URL in `.env` matches your backend deployment.
 
