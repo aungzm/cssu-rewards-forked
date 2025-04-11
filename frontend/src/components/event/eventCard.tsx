@@ -91,7 +91,7 @@ export default function EventsCard({
       {/* Event image with date badge */}
       <div className="relative h-2/5 bg-gray-200 dark:bg-slate-500 bg-cover bg-center">
         {/* Edit button for managers/superusers */}
-        {(currentUserRole === "MANAGER" || currentUserRole === "SUPERUSER") && (
+        {(currentUserRole === "MANAGER" || currentUserRole === "SUPERUSER" || isOrganizer) && (
             <div
             className="absolute right-2 top-4 z-10 flex cursor-pointer aspect-square w-9 rounded-lg bg-white p-2 shadow-sm hover:bg-gray-100 items-center justify-center dark:bg-gray-200"
             onClick={handleEditClick}
