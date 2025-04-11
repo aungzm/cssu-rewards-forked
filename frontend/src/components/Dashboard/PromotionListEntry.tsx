@@ -10,7 +10,7 @@ function PromotionListEntry({ promotion, onClick }: PromotionListEntryProps) {
   return (
     <div
       onClick={onClick}
-      className="cursor-pointer flex flex-row bg-white border-t border-gray-300 py-2 hover:bg-gray-200 text-sm"
+      className="cursor-pointer flex flex-row bg-white border-t border-gray-300 py-2 hover:bg-gray-200 text-sm dark:bg-slate-600"
     >
       {promotion.type === "automatic" && (
         <FaStar className="text-yellow-500 h-8 w-8 mr-4" />
@@ -18,15 +18,15 @@ function PromotionListEntry({ promotion, onClick }: PromotionListEntryProps) {
       {promotion.type === "one-time" && (
         <FaRegStar className="text-yellow-500 h-8 w-8 mr-4" />
       )}
-      <div className="flex flex-col">
+      <div className="flex flex-col dark:text-white">
         <p>{promotion.name}</p>
         {promotion.type === "automatic" && (
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-white">
             Active until {promotion.endTime.slice(0, 10)}
           </p>
         )}
         {promotion.type === "one-time" && (
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-white">
             Available until {promotion.endTime.slice(0, 10)}
           </p>
         )}

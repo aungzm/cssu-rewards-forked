@@ -101,10 +101,10 @@ const Dashboard: React.FC = () => {
   const ListHeader = (props: { heading: string; link: string }) => {
     const { heading, link } = props;
     return (
-      <div className="flex flex-row justify-between items-center">
-        <h2 className="text-lg font-normal text-[#002A5C]">{heading}</h2>
+      <div className="flex flex-row justify-between items-center ">
+        <h2 className="text-lg font-normal text-[#002A5C] dark:text-white">{heading}</h2>
         <button
-          className="text-blue-500 hover:underline"
+          className="text-blue-500 hover:underline dark:text-blue-400"
           onClick={() => window.location.href = `${link}`}
         >
           View All 
@@ -132,7 +132,7 @@ const Dashboard: React.FC = () => {
             <DashboardPoints />
             {/* Recent Transactions */}
             {transactionList && transactionList.length > 0 && (
-              <div className="flex flex-col bg-white shadow-md rounded-lg p-4 mt-4 mr-8">
+              <div className="flex flex-col bg-white shadow-md rounded-lg p-4 mt-4 mr-8 dark:bg-slate-600">
                 <ListHeader heading="Recent Transactions" link="transaction-history" />
                 <div className="mt-4">
                   {transactionList.map((transaction: Transaction, index) => (
@@ -146,7 +146,7 @@ const Dashboard: React.FC = () => {
             )}
             {/* Upcoming Events */}
             {eventList && eventList.length > 0 && (
-              <div className="flex flex-col bg-white shadow-md rounded-lg p-4 mt-8 mb-8 mr-8">
+              <div className="flex flex-col bg-white shadow-md rounded-lg p-4 mt-8 mb-8 mr-8 dark:bg-slate-600">
                 <ListHeader heading="Upcoming Events" link="events" />
                 <div className="mt-4 space-y-2">
                   {eventList.map((event: EventDetails, index) => (
@@ -164,13 +164,13 @@ const Dashboard: React.FC = () => {
             )}
           </div>
           {/* Right Sidebar */}
-          <div className="w-full md:w-1/4 shrink-0 mt-4 md:mt-0">
+          <div className="w-full md:w-1/4 shrink-0 mt-4 md:mt-0 ">
             {/* Spacer for mobile */}
-            <div className="w-full h-20"></div>
+            <div className="w-full h-20 "></div>
             {/* QR Code Container */}
-            <div className="flex flex-col bg-white shadow-md rounded-lg p-4">
+            <div className="flex flex-col bg-white shadow-md rounded-lg p-4 dark:bg-slate-600">
               <ListHeader heading="Your QR Code" link="profile" />
-              <div className="flex flex-col justify-center items-center pt-2 mt-2 border-t border-gray-300">
+              <div className="flex flex-col justify-center items-center pt-2 mt-2 border-t border-gray-300 " >
                 <QRCodeSVG value={String(useUser().userData?.id || "")} />
                 <p className="text-gray-500 text-sm mt-2">
                   Show this to transfer points
@@ -179,7 +179,7 @@ const Dashboard: React.FC = () => {
             </div>
             {/* Active Promotions */}
             {promotionList && promotionList.length > 0 && (
-              <div className="flex flex-col bg-white shadow-md rounded-lg p-4 mt-4">
+              <div className="flex flex-col bg-white shadow-md rounded-lg p-4 mt-4 dark:bg-slate-600">
                 <ListHeader heading="Promotions" link="promotions"/>
                 <div className="mt-4 space-y-2">
                   {promotionList.map((promotion: Promotion, index) => (
@@ -197,7 +197,7 @@ const Dashboard: React.FC = () => {
             )}
             {/* Previous Redemptions */}
             {redemptionList && redemptionList.length > 0 && (
-              <div className="flex flex-col bg-white shadow-md rounded-lg p-4 mt-4">
+              <div className="flex flex-col bg-white shadow-md rounded-lg p-4 mt-4 dark:bg-slate-600">
                 <ListHeader heading="My Redemptions" link="redeem-points" />
                 <div className="mt-4">
                   {redemptionList.map((redemption: Redemption, index) => (
