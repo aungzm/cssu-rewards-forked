@@ -91,7 +91,7 @@ export function EventDetailsTab({
       endTime: ensureFullIso(data.endTime),
       capacity: data.capacity,
       // API expects "points" – use pointsRemain or default to 0.
-      points: data.pointsRemain !== null && data.pointsRemain !== undefined ? data.pointsRemain : 0,
+      points: data.pointsRemain !== null && data.pointsRemain !== undefined ? data.pointsRemain : 0 + (data.pointsAwarded || 0),
       published: data.published,
     };
   }
@@ -174,6 +174,12 @@ export function EventDetailsTab({
         }
         if (formData.endTime.trim() === "") {
           alert("Event end time cannot be empty.");
+          setLoading(false);
+          return;
+        }
+
+        if (formData.pointsRemain != null && formData.pointsRemain < 1) {
+          alert("Points remaining must be at least 1.");
           setLoading(false);
           return;
         }
@@ -272,11 +278,12 @@ export function EventDetailsTab({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(submitCompliantFormData(formData)),
         });
         const updatedEventData = await response.json();
         onEventUpdate({ ...event, ...updatedEventData });
         setSuccess("Event updated successfully!");
+        navigate("/events");
       } else {
         setSuccess("No changes made");
       }
