@@ -303,7 +303,7 @@ const CreateCard: React.FC<CreateCardProps> = ({ type, user }) => {
 
                     {type === "transfer" && (
                         <>
-                            <label className='mb-2'>
+                            <label className='mb-2 '>
                                 Recipient ID
                             </label>
                             <div className="flex items-center w-full mb-4 ">
@@ -313,12 +313,12 @@ const CreateCard: React.FC<CreateCardProps> = ({ type, user }) => {
                                     value={recipientId || ""}
                                     onChange={(e) => setRecipientId(Number(e.target.value))}
                                     placeholder='Enter recipient ID'
-                                    className='border border-gray-300 rounded p-2 w-full ' 
+                                    className='border border-gray-300 rounded p-2 w-full dark:bg-slate-500 dark:border-none' 
                                 />
                                 <button 
                                     onClick={startScanner} 
                                     disabled={scanning}
-                                    className="ml-2 text-gray-500 hover:text-blue-500"
+                                    className="ml-2 text-gray-500 dark:text-white hover:text-blue-500 dark:hover:text-blue-500"
                                 >
                                     <ScanLine size={20} />
                                 </button>

@@ -20,9 +20,9 @@ const CreateTransaction: React.FC = () => {
         <>
         <Navbar activeLink="dashboard"/>
 
-        <div className="bg-gray-100 min-h-screen flex flex-col items-center">
+        <div className="bg-gray-100 min-h-screen flex flex-col items-center dark:bg-gray-900">
 
-            <div className="flex flex-col w-2/3 my-10">
+            <div className="flex flex-col w-2/3 my-10 ">
 
                 <div className="justify-left flex flex-col items-start">
                     <h2 className="text-2xl font-bold" style={{ color: "#002A5C" }}>Create Transaction</h2>
