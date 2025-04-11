@@ -20,7 +20,7 @@ const TransactionEntry: React.FC<TransactionEntryProps> = ({
 }) => {
     const getTransactionIcon = () => {
         if (transaction.suspicious || (transaction.type === "redemption" && transaction.operatorId === null)) {
-            return <HiOutlineMinusCircle className="text-gray-500 h-6 w-6 md:h-8 md:w-8" />;
+            return <HiOutlineMinusCircle className="text-gray-500 h-6 w-6 md:h-8 md:w-8 dark:text-white" />;
         } else if (transaction.type === "redemption" && transaction.operatorId !== null) {
             return <HiOutlineMinusCircle className="text-red-500 h-6 w-6 md:h-8 md:w-8" />;
         } else if (transaction.type === "purchase") {
@@ -51,7 +51,7 @@ const TransactionEntry: React.FC<TransactionEntryProps> = ({
 
     const getPointsDisplay = () => {
         if (transaction.suspicious || (transaction.type === "redemption" && transaction.operatorId === null)) {
-            return <p className="text-gray-500 text-right">{transaction.amount} points (Pending)</p>;
+            return <p className="text-gray-500 text-right dark:text-white">{transaction.amount} points (Pending)</p>;
         } else if (transaction.amount > 0) {
             return <p className="text-green-500 text-right font-medium">+{transaction.amount} points</p>;
         } else if (transaction.amount < 0) {
@@ -103,7 +103,7 @@ const TransactionEntry: React.FC<TransactionEntryProps> = ({
                     <div className="flex flex-col">
                         <p className="font-medium">{getTransactionTitle()}</p>
 
-                        <div className="flex flex-row gap-2 text-gray-500">
+                        <div className="flex flex-row gap-2 text-gray-500 dark:text-gray-200">
                             <p>{formatDate(transaction.createdAt)}</p>
                             <p>Transaction ID: {transaction.id}</p>
                         </div>
