@@ -195,8 +195,16 @@ export default function EventDetailsPage() {
               <div className="mt-1 flex items-center text-gray-800 dark:text-gray-200">
                 <Clock className="mr-2 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                 <span className="text-sm">
-                  {new Date(event.startTime).toLocaleTimeString()} -{" "}
-                  {new Date(event.endTime).toLocaleTimeString()}
+                  {new Date(event.startTime).toLocaleTimeString([], {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                  })} -{" "}
+                  {new Date(event.endTime).toLocaleTimeString([], {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                  })}
                 </span>
               </div>
             </div>
