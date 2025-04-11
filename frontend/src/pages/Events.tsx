@@ -279,6 +279,10 @@ export default function EventsPage() {
     window.location.href = `/edit/events/${eventId}`;
   };
 
+  const handleCreateEvent = () => { 
+    window.location.href = '/create/event';
+  }
+
   const handleRsvpToggle = useCallback(
     async (eventId: number, isOrganizer: boolean, isGuest: boolean, endTimeStr: string) => {
       const now = new Date();
@@ -348,6 +352,10 @@ export default function EventsPage() {
             <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-300">
               Events ({!isLoading && !error ? totalCount : '...'})
             </h1>
+            {/* Create Event Button */}
+            <button className='rounded-md bg-blue-600 px-4 py-2 text-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600' onClick={handleCreateEvent}> 
+                Create Event
+            </button>
           </div>
           <div className="flex flex-col flex-wrap items-stretch gap-3 md:flex-row md:items-center">
             {/* Search Input */}

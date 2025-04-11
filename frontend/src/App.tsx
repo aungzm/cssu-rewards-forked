@@ -52,7 +52,8 @@ function App() {
           <Route path='/my-events' element={<MyOrganizedEvents/>}/>
           <Route path="/promotions" element={<PromotionsPage />} />
           <Route path="/events" element={<EventsPage />} />
-          <Route path="/edit/events/:eventId" element={<EventDetailsPage />} />{" "}
+          <Route path="/edit/events/:eventId" element={<EventDetailsPage />} />
+          <Route path="/create/event" element={ <EventDetailsPage />} />
         </Route>
 
         {/* Default route */}
