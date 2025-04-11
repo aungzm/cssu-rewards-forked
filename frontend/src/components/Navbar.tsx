@@ -164,10 +164,10 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
             <Link to="/dashboard" className="flex items-center">
               <div className="w-8 h-8 rounded-full bg-gray-900 dark:bg-white flex items-center justify-center mr-3">
                 <span className="text-white dark:text-gray-900 font-bold">
-                  U
+                  C
                 </span>
               </div>
-              <span className="font-bold text-lg">UofT Rewards</span>
+              <span className="font-bold text-lg">CSSU Rewards</span>
             </Link>
           </div>
 
