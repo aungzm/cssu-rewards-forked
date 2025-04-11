@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useUser } from '../../context/UserContext'; // Adjust path if needed
+import { useUser } from '../../context/UserContext'; 
 import { ChevronDown } from 'lucide-react';
 
 // Define the shape of the filters managed by this component

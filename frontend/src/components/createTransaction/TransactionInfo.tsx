@@ -20,11 +20,10 @@ const TransactionInfo: React.FC<TransactionInfoProps> = ({ user, creator }) => {
     const [toastMessage, setToastMessage] = useState("");
     const [toastType, setToastType] = useState<"success" | "error">("success");
 
-    // NEW state: promotionIds for purchase transactions
+    // promotionIds for purchase transactions
     const [promotionIds, setPromotionIds] = useState<number[]>([]);
     const [promotionIdText, setPromotionIdText] = useState("");
 
-    // -------------------------------
     // QR Scanner states for Promotion IDs
     const [showScanModal, setShowScanModal] = useState<boolean>(false);
     const [scanning, setScanning] = useState<boolean>(false);
@@ -32,7 +31,6 @@ const TransactionInfo: React.FC<TransactionInfoProps> = ({ user, creator }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const scannerIntervalRef = useRef<number | null>(null);
-    // -------------------------------
 
     // Handle toast display and auto-hide
     useEffect(() => {
@@ -110,7 +108,6 @@ const TransactionInfo: React.FC<TransactionInfoProps> = ({ user, creator }) => {
         }
     };
 
-    // -------------------------------
     // QR Scanner functions for Promotion IDs
     const startScanner = async () => {
         try {
@@ -209,23 +206,23 @@ const TransactionInfo: React.FC<TransactionInfoProps> = ({ user, creator }) => {
         // Extract all integers found in the scanned result.
         const matches = result.match(/\d+/g);
         if (matches && matches.length > 0) {
-            const numbers = matches.map((m) => parseInt(m, 10));
-            // Append the new numbers (ignoring duplicates)
-            setPromotionIds((prev) => {
-                const newSet = new Set(prev);
-                numbers.forEach((num) => newSet.add(num));
-                return Array.from(newSet);
-            });
-            stopScanner();
-            displayToast("Promotion IDs scanned successfully", "success");
+          const numbers = matches.map((m) => parseInt(m, 10));
+          // Append the new numbers (ignoring duplicates)
+          const newSet = new Set(promotionIds);
+          numbers.forEach((num) => newSet.add(num));
+          const newIds = Array.from(newSet);
+          setPromotionIds(newIds);
+          // Update the text input to reflect the new promotion IDs
+          setPromotionIdText(newIds.join(", "));
+          stopScanner();
+          displayToast("Promotion IDs scanned successfully", "success");
         } else {
-            displayToast(
-                "Invalid QR code. Please scan a QR code with valid integers.",
-                "error"
-            );
+          displayToast(
+            "Invalid QR code. Please scan a QR code with valid integers.",
+            "error"
+          );
         }
     };
-    // -------------------------------
 
     return (
         <div className="bg-white flex flex-col w-full mt-4 p-3 md:p-4 border border-gray-300 shadow-md rounded-lg relative">
