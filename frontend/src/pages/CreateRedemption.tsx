@@ -48,11 +48,11 @@ const CreateRedemption: React.FC = () => {
         <>
         <Navbar activeLink="dashboard"/>
 
-        <div className="bg-gray-100 min-h-screen flex flex-col justify-center items-center">
+        <div className="bg-gray-100 min-h-screen flex flex-col justify-center items-center dark:bg-gray-900">
 
         <CreateCard type="redemption" user={{id: user?.userData?.id || 0,  points: user?.userData?.points || 0}} />
 
-        <div className="flex flex-col items-center w-full mt-4">
+        <div className="flex flex-col items-center w-full mt-4 dark:text-white">
             <h2 className="text-xl font-bold mb-4">Recent Transfers</h2>
             <div className="w-full max-w-md">
                 {redemptions.slice(0, 3).map((redemption: Redemption) => (

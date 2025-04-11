@@ -35,7 +35,7 @@ const RecentTransactionEntry: React.FC<RecentTransactionEntryProps> =
                     <p>Redeemed Points</p>
                 )}
 
-                <p className="text-gray-500">
+                <p className="text-gray-500 dark:text-gray-300">
                     {transaction.createdAt.slice(0, 10)}
                 </p>
 
@@ -52,7 +52,7 @@ const RecentTransactionEntry: React.FC<RecentTransactionEntryProps> =
             )}
 
             {transaction.type === "redemption" && transaction.operatorId === null && (
-                <p className="text-gray-500"> (Pending) {transaction.amount} Points </p>
+                <p className="text-gray-500 dark:text-gray-300"> (Pending) {transaction.amount} Points </p>
             )}
 
             {transaction.type === "redemption" && transaction.operatorId !== null && (
