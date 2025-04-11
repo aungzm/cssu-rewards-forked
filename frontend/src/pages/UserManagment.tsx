@@ -271,6 +271,7 @@ const UserManagement: React.FC = () => {
   return (
     <>
       <Navbar activeLink="user-management" />
+      <div className="bg-gray-100 dark:bg-gray-900 min-h-screen">
       <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto dark:bg-gray-900 min-h-screen">
         {/* Main content card */}
         <div className="bg-white dark:bg-gray-800 px-4 py-5 shadow sm:rounded-lg sm:p-6">
@@ -352,6 +353,9 @@ const UserManagement: React.FC = () => {
           )}
         </div>
       </div>
+      </div>
+
+      {/* Infinite Scroll Loader */}
 
       {/* Modals */}
       {modalState.type === "add" && (
