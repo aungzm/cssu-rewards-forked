@@ -12,6 +12,7 @@ import RedemptionListEntry from "../components/Dashboard/RedemptionListEntry";
 import EventDetailsModal from "../components/event/eventDetailsModal";
 import PromotionDetailsModal from "../components/promotion/PromotionDetailsModal";
 import { Promotion, EventDetails } from "../types/"
+import { useNavigate } from "react-router-dom";
 
 interface UserData {
   name: string;
@@ -38,6 +39,7 @@ interface Redemption {
 
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   // Data lists
   const [redemptionList, setRedemptionList] = useState<Redemption[]>([]);
   const [transactionList, setTransactionList] = useState<Transaction[]>([]);
@@ -105,7 +107,7 @@ const Dashboard: React.FC = () => {
         <h2 className="text-lg font-normal text-[#002A5C] dark:text-white">{heading}</h2>
         <button
           className="text-blue-500 hover:underline dark:text-blue-400"
-          onClick={() => window.location.href = `${link}`}
+          onClick={() => navigate(`/${link}`)}
         >
           View All 
         </button>

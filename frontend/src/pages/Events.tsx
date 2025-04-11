@@ -14,6 +14,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import { useUser } from '../context/UserContext'; 
 import { Search, ArrowUpDown } from 'lucide-react'; 
 import EventFilterDropdown from '../components/event/eventFilterDropDown';
+import { useNavigate } from 'react-router-dom';
 
 // --- Interfaces & Enums ---
 export interface Event {
@@ -74,7 +75,7 @@ type EventSortOption =
 const ITEMS_PER_PAGE = 12;
 
 export default function EventsPage() {
-  // --- State ---
+  const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -276,11 +277,11 @@ export default function EventsPage() {
   };
 
   const handleEditClick = (eventId: number) => {
-    window.location.href = `/edit/events/${eventId}`;
+    navigate(`/edit/events/${eventId}`);
   };
 
   const handleCreateEvent = () => { 
-    window.location.href = '/create/event';
+    navigate('/create/event');
   }
 
   const handleRsvpToggle = useCallback(
