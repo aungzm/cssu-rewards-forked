@@ -25,8 +25,8 @@ const CreateTransaction: React.FC = () => {
             <div className="flex flex-col w-2/3 my-10 ">
 
                 <div className="justify-left flex flex-col items-start">
-                    <h2 className="text-2xl font-bold" style={{ color: "#002A5C" }}>Create Transaction</h2>
-                    <p className="text-gray-500">Please select a transaction type from the navbar.</p>
+                    <h2 className="text-2xl font-bold text-[#002A5C] dark:text-gray-300">Create Transaction</h2>
+                    <p className="text-gray-500 dark:text-gray-300">Please select a transaction type from the navbar.</p>
                 </div>
 
                 {/* User Info */}

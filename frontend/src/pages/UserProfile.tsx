@@ -26,13 +26,15 @@ const UserProfile: React.FC = () => {
         
           const formData = new FormData();
           formData.append("avatar", file);
+          const token = localStorage.getItem('authToken');
           // Send a PATCH request to upload the file
           console.log(formData)
           try {
             // cannot use fetch with auth here, since fetch with auth has application/json set in headers, but this requires multipart/form-data
             // trying to set multipart/form-data will result in not having a default boundary and thus fetch fails
             // backend cors settings allows localhost:5173 (and BASE_API_URL), for PATCH /users/me in order for this to be able to send a file.
-            fetchWithAuth(`${API_BASE_URL}/users/me`, {
+            fetch(`${API_BASE_URL}/users/me`, {
+              headers : {'Authorization': `Bearer ${token}`},
               method: "PATCH",
               body: formData
             }).then((response) => {
@@ -51,7 +53,6 @@ const UserProfile: React.FC = () => {
     };
     fileInput.click();
   };
-
   if (!userData) {
     // Consider a more user-friendly loading state or redirect logic here
     return (

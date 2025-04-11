@@ -166,7 +166,7 @@ updateSorts,
                     <select 
                         value={operator || ''} 
                         onChange={(e) => setOperator(e.target.value as operatorType)} 
-                        className={`border rounded p-2 w-full  ${
+                        className={`border rounded p-2 w-full dark:bg-gray-300 dark:text-black ${
                             amount === null ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""
                         }`}
                         disabled={amount === null}

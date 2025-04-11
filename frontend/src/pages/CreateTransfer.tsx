@@ -48,7 +48,7 @@ const CreateTransfer: React.FC = () => {
         <>
         <Navbar activeLink="dashboard"/>
 
-        <div className="bg-gray-100 min-h-screen flex flex-col justify-center items-center dark:bg-gray-900">
+        <div className="bg-gray-100 min-h-screen flex flex-col justify-center items-center dark:bg-gray-900 dark:text-gray-300">
 
         <CreateCard type="transfer" user={{id: user?.userData?.id || 0,  points: user?.userData?.points || 0}} />
 

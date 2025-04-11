@@ -196,13 +196,6 @@ const updateCurrentUserSchema = z.object({
     // ),
 });
 
-const corsOptions = {
-  origin: 'http://localhost:5173',  // Change to the correct frontend URL
-  methods: ['PATCH', 'OPTIONS'],  // Only allow PATCH and OPTIONS methods
-  allowedHeaders: ['Content-Type', 'Authorization'],  // Allow headers we need
-  credentials: true,  // Allow credentials (cookies, tokens, etc.)
-};
-
 const updatePasswordSchema = z.object({
   body: z.object({
     old: z.string().min(8).max(20),
@@ -314,7 +307,6 @@ router.get("/me", authenticateToken, getCurrentUser);
 
 router.patch(
   "/me",
-  cors(corsOptions),
   authenticateToken,
   upload.single("avatar"),
   validate(updateCurrentUserSchema),
@@ -428,6 +420,5 @@ router.get(
   validate(getUsersSchema),
   getUsers
 );
-router.options('*', cors());
 
 export default router;
