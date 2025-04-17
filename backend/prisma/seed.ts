@@ -25,6 +25,23 @@ async function createUser(utorid: string,role: RoleType,activated: boolean,verif
 	});
 	return user;
 }
+async function createUserWithPassword(utorid: string,password: string, role: RoleType,activated: boolean,verified: boolean,sus=false) {
+	minUtorid++;
+	const user = await prisma.user.create({
+		data: {
+			utorid: utorid,
+			name: utorid,
+			password: await bcrypt.hash(password,10),
+			email: utorid+"@mail.utoronto.ca",
+			points: 0,
+			role: role,
+			activated: activated,
+			verified: verified,
+			suspicious: sus,
+		},
+	});
+	return user;
+}
 
 async function createEvent(name: string,startTime: Date,endTime: Date,capacity: number,points: number,published: boolean,numGuests:number) {
 	const event = await prisma.event.create({
@@ -243,13 +260,13 @@ async function createPromotion(
 // Delete all existing data
 // await clearData();
 
-await createEvent("a",new Date("2000-01-01"), new Date("2024-01-11"), 5000, 50000, true,0);
-await createEvent("a",new Date("2005-01-01"), new Date("2025-02-12"), 5000, 50000, true,0);
-await createEvent("a",new Date("2010-01-01"), new Date("2026-03-13"), 5000, 50000, true,0);
-await createEvent("a",new Date("2015-01-01"), new Date("2026-04-14"), 5000, 50000, true,0);
-const e = await createEvent("event with users",new Date("2020-01-01"), new Date("2027-05-15"), 5000, 50000, true,0);
-await createEvent("a",new Date("2030-01-01"), new Date("2037-05-15"), 5000, 50000, true,0);
-await createEvent("a",new Date("2030-01-01"), new Date("2037-05-15"), 5000, 50000, false,0);
+await createEvent("Game night",new Date("2000-01-01"), new Date("2024-01-11"), 5000, 50000, true,0);
+await createEvent("pizza party",new Date("2005-01-01"), new Date("2025-02-12"), 5000, 50000, true,0);
+await createEvent("ML intro",new Date("2010-01-01"), new Date("2026-03-13"), 5000, 50000, true,0);
+await createEvent("Hackathon for beginners",new Date("2015-01-01"), new Date("2026-04-14"), 5000, 50000, true,0);
+const e = await createEvent("Networking event",new Date("2020-01-01"), new Date("2027-05-15"), 5000, 50000, true,0);
+await createEvent("Optimize your linkedin",new Date("2030-01-01"), new Date("2037-05-15"), 5000, 50000, true,0);
+await createEvent("dynamic programming tutorial",new Date("2030-01-01"), new Date("2037-05-15"), 5000, 50000, false,0);
 for (let i=0;i<30;i++) {
 	await createEvent(`scroll test ${i}`,new Date("2030-01-01"), new Date("2037-05-15"), 5000, 50000, true,0);
 }
@@ -265,15 +282,15 @@ for (let i=0; i<5;i++) {
 	await createUser(minUtorid.toString(),RoleType.REGULAR,false,true);
 	await createUser(minUtorid.toString(),RoleType.REGULAR,false,false);
 }
-const manager1 = await createUser("manager1",RoleType.MANAGER,true,true);
 await createUser("manager2",RoleType.MANAGER,true,true);
-const cashier1 = await createUser("cashier1",RoleType.CASHIER,true,true);
 const sussycashier = await createUser("susier69",RoleType.CASHIER,true,true,true);
 await createUser("cashier2",RoleType.CASHIER,true,true);
 await createUser("cashier3",RoleType.CASHIER,true,true);
 await createUser("cashier4",RoleType.CASHIER,true,true);
 await createUser("clive123",RoleType.SUPERUSER,true,true)
-
+const reg1 = await createUserWithPassword("regular1","123",RoleType.REGULAR,true,true,false);
+const cash1 = await createUserWithPassword("cashier1","123",RoleType.CASHIER,true,true,false);
+const man1 = await createUserWithPassword("manager1","20952",RoleType.MANAGER,true,true,false);
 await addUserToEvent(1,e.id);
 for (let i=0;i<5;i++) {
 	await createEventTransaction(1,100,e.id);
@@ -281,13 +298,14 @@ for (let i=0;i<5;i++) {
 
 // create transactions
 const selectUsers = regularUserIds.slice(0,3);
+selectUsers.push(...[reg1.id,cash1.id,man1.id]);
 for (const id of selectUsers) {
 	for (let i=1;i<11;i++) {
-		const transaction = await createPurchaseTransaction(1000*i,1000*i,false,id,cashier1.id);
+		const transaction = await createPurchaseTransaction(1000*i,1000*i,false,id,cash1.id);
 		await createPurchaseTransaction(69*i,69*i,true,id,sussycashier.id);
 		if (transaction) {
-			await createAdjustmentTransaction(-40*i, id,manager1.id,transaction.id);
-			await createAdjustmentTransaction(50*i, id,manager1.id,transaction.id);
+			await createAdjustmentTransaction(-40*i, id,man1.id,transaction.id);
+			await createAdjustmentTransaction(50*i, id,man1.id,transaction.id);
 		} else {
 			console.log(`somehow purchase transaction ${i} NOT created for user ${id}`);
 		}
@@ -303,14 +321,14 @@ for (let i=0;i<selectUsers.length-1;i++) {
 
 
 
-await createPromotion("curr promo 1", "2022/01/01","2026/01/01",0.01,69,50,"automatic");
-await createPromotion("curr promo 2", "2022/01/01","2026/01/01",0.02,100,300,"automatic");
-await createPromotion("curr promo 3", "2022/01/01","2026/01/01",0.03,200,420,"automatic");
-await createPromotion("past promo", "2022/01/01","2023/01/01",0.02,69,500,"automatic");
-await createPromotion("future promo", "2026/01/01","2027/01/01",0.03,60,40,"automatic");
-await createPromotion("infinite points", "2022/01/01","2026/01/01",0.03,0,999999999,"one-time");
-await createPromotion("past infinite points", "2022/01/01","2023/01/01",0.03,0,999999999,"one-time");
-await createPromotion("future infinite points", "2027/01/01","2028/01/01",0.03,0,999999999,"one-time");
+await createPromotion("start of summer", "2022/01/01","2026/01/01",0.01,69,50,"automatic");
+await createPromotion("happy holidays", "2022/01/01","2026/01/01",0.02,100,300,"automatic");
+await createPromotion("new year", "2022/01/01","2026/01/01",0.03,200,420,"automatic");
+await createPromotion("reading week bonus", "2022/01/01","2023/01/01",0.02,69,500,"automatic");
+await createPromotion("finals bonus", "2026/01/01","2027/01/01",0.03,60,40,"automatic");
+await createPromotion("new user bonus", "2022/01/01","2026/01/01",0.03,0,100,"one-time");
+await createPromotion("new year 2022", "2022/01/01","2023/01/01",0.03,0,100,"one-time");
+await createPromotion("new year 2027", "2027/01/01","2028/01/01",0.03,0,100,"one-time");
 
 for (let i=0;i<30; i++ ) {
 	await createPromotion(`scroll test ${i} `, "2024/01/01","2028/01/01",0.02,69,500,"automatic");
