@@ -5,7 +5,7 @@ import React, {
   useRef,
   useMemo,
 } from "react";
-import type { UserData } from "../types";
+import type { UserData, CreateUserResponse } from "../types";
 import { useUser } from "../context/UserContext";
 import { fetchWithAuth } from "../utils/authHelper";
 import { API_BASE_URL } from "../utils/auth";
@@ -13,6 +13,7 @@ import UserTable from "../components/userManagment/UserTable";
 import AddUserModal from "../components/userManagment/AddUserModal";
 import EditUserModal from "../components/userManagment/EditUserModal";
 import ViewUserModal from "../components/userManagment/ViewUserModal";
+import ResetTokenModal from "../components/userManagment/ResetTokenModal"; // Import the new modal
 import Navbar from "../components/Navbar";
 import FilterDropdown, {
   UserManagementFilters,
@@ -59,8 +60,11 @@ const UserManagement: React.FC = () => {
     defaultUserManagementFilters,
   );
 
+  // Add resetTokenData state to store the reset token information
+  const [resetTokenData, setResetTokenData] = useState<Partial<CreateUserResponse> | null>(null);
+
   const [modalState, setModalState] = useState<{
-    type: "add" | "edit" | "view" | null;
+    type: "add" | "edit" | "view" | "reset-token" | null; // Add reset-token option
     user: FetchedUser | null; // Use FetchedUser here too
   }>({ type: null, user: null });
   const observer = useRef<IntersectionObserver | null>(null);
@@ -214,7 +218,7 @@ const UserManagement: React.FC = () => {
   };
 
   const handleOpenModal = (
-    type: "add" | "edit" | "view",
+    type: "add" | "edit" | "view" | "reset-token",
     user: FetchedUser | null = null,
   ) => {
     // We only try to edit if the user has the necessary role
@@ -226,15 +230,40 @@ const UserManagement: React.FC = () => {
       console.warn("Cashiers cannot edit users.");
       return; // Prevent opening edit modal for cashiers
     }
+
+    // For reset-token modal, set the token data
+    if (type === "reset-token") {
+      // Example data - in a real app, you would fetch this from an API
+      setResetTokenData({
+        id: 1,
+        utorid: "johndoe1",
+        name: "John Doe",
+        email: "john.doe@mail.utoronto.ca",
+        verified: false,
+        expiresAt: "2025-03-10T01:41:47.000Z",
+        resetToken: "ad71d4e1-8614-46aa-b96f-cb894e346506"
+      });
+    }
+    
     setModalState({ type, user });
   };
 
   const handleCloseModal = () => {
     setModalState({ type: null, user: null });
+    if (modalState.type === "reset-token") {
+      setResetTokenData(null);
+    }
   };
 
-  const handleSuccess = () => {
+  const handleSuccess = (responseData: CreateUserResponse) => {
     handleCloseModal();
+    // If we have reset token data, show the reset token modal
+    if (responseData && responseData.resetToken) {
+      setResetTokenData(responseData);
+      setModalState({ type: "reset-token", user: null });
+      return;
+    }
+    
     setPage(1); // Reset to page 1 after add/edit
     fetchUsers(true); // Refetch and reset the list
   };
@@ -321,7 +350,7 @@ const UserManagement: React.FC = () => {
                   <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                   Add User
                 </button>
-              )}
+              )}              
             </div>
           </div>
 
@@ -369,7 +398,7 @@ const UserManagement: React.FC = () => {
         <EditUserModal
           isOpen={modalState.type === "edit"}
           onClose={handleCloseModal}
-          onSuccess={handleSuccess}
+          onSuccess={() => handleSuccess({} as CreateUserResponse)}
           userId={modalState.user.id as number}
         />
       )}
@@ -378,6 +407,14 @@ const UserManagement: React.FC = () => {
           isOpen={modalState.type === "view"}
           onClose={handleCloseModal}
           user={modalState.user as UserData} // View modal fetches details
+        />
+      )}
+      {/* New Reset Token Modal */}
+      {modalState.type === "reset-token" && resetTokenData && (
+        <ResetTokenModal
+          isOpen={modalState.type === "reset-token"}
+          onClose={handleCloseModal}
+          userData={resetTokenData}
         />
       )}
     </>

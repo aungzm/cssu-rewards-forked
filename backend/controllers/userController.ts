@@ -637,6 +637,12 @@ export async function getMyOrganizedEvents(
           capacity: event.capacity,
           published: event.published,
           numGuests: event._count.guests,
+          isOrganizer: event.organizers.some(
+            (org) => org.organizerId === currentUserId
+          ),
+          isGuest: !event.organizers.some(
+            (org) => org.organizerId === currentUserId
+          ),
         }));
         res.status(200).json({
           count: fullEvents.length,
@@ -658,6 +664,12 @@ export async function getMyOrganizedEvents(
           capacity: event.capacity,
           published: event.published,
           numGuests: event._count.guests,
+          isOrganizer: event.organizers.some(
+            (org) => org.organizerId === currentUserId
+          ),
+          isGuest: !event.organizers.some(
+            (org) => org.organizerId === currentUserId
+          ),
         }));
         res.status(200).json({
           count: nonFullEvents.length,
@@ -678,6 +690,12 @@ export async function getMyOrganizedEvents(
       capacity: event.capacity,
       published: event.published,
       numGuests: event._count.guests,
+      isOrganizer: event.organizers.some(
+        (org) => org.organizerId === currentUserId
+      ),
+      isGuest: !event.organizers.some(
+        (org) => org.organizerId === currentUserId
+      ),
     }));
 
     res.status(200).json({

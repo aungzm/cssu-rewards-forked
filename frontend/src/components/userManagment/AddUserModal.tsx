@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { fetchWithAuth } from '../../utils/authHelper';
 import { API_BASE_URL } from '../../utils/auth';
+import { CreateUserResponse } from '../../types'; // Adjust the import path as necessary
 import { X } from 'lucide-react';
 
 interface AddUserModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: () => void; // Callback after successful creation
+    onSuccess: (responseData: CreateUserResponse) => void; // Callback after successful creation
 }
 
 const AddUserModal: React.FC<AddUserModalProps> = ({
@@ -51,12 +52,6 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
             errors.email = 'Please enter a valid @mail.utoronto.ca email address.';
             isValid = false;
         }
-        if (!name.trim()) {
-            // Add name validation if required by backend
-            // errors.name = "Name cannot be empty.";
-            // isValid = false;
-        }
-
 
         setValidationErrors(errors);
         return isValid;
@@ -79,7 +74,6 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
                     utorid,
                     name,
                     email,
-                    // Backend should handle setting defaults for role, points, verified etc.
                 }),
             });
 
@@ -96,8 +90,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
                 );
             }
 
-            // const newUser = await response.json(); // Optional: use the returned user data
-            onSuccess(); // Call success callback (closes modal, refetches users)
+            const data = await response.json();
+            onSuccess(data); // Call the success callback with the reset token
         } catch (err) {
             console.error('Error adding user:', err);
             setError(err instanceof Error ? err.message : 'Failed to add user');

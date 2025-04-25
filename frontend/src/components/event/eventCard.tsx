@@ -82,7 +82,6 @@ export default function EventsCard({
     new Date(endTime) < new Date() ||
     isOrganizer ||
     (capacity !== null && capacity <= numGuests);
-
   return (
     <div
       onClick={onClick}

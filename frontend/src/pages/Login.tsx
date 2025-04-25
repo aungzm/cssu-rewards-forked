@@ -179,22 +179,10 @@ const LoginPage: React.FC = () => {
         {/* Help Text */}
         <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           <p>
-            Forgot your{" "}
-            <a href="#" className="text-black dark:text-white hover:underline">
-              UTORid
-            </a>{" "}
-            or{" "}
-            <a href="#" className="text-black dark:text-white hover:underline">
-              password
+            Don't have an account?{" "}
+            <a onClick={() => navigate('/signup')} className="text-black dark:text-white hover:underline" style={{ cursor: 'pointer' }}>
+              Sign up
             </a>
-            ?
-          </p>
-          <p className="mt-1">
-            Need{" "}
-            <a href="#" className="text-black dark:text-white hover:underline">
-              help
-            </a>
-            ?
           </p>
         </div>
       </div>

@@ -12,6 +12,16 @@ export interface UserData {
   avatarUrl?: string; // optional, nice!
 }
 
+export interface CreateUserResponse {
+    id: number;
+    utorid: string;
+    name: string;
+    email: string;
+    verified: boolean;
+    expiresAt: string;
+    resetToken: string; 
+}
+
 export interface UserContextType {
   userData: UserData | null;
   isLoading: boolean;

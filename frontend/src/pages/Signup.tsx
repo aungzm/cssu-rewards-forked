@@ -260,17 +260,10 @@ const Signup: React.FC = () => {
         {/* Help Text */}
         <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           <p>
-            Remember your password?{" "}
-            <a href="/login" className="text-black dark:text-white hover:underline">
+            Already have an account?{" "}
+            <a onClick={() => navigate('/login')} className="text-black dark:text-white hover:underline">
               Sign in
             </a>
-          </p>
-          <p className="mt-1">
-            Need{" "}
-            <a href="#" className="text-black dark:text-white hover:underline">
-              help
-            </a>
-            ?
           </p>
         </div>
       </div>

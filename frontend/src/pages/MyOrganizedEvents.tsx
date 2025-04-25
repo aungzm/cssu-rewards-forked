@@ -278,6 +278,8 @@ export default function EventsPage() {
     navigate(`/edit/events/${eventId}`);
   };
 
+  console.log('Events:', events);
+
   
 
   // Render
