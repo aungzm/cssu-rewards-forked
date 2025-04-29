@@ -353,6 +353,7 @@ export async function getEventById(req: Request, res: Response): Promise<void> {
  */
 export async function updateEvent(req: Request, res: Response): Promise<void> {
   try {
+    
     const eventId = parseInt(req.params.eventId, 10);
     if (isNaN(eventId)) {
       res.status(400).json({ error: "Invalid event ID" });
@@ -361,7 +362,12 @@ export async function updateEvent(req: Request, res: Response): Promise<void> {
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      include: {
+      select: {
+        startTime: true,
+        endTime: true,
+        name: true,
+        pointsAwarded: true,
+        pointsRemain: true,
         guests: true,
         organizers: {
           select: { organizerId: true },
@@ -443,7 +449,6 @@ export async function updateEvent(req: Request, res: Response): Promise<void> {
       updateData.startTime = newStartTime;
       updatedFields.startTime = startTime;
     }
-
     if (endTime !== undefined && endTime !== null) {
       const newEndTime = new Date(endTime);
       const effectiveStartTime = updateData.startTime || event.startTime;
@@ -476,8 +481,7 @@ export async function updateEvent(req: Request, res: Response): Promise<void> {
       updateData.capacity = capacity;
       updatedFields.capacity = capacity;
     }
-
-    if (points !== undefined && points !== null) {
+    if (points !== undefined && points !== null && points!== event.pointsAwarded+event.pointsRemain) {
       if (!isManagerOrHigher) {
         res.status(403).json({ error: "Not authorized to update points." });
         return;
@@ -493,7 +497,6 @@ export async function updateEvent(req: Request, res: Response): Promise<void> {
       updateData.pointsRemain = points - pointsAwarded;
       updatedFields.pointsRemain = points - pointsAwarded;
     }
-
     if (published !== undefined && published !== null) {
       if (!isManagerOrHigher) {
         res.status(403).json({ error: "Not authorized to set published." });

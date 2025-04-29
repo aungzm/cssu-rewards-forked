@@ -4,6 +4,7 @@ import ThemeToggle from "./ThemeToggle";
 import { User, Menu, X } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { UserData } from "../types"; 
+import cssu from "../assets/cssu.png"
 
 interface DropdownItem {
   name: string;
@@ -164,7 +165,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeLink }) => {
             <Link to="/dashboard" className="flex items-center">
               <div className="w-8 h-8 rounded-full bg-gray-900 dark:bg-white flex items-center justify-center mr-3">
                 <span className="text-white dark:text-gray-900 font-bold">
-                  C
+                  <img src={cssu}></img>
                 </span>
               </div>
               <span className="font-bold text-lg">CSSU Rewards</span>
