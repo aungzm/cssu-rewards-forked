@@ -428,6 +428,10 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
     if (birthday !== undefined && birthday !== null) {
       // Accept either Date or string, converting string to Date
       updateData.birthday = birthday instanceof Date ? birthday : new Date(birthday);
+      if (updateData.birthday> new Date()) {
+        res.status(400).json("birthday cannot be set in the future");
+        return;
+      }
     }
     // For file upload, assume req.file is populated via multer.
     if (req.file) {
