@@ -379,8 +379,8 @@ export default function EventsPage() {
                 pointsRemain={event.pointsRemain}
                 pointsAwarded={event.pointsAwarded}
                 published={event.published}
-                isOrganizer={event.isOrganizer}
-                isGuest={event.isGuest}
+                isOrganizer={true}
+                isGuest={false}
                 onEdit={() => handleEditClick(event.id)}
               />
             ))}

@@ -397,7 +397,6 @@ router.get(
 router.patch(
   "/:eventId",
   authenticateToken,
-  requireManagerOrHigher,
   validate(updateEventSchema),
   updateEvent
 );

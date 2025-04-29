@@ -92,7 +92,7 @@ export function EventDetailsTab({
       capacity: data.capacity,
       // API expects "points" – use pointsRemain or default to 0.
       points: data.pointsRemain !== null && data.pointsRemain !== undefined ? data.pointsRemain : 0 + (data.pointsAwarded || 0),
-      published: data.published,
+      published: (data.published ? data.published : undefined),
     };
   }
 

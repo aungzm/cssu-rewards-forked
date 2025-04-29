@@ -104,7 +104,7 @@ export default function EventDetailsPage() {
     capacity: null,
     pointsRemain: 0,
     pointsAwarded: 0,
-    published: false,
+    published: undefined,
     isGuest: false,
     organizers: [],
     guests: [],
