@@ -87,7 +87,9 @@ const DataField: React.FC<DataFieldProps> = ({
   const statusHandler = (status: number, updatedValue: string | number) => {
     setIsEditing(false);
     if (status === 400) {
-      if (fieldName === 'Birthday') {
+      if (fieldName==="Birthday" && new Date(fieldContent) > new Date()) {
+        alert("Birthday cannot be set in the future");
+      } else if (fieldName === 'Birthday') {
         alert('Birthday must be in YYYY-MM-DD');
       } else if (fieldName === 'Email') {
         alert('Must be a valid UofT email');
