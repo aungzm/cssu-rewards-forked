@@ -4,4 +4,4 @@ node_modules
 prisma/dev*
 package-lock.json
 uploads
-backend/dist/*
+dist/
