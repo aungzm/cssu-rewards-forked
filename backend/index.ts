@@ -20,11 +20,9 @@ import promotionRoutes from "./routes/promotionRoute.js";
 
 const app: Express = express();
 
-const allowedOrigins = [
-  'https://cssu-rewards.vercel.app', // Your Vercel frontend URL
-  'http://localhost:5173', // Default Vite dev port 
-  'https://frontend-production-9895.up.railway.app' // Railway
-];
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
+  : ['http://localhost:5173'];
 
 const corsOptions = {
   origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
