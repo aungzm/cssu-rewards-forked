@@ -803,16 +803,22 @@ export async function createRedemptionTransaction(
       return;
     }
     if (redemptionAmount === undefined) {
-      redemptionAmount = currentUser.points || 0;
+      // Fall back to the balance stored in the database; the JWT only carries
+      // id, utorid and role, so currentUser.points is never available here.
+      redemptionAmount = user.points;
     } else {
       if (!Number.isInteger(redemptionAmount) || redemptionAmount <= 0) {
         res.status(400).json({ error: "Amount must be a positive integer." });
         return;
       }
-      if (user.points < redemptionAmount) {
-        res.status(400).json({ error: "Insufficient points for redemption." });
-        return;
-      }
+    }
+    if (redemptionAmount <= 0) {
+      res.status(400).json({ error: "Amount must be a positive integer." });
+      return;
+    }
+    if (user.points < redemptionAmount) {
+      res.status(400).json({ error: "Insufficient points for redemption." });
+      return;
     }
     const validRedemptionAmount = redemptionAmount ?? 0;
     const transaction = await prisma.transaction.create({
@@ -1007,7 +1013,9 @@ export async function markRedemptionAsProcessed(
       });
       await tx.user.update({
         where: { id: transaction.userId ?? undefined },
-        data: { points: { decrement: transaction.amount ?? 0 } },
+        // Redemptions are stored with a negative amount, so decrementing by
+        // that value would credit the user instead of charging them.
+        data: { points: { decrement: Math.abs(transaction.amount ?? 0) } },
       });
       return updated;
     });
