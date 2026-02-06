@@ -511,7 +511,7 @@ export async function getTransactions(
       if (transaction.type === "PURCHASE") {
         return {
           ...baseResponse,
-          spent: transaction.amount,
+          spent: transaction.spent,
           amount: transaction.amount,
         };
       } else if (transaction.type === "REDEMPTION") {
@@ -903,7 +903,7 @@ export async function getUserTransactions(
     }
 
     if (promotionId) {
-      filter.promotionId = parseInt(promotionId as string, 10);
+      filter.promotionIds = { some: { id: parseInt(promotionId as string, 10) } };
     }
 
     if (amount !== undefined && operator) {
@@ -931,10 +931,10 @@ export async function getUserTransactions(
       take: limitNum,
       orderBy: { createdAt: "desc" },
       include: {
-        user: { select: { email: true, name: true } },
-        operator: { select: { email: true, name: true } },
-        sender: { select: { email: true, name: true } },
-        receiver: { select: { email: true, name: true } },
+        user: { select: { utorid: true, name: true } },
+        operator: { select: { utorid: true, name: true } },
+        sender: { select: { utorid: true, name: true } },
+        receiver: { select: { utorid: true, name: true } },
       },
     });
 
@@ -945,8 +945,13 @@ export async function getUserTransactions(
       relatedId: getRelatedIdForTransaction(transaction),
       promotionIds: [], // Add logic for promotion IDs if needed.
       remark: transaction.remarks || "",
+      // Keep createdBy consistent with the other endpoints, which return a
+      // utorid rather than an internal user id.
       createdBy:
-        transaction.operatorId || transaction.senderId || transaction.userId,
+        transaction.operator?.utorid ??
+        transaction.sender?.utorid ??
+        transaction.user?.utorid ??
+        null,
       createdAt: transaction.createdAt, // Added for Dashboard Transaction List entry
       suspicious: transaction.suspicious,
       operatorId: transaction.operatorId
