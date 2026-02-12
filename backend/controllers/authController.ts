@@ -28,12 +28,9 @@ export async function generateJWTToken(
       where: { utorid },
     });
 
-    if (!user) {
-      res.status(404).json({ error: "User not found." });
-      return;
-    }
-
-    if (user.password === null) {
+    // A single generic response for unknown, unactivated, or password-less
+    // accounts keeps the endpoint from being used to enumerate UTORids.
+    if (!user || !user.activated || user.password === null) {
       res.status(401).json({ error: "Invalid credentials." });
       return;
     }
@@ -61,23 +58,14 @@ export async function generateJWTToken(
 
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour expiration in ISO format
 
-    // Activate user if not already activated
-    if (user.activated === false) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          activated: true,
-          lastLogin: new Date(),
-        },
-      });
-    } else {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          lastLogin: new Date(),
-        },
-      });
-    }
+    // Activating on login is no longer possible: login now requires an
+    // already-activated account. Only the login timestamp changes here.
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastLogin: new Date(),
+      },
+    });
 
     res.status(200).json({ token, expiresAt });
   } catch (error) {
@@ -203,10 +191,11 @@ export async function finalizePasswordReset(
     // Hash the new password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Update user's password
+    // Update user's password. Completing a reset also activates the account:
+    // this token is handed out at account creation as the activation token.
     await prisma.user.update({
       where: { id: tokenRecord.user.id },
-      data: { password: hashedPassword },
+      data: { password: hashedPassword, activated: true },
     });
 
     // Delete the reset token after successful reset

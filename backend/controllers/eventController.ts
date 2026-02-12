@@ -1144,36 +1144,45 @@ export async function awardPoints(req: AuthenticatedRequest, res: Response): Pro
       return;
     }
 
-    const transactionsToCreate = event.guests.map((rsvp) =>
-      prisma.transaction.create({
+    // Create every award transaction, move the event's point budget and credit
+    // each guest in one transaction. Previously these were three separate
+    // transactions, so a failure part-way through could leave guests credited
+    // without matching EVENT records (or the event budget out of sync).
+    const createdTransactions = await prisma.$transaction(async (tx) => {
+      const created: any[] = [];
+
+      for (const rsvp of event.guests) {
+        created.push(
+          await tx.transaction.create({
+            data: {
+              type: "EVENT",
+              amount,
+              user: { connect: { id: rsvp.userId } },
+              operator: { connect: { id: operatorId } },
+              relatedEvent: { connect: { id: event.id } },
+              remarks: remark || "",
+            },
+          })
+        );
+      }
+
+      await tx.event.update({
+        where: { id: event.id },
         data: {
-          type: "EVENT",
-          amount,
-          user: { connect: { id: rsvp.userId } },
-          operator: { connect: { id: operatorId } },
-          relatedEvent: { connect: { id: event.id } },
-          remarks: remark || "",
+          pointsRemain: event.pointsRemain - totalRequired,
+          pointsAwarded: event.pointsAwarded + totalRequired,
         },
-      })
-    );
+      });
 
-    const createdTransactions = await prisma.$transaction(transactionsToCreate);
+      for (const rsvp of event.guests) {
+        await tx.user.update({
+          where: { id: rsvp.userId },
+          data: { points: { increment: amount } },
+        });
+      }
 
-    await prisma.event.update({
-      where: { id: event.id },
-      data: {
-        pointsRemain: event.pointsRemain - totalRequired,
-        pointsAwarded: event.pointsAwarded + totalRequired,
-      },
+      return created;
     });
-
-    const guestUpdates = event.guests.map((rsvp) =>
-      prisma.user.update({
-        where: { id: rsvp.userId },
-        data: { points: { increment: amount } },
-      })
-    );
-    await prisma.$transaction(guestUpdates);
 
     const responseTransactions = createdTransactions.map((tran) => {
       // Find the recipient's utorid from the event.guests (if available)
