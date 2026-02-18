@@ -1,11 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { AuthenticatedRequest } from "./authMiddleware.js";
-
-// You might store your secret in an environment variable
-const JWT_SECRET =
-  process.env.JWT_SECRET ||
-  "1d1fa6874e3855ff363b620b5e44ec5774976308423484dfe85dc92c0bf0b078";
+import { getJwtSecret } from "../lib/jwtSecret.js";
 
 export function authenticateToken(
   req: AuthenticatedRequest,
@@ -25,7 +21,7 @@ export function authenticateToken(
     return;
   }
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
+  jwt.verify(token, getJwtSecret(), (err, user) => {
     if (err) {
       // Send a 401 error when token verification fails
       res.status(401).json({ error: "Invalid or expired token." });

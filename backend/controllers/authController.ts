@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
+import { getJwtSecret } from "../lib/jwtSecret.js";
 
 const prisma = new PrismaClient();
 
@@ -42,17 +43,14 @@ export async function generateJWTToken(
       return;
     }
 
-    // Generate JWT token using environment variable if available
-    const secret =
-      process.env.JWT_SECRET ||
-      "1d1fa6874e3855ff363b620b5e44ec5774976308423484dfe85dc92c0bf0b078";
+    // Generate JWT token using the shared, lazily-read secret
     const token = jwt.sign(
       {
         id: user.id,
         utorid: user.utorid,
         role: user.role,
       },
-      secret,
+      getJwtSecret(),
       { expiresIn: "1h" }
     );
 

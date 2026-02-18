@@ -172,9 +172,26 @@ export async function getUserById(req: AuthenticatedRequest, res: Response): Pro
     const userId = parseInt(req.params.userId, 10);
     const requestingUser = req.user; // Provided by authenticateToken
 
-    // Fetch user
+    // Fetch user. Never select the password hash: this response is sent to
+    // managers/superusers and must not expose credentials.
     const user = await prisma.user.findUnique({
       where: { id: userId },
+      select: {
+        id: true,
+        utorid: true,
+        email: true,
+        name: true,
+        birthday: true,
+        avatarUrl: true,
+        role: true,
+        points: true,
+        activated: true,
+        verified: true,
+        suspicious: true,
+        createdAt: true,
+        updatedAt: true,
+        lastLogin: true,
+      },
     });
     if (!user) {
       res.status(404).json({ error: "User not found." });
