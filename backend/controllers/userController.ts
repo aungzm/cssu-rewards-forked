@@ -459,7 +459,6 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
         // fs.renameSync(req.file.path, newPath);
         updateData.avatarUrl = `/uploads/avatars/${currentUserId}${extension}`;
         updateData.avatar = req.file.buffer.toString('base64');
-        console.log(updateData.avatar)
       } catch (error) {
         console.error("Error renaming avatar file:", error);
       }

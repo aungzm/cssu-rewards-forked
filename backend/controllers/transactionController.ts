@@ -634,11 +634,28 @@ export async function toggleTransactionSuspicious(
       return;
     }
     let userPointsAdjustment = 0;
-    if (suspicious && !currentTransaction.suspicious) {
-      // Deduct points from user's balance.
-      userPointsAdjustment = -(currentTransaction.amount ?? 0);
-    } else if (!suspicious && currentTransaction.suspicious) {
-      userPointsAdjustment = currentTransaction.amount ?? 0;
+    if (suspicious !== currentTransaction.suspicious) {
+      const amount = currentTransaction.amount ?? 0;
+      switch (currentTransaction.type) {
+        case "PURCHASE":
+        case "EVENT":
+          // These rows represent points credited to the affected user.
+          userPointsAdjustment = suspicious ? -amount : amount;
+          break;
+        case "REDEMPTION":
+          // A pending redemption has not moved any points yet; only a
+          // processed one can be refunded or charged again.
+          if (currentTransaction.operatorId) {
+            userPointsAdjustment = suspicious
+              ? Math.abs(amount)
+              : -Math.abs(amount);
+          }
+          break;
+        default:
+          // TRANSFER rows exist as mirrored pairs and ADJUSTMENT rows do not
+          // own a balance, so flag them without touching points.
+          break;
+      }
     }
     const updatedTransaction = await prisma.$transaction(async (tx) => {
       const updated = await tx.transaction.update({
@@ -655,7 +672,7 @@ export async function toggleTransactionSuspicious(
           user: {
             select: { id: true, email: true, points: true, utorid: true },
           },
-          operator: { select: { email: true } },
+          operator: { select: { utorid: true } },
         },
       });
       if (userPointsAdjustment !== 0 && updated.user) {
@@ -675,7 +692,7 @@ export async function toggleTransactionSuspicious(
       promotionIds: [],
       suspicious: updatedTransaction.suspicious,
       remark: updatedTransaction.remarks || "",
-      createdBy: updatedTransaction.operator?.email,
+      createdBy: updatedTransaction.operator?.utorid,
     };
     res.status(200).json(response);
   } catch (error) {

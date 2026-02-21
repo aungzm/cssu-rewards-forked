@@ -25,7 +25,30 @@ import {
 import cors from "cors";
 const router = express.Router();
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === "image/png") {
+      cb(null, true);
+      return;
+    }
+    cb(new Error("Only .png format is supported."));
+  },
+});
+const uploadAvatar = upload.single("avatar");
+
+// Multer reports its own errors (size, type); surface them as 400s instead of
+// letting them fall through to the generic 500 handler.
+const handleAvatarUpload = (req: Request, res: Response, next: NextFunction) => {
+  uploadAvatar(req, res, (error: any) => {
+    if (error) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+    next();
+  });
+};
 
 // Custom parser to convert strings to boolean correctly
 const parseBoolean = (val: unknown): unknown => {
@@ -61,17 +84,6 @@ const validate =
     }
   };
 
-  
-const checkImg = (file: File) => {
-  if (!file) {
-    return true;
-  } else if (file.name) {
-      const fileType = file.name.split(".").pop();
-      if (fileType ==="png") return true;
-  } 
-  return false;
-  
-}
 // Schemas
 
 const userIdSchema = z.object({
@@ -172,17 +184,8 @@ const updateCurrentUserSchema = z.object({
           { message: "Invalid date. Please provide a valid calendar date." }
         )
         .transform((val) => (val ? new Date(val) : val)), // Transform to Date object if not null
-      avatar: z
-        .any()
-        .optional()
-        .nullable()
-        .refine((file) => {
-          if (!file) {
-            return true;
-          };
-          return file.size < 5000000;
-        }, "Max size is 5MB.")
-        .refine((file) => checkImg(file), "Only .png format is supported."),
+      // File uploads are validated by multer (5 MB limit, PNG only).
+      avatar: z.any().optional().nullable(),
     })
     // .refine( TODO: i do not know why this is causing update to fail for updating avatars, but it is
     //   (data) => {
@@ -308,7 +311,7 @@ router.get("/me", authenticateToken, getCurrentUser);
 router.patch(
   "/me",
   authenticateToken,
-  upload.single("avatar"),
+  handleAvatarUpload,
   validate(updateCurrentUserSchema),
   updateCurrentUser
 );
