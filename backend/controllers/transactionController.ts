@@ -1,8 +1,14 @@
 import { Request, Response } from "express";
-import { PrismaClient, RoleType, TransactionType } from "@prisma/client";
-import { create } from "domain";
+import { Prisma, PrismaClient, RoleType, TransactionType } from "@prisma/client";
 
 const prisma = new PrismaClient();
+
+// Sentinels thrown inside transactions and translated to HTTP responses by the
+// surrounding catch blocks.
+const INSUFFICIENT_POINTS = "INSUFFICIENT_POINTS";
+const USER_NOT_FOUND = "USER_NOT_FOUND";
+const ALREADY_PROCESSED = "ALREADY_PROCESSED";
+
 /**
  * POST /transactions
  * Creates a new purchase or adjustment transaction (Manager or higher for adjustment)
@@ -726,22 +732,23 @@ export async function createTransferTransaction(
       res.status(400).json({ error: "Cannot transfer points to yourself." });
       return;
     }
-    const user = await prisma.user.findUnique({
-      where: { id: senderUser.id },
-      select: { points: true },
-    });
+    // Debit atomically so a concurrent transfer cannot overdraw the balance.
+    const senderTransaction = await prisma.$transaction(
+      async (tx) => {
+        const debit = await tx.user.updateMany({
+          where: { id: senderUser.id, points: { gte: amount } },
+          data: { points: { decrement: amount } },
+        });
+        if (debit.count === 0) {
+          throw new Error(INSUFFICIENT_POINTS);
+        }
 
-    if (user === null) {
-      res.status(404).json({ error: "User not found." });
-      return;
-    }
-    if (user.points < amount) {
-      res.status(400).json({ error: "Insufficient points for transfer." });
-      return;
-    }
-    const [senderTransaction, recipientTransaction] = await prisma.$transaction(
-      [
-        prisma.transaction.create({
+        await tx.user.update({
+          where: { id: recipientId },
+          data: { points: { increment: amount } },
+        });
+
+        const sent = await tx.transaction.create({
           data: {
             type: "TRANSFER",
             amount: -amount,
@@ -750,8 +757,9 @@ export async function createTransferTransaction(
             sender: { connect: { id: senderUser.id } },
             receiver: { connect: { id: recipientId } },
           },
-        }),
-        prisma.transaction.create({
+        });
+
+        await tx.transaction.create({
           data: {
             type: "TRANSFER",
             amount: amount,
@@ -760,16 +768,11 @@ export async function createTransferTransaction(
             sender: { connect: { id: senderUser.id } },
             receiver: { connect: { id: recipientId } },
           },
-        }),
-        prisma.user.update({
-          where: { id: senderUser.id },
-          data: { points: { decrement: amount } },
-        }),
-        prisma.user.update({
-          where: { id: recipientId },
-          data: { points: { increment: amount } },
-        }),
-      ]
+        });
+
+        return sent;
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
     );
     res.status(201).json({
       id: senderTransaction.id,
@@ -781,6 +784,17 @@ export async function createTransferTransaction(
       createdBy: senderUser.utorid,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === INSUFFICIENT_POINTS) {
+      res.status(400).json({ error: "Insufficient points for transfer." });
+      return;
+    }
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2034"
+    ) {
+      res.status(409).json({ error: "Transfer conflict, please retry." });
+      return;
+    }
     console.error("Error creating transfer transaction:", error);
     res.status(500).json({ error: "Internal server error." });
   }
@@ -833,25 +847,57 @@ export async function createRedemptionTransaction(
       res.status(400).json({ error: "Amount must be a positive integer." });
       return;
     }
-    if (user.points < redemptionAmount) {
+    const validRedemptionAmount = redemptionAmount ?? 0;
+
+    if (user.points < validRedemptionAmount) {
       res.status(400).json({ error: "Insufficient points for redemption." });
       return;
     }
-    const validRedemptionAmount = redemptionAmount ?? 0;
-    const transaction = await prisma.transaction.create({
-      data: {
-        type: "REDEMPTION",
-        amount: -validRedemptionAmount,
-        remarks: remark,
-        user: { connect: { id: currentUser.id } },
+
+    // Reserve against points already committed to pending redemptions, and do
+    // the check and insert in one serializable transaction so two concurrent
+    // requests cannot both spend the same balance.
+    const transaction = await prisma.$transaction(
+      async (tx) => {
+        const freshUser = await tx.user.findUnique({
+          where: { id: currentUser.id },
+          select: { points: true },
+        });
+        if (!freshUser) {
+          throw new Error(USER_NOT_FOUND);
+        }
+
+        const pending = await tx.transaction.aggregate({
+          where: {
+            userId: currentUser.id,
+            type: TransactionType.REDEMPTION,
+            operatorId: null,
+          },
+          _sum: { amount: true },
+        });
+        const reserved = Math.abs(pending._sum.amount ?? 0);
+
+        if (validRedemptionAmount > freshUser.points - reserved) {
+          throw new Error(INSUFFICIENT_POINTS);
+        }
+
+        return tx.transaction.create({
+          data: {
+            type: "REDEMPTION",
+            amount: -validRedemptionAmount,
+            remarks: remark,
+            user: { connect: { id: currentUser.id } },
+          },
+          select: {
+            id: true,
+            amount: true,
+            remarks: true,
+            user: { select: { utorid: true } },
+          },
+        });
       },
-      select: {
-        id: true,
-        amount: true,
-        remarks: true,
-        user: { select: { utorid: true } },
-      },
-    });
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
     res.status(201).json({
       id: transaction.id,
       utorid: currentUser.utorid,
@@ -862,6 +908,21 @@ export async function createRedemptionTransaction(
       createdBy: currentUser.utorid,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === INSUFFICIENT_POINTS) {
+      res.status(400).json({ error: "Insufficient points for redemption." });
+      return;
+    }
+    if (error instanceof Error && error.message === USER_NOT_FOUND) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2034"
+    ) {
+      res.status(409).json({ error: "Redemption conflict, please retry." });
+      return;
+    }
     console.error("Error creating redemption transaction:", error);
     res.status(500).json({ error: "Internal server error." });
   }
@@ -1025,22 +1086,58 @@ export async function markRedemptionAsProcessed(
       return;
     }
 
-    const updatedTransaction = await prisma.$transaction(async (tx) => {
-      const updated = await tx.transaction.update({
-        where: { id: transactionId },
-        data: { operator: { connect: { id: operator.id } } },
-        include: {
-          user: { select: { utorid: true } },
-        },
-      });
-      await tx.user.update({
-        where: { id: transaction.userId ?? undefined },
-        // Redemptions are stored with a negative amount, so decrementing by
-        // that value would credit the user instead of charging them.
-        data: { points: { decrement: Math.abs(transaction.amount ?? 0) } },
-      });
-      return updated;
-    });
+    const updatedTransaction = await prisma.$transaction(
+      async (tx) => {
+        if (!transaction.userId) {
+          throw new Error(USER_NOT_FOUND);
+        }
+
+        const freshUser = await tx.user.findUnique({
+          where: { id: transaction.userId },
+          select: { points: true },
+        });
+        if (!freshUser) {
+          throw new Error(USER_NOT_FOUND);
+        }
+
+        // Claim the redemption atomically: only one request can move it from
+        // "pending" (operatorId null) to processed.
+        const claimed = await tx.transaction.updateMany({
+          where: {
+            id: transactionId,
+            type: TransactionType.REDEMPTION,
+            operatorId: null,
+          },
+          data: { operatorId: operator.id },
+        });
+        if (claimed.count === 0) {
+          throw new Error(ALREADY_PROCESSED);
+        }
+
+        // Redemptions are stored with a negative amount.
+        const redeemed = Math.abs(transaction.amount ?? 0);
+        if (freshUser.points < redeemed) {
+          throw new Error(INSUFFICIENT_POINTS);
+        }
+
+        await tx.user.update({
+          where: { id: transaction.userId },
+          data: { points: { decrement: redeemed } },
+        });
+
+        const updated = await tx.transaction.findUnique({
+          where: { id: transactionId },
+          include: {
+            user: { select: { utorid: true } },
+          },
+        });
+        if (!updated) {
+          throw new Error(USER_NOT_FOUND);
+        }
+        return updated;
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
 
     const positiveRedeemedAmount = Math.abs(updatedTransaction.amount ?? 0);
     res.status(200).json({
@@ -1053,6 +1150,21 @@ export async function markRedemptionAsProcessed(
       createdBy: transaction.user?.utorid || "",
     });
   } catch (error) {
+    if (error instanceof Error && error.message === ALREADY_PROCESSED) {
+      res.status(400).json({ error: "Transaction has already been processed." });
+      return;
+    }
+    if (error instanceof Error && error.message === INSUFFICIENT_POINTS) {
+      res.status(400).json({ error: "Insufficient points for redemption." });
+      return;
+    }
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2034"
+    ) {
+      res.status(409).json({ error: "Redemption conflict, please retry." });
+      return;
+    }
     console.error("Error marking redemption as processed:", error);
     res.status(500).json({ error: "Internal server error." });
   }
