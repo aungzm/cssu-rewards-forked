@@ -14,6 +14,46 @@ const prisma = new PrismaClient();
 const lastResetRequestMap = new Map<string, number>();
 const RESET_REQUEST_COOLDOWN = 60 * 1000; // 60 seconds
 
+/**
+ * Failed-login throttle keyed by client IP + UTORid, so one noisy account
+ * cannot lock out other users behind the same address.
+ */
+const failedLoginAttempts = new Map<
+  string,
+  { count: number; windowStart: number }
+>();
+const LOGIN_ATTEMPT_WINDOW = 15 * 60 * 1000;
+const MAX_FAILED_LOGINS = 10;
+
+function loginAttemptKey(req: Request, utorid: string): string {
+  const ip =
+    (req.ip as string) ||
+    (req.headers["x-forwarded-for"] as string) ||
+    (req.socket && req.socket.remoteAddress) ||
+    "unknown";
+  return `${ip}:${utorid}`;
+}
+
+function isLoginThrottled(key: string): boolean {
+  const record = failedLoginAttempts.get(key);
+  if (!record) return false;
+  if (Date.now() - record.windowStart >= LOGIN_ATTEMPT_WINDOW) {
+    failedLoginAttempts.delete(key);
+    return false;
+  }
+  return record.count >= MAX_FAILED_LOGINS;
+}
+
+function recordFailedLogin(key: string): void {
+  const now = Date.now();
+  const record = failedLoginAttempts.get(key);
+  if (!record || now - record.windowStart >= LOGIN_ATTEMPT_WINDOW) {
+    failedLoginAttempts.set(key, { count: 1, windowStart: now });
+    return;
+  }
+  record.count += 1;
+}
+
 export async function generateJWTToken(
   req: Request,
   res: Response
@@ -24,6 +64,14 @@ export async function generateJWTToken(
       password: string;
     };
 
+    const attemptKey = loginAttemptKey(req, utorid);
+    if (isLoginThrottled(attemptKey)) {
+      res.status(429).json({
+        error: "Too many failed login attempts. Please try again later.",
+      });
+      return;
+    }
+
     // Find user by utorid
     const user = await prisma.user.findUnique({
       where: { utorid },
@@ -32,6 +80,7 @@ export async function generateJWTToken(
     // A single generic response for unknown, unactivated, or password-less
     // accounts keeps the endpoint from being used to enumerate UTORids.
     if (!user || !user.activated || user.password === null) {
+      recordFailedLogin(attemptKey);
       res.status(401).json({ error: "Invalid credentials." });
       return;
     }
@@ -39,9 +88,12 @@ export async function generateJWTToken(
     // Compare password
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
+      recordFailedLogin(attemptKey);
       res.status(401).json({ error: "Invalid credentials." });
       return;
     }
+
+    failedLoginAttempts.delete(attemptKey);
 
     // Generate JWT token using the shared, lazily-read secret
     const token = jwt.sign(

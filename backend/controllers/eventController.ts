@@ -4,6 +4,12 @@ import { AuthenticatedRequest } from "middlewares/authMiddleware.js";
 
 const prisma = new PrismaClient();
 
+const EVENT_BUDGET_EXHAUSTED_SINGLE = "EVENT_BUDGET_EXHAUSTED_SINGLE";
+const EVENT_BUDGET_EXHAUSTED_BULK = "EVENT_BUDGET_EXHAUSTED_BULK";
+const EVENT_NO_GUESTS = "EVENT_NO_GUESTS";
+const EVENT_FULL = "EVENT_FULL";
+const EVENT_NOT_FOUND = "EVENT_NOT_FOUND";
+
 /**
  * POST /events
  * Create a new event (Manager or higher clearance).
@@ -786,19 +792,42 @@ export async function addGuest(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const updatedEvent = await prisma.event.update({
-      where: { id: eventId },
-      data: {
-        guests: {
-          create: { user: { connect: { id: user.id } } },
-        },
+    const updatedEvent = await prisma.$transaction(
+      async (tx) => {
+        // Re-check capacity inside the transaction so two concurrent adds
+        // cannot both take the last seat.
+        const freshEvent = await tx.event.findUnique({
+          where: { id: eventId },
+          select: { capacity: true },
+        });
+        if (!freshEvent) {
+          throw new Error(EVENT_NOT_FOUND);
+        }
+        if (freshEvent.capacity !== null) {
+          const guestCount = await tx.rsvp.count({ where: { eventId } });
+          if (guestCount >= freshEvent.capacity) {
+            throw new Error(EVENT_FULL);
+          }
+        }
+
+        return tx.event.update({
+          where: { id: eventId },
+          data: {
+            guests: {
+              create: { user: { connect: { id: user.id } } },
+            },
+          },
+          include: {
+            guests: {
+              include: {
+                user: { select: { id: true, utorid: true, name: true } },
+              },
+            },
+          },
+        });
       },
-      include: {
-        guests: {
-          include: { user: { select: { id: true, utorid: true, name: true } } },
-        },
-      },
-    });
+      { isolationLevel: "Serializable" }
+    );
 
     res.status(201).json({
       id: updatedEvent.id,
@@ -808,6 +837,14 @@ export async function addGuest(req: Request, res: Response): Promise<void> {
       numGuests: updatedEvent.guests.length,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === EVENT_FULL) {
+      res.status(410).json({ error: "Event is full" });
+      return;
+    }
+    if (error instanceof Error && error.message === EVENT_NOT_FOUND) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
     console.error("addGuest error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
@@ -931,18 +968,36 @@ export async function addSelfAsGuest(
       return;
     }
 
-    await prisma.event.update({
-      where: { id: eventId },
-      data: {
-        guests: {
-          create: { user: { connect: { id: userId } } },
-        },
-      },
-    });
+    const numGuests = await prisma.$transaction(
+      async (tx) => {
+        // Re-check capacity inside the transaction to avoid a last-seat race.
+        const freshEvent = await tx.event.findUnique({
+          where: { id: eventId },
+          select: { capacity: true },
+        });
+        if (!freshEvent) {
+          throw new Error(EVENT_NOT_FOUND);
+        }
+        if (freshEvent.capacity !== null) {
+          const guestCount = await tx.rsvp.count({ where: { eventId } });
+          if (guestCount >= freshEvent.capacity) {
+            throw new Error(EVENT_FULL);
+          }
+        }
 
-    const numGuests = await prisma.rsvp.count({
-      where: { eventId },
-    });
+        await tx.event.update({
+          where: { id: eventId },
+          data: {
+            guests: {
+              create: { user: { connect: { id: userId } } },
+            },
+          },
+        });
+
+        return tx.rsvp.count({ where: { eventId } });
+      },
+      { isolationLevel: "Serializable" }
+    );
 
     const guestAdded = await prisma.user.findUnique({
       where: { id: userId },
@@ -957,6 +1012,14 @@ export async function addSelfAsGuest(
       numGuests,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === EVENT_FULL) {
+      res.status(410).json({ error: "Event is full" });
+      return;
+    }
+    if (error instanceof Error && error.message === EVENT_NOT_FOUND) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
     console.error("addSelfAsGuest error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
@@ -1089,29 +1152,41 @@ export async function awardPoints(req: AuthenticatedRequest, res: Response): Pro
         return;
       }
 
-      const [transactionResult] = await prisma.$transaction([
-        prisma.transaction.create({
-          data: {
-            type: "EVENT",
-            amount,
-            user: { connect: { id: targetUser.id } },
-            operator: { connect: { id: operatorId } },
-            remarks: remark || "",
-            relatedEvent: { connect: { id: event.id } } 
-          },
-        }),
-        prisma.event.update({
-          where: { id: event.id },
-          data: {
-            pointsRemain: event.pointsRemain - amount,
-            pointsAwarded: event.pointsAwarded + amount,
-          },
-        }),
-        prisma.user.update({
-          where: { id: targetUser.id },
-          data: { points: { increment: amount } },
-        }),
-      ]);
+      const [transactionResult] = await prisma.$transaction(
+        async (tx) => {
+          // Move the budget first and atomically: only awards with enough
+          // remaining points can proceed.
+          const budget = await tx.event.updateMany({
+            where: { id: event.id, pointsRemain: { gte: amount } },
+            data: {
+              pointsRemain: { decrement: amount },
+              pointsAwarded: { increment: amount },
+            },
+          });
+          if (budget.count === 0) {
+            throw new Error(EVENT_BUDGET_EXHAUSTED_SINGLE);
+          }
+
+          const created = await tx.transaction.create({
+            data: {
+              type: "EVENT",
+              amount,
+              user: { connect: { id: targetUser.id } },
+              operator: { connect: { id: operatorId } },
+              remarks: remark || "",
+              relatedEvent: { connect: { id: event.id } },
+            },
+          });
+
+          await tx.user.update({
+            where: { id: targetUser.id },
+            data: { points: { increment: amount } },
+          });
+
+          return [created];
+        },
+        { isolationLevel: "Serializable" }
+      );
 
       const responseTransaction = {
         id: transactionResult.id,
@@ -1144,65 +1219,102 @@ export async function awardPoints(req: AuthenticatedRequest, res: Response): Pro
       return;
     }
 
-    // Create every award transaction, move the event's point budget and credit
-    // each guest in one transaction. Previously these were three separate
-    // transactions, so a failure part-way through could leave guests credited
-    // without matching EVENT records (or the event budget out of sync).
-    const createdTransactions = await prisma.$transaction(async (tx) => {
-      const created: any[] = [];
-
-      for (const rsvp of event.guests) {
-        created.push(
-          await tx.transaction.create({
-            data: {
-              type: "EVENT",
-              amount,
-              user: { connect: { id: rsvp.userId } },
-              operator: { connect: { id: operatorId } },
-              relatedEvent: { connect: { id: event.id } },
-              remarks: remark || "",
-            },
-          })
-        );
-      }
-
-      await tx.event.update({
-        where: { id: event.id },
-        data: {
-          pointsRemain: event.pointsRemain - totalRequired,
-          pointsAwarded: event.pointsAwarded + totalRequired,
-        },
-      });
-
-      for (const rsvp of event.guests) {
-        await tx.user.update({
-          where: { id: rsvp.userId },
-          data: { points: { increment: amount } },
+    // Create every award transaction, move the event point budget and credit
+    // each guest in one transaction. The budget is moved with a conditional
+    // update so concurrent awards cannot drive pointsRemain negative.
+    const createdTransactions = await prisma.$transaction(
+      async (tx) => {
+        const guests = await tx.rsvp.findMany({
+          where: { eventId: event.id },
+          select: { userId: true },
         });
-      }
+        if (guests.length === 0) {
+          throw new Error(EVENT_NO_GUESTS);
+        }
 
-      return created;
-    });
+        const required = amount * guests.length;
+        const budget = await tx.event.updateMany({
+          where: { id: event.id, pointsRemain: { gte: required } },
+          data: {
+            pointsRemain: { decrement: required },
+            pointsAwarded: { increment: required },
+          },
+        });
+        if (budget.count === 0) {
+          throw new Error(EVENT_BUDGET_EXHAUSTED_BULK);
+        }
 
-    const responseTransactions = createdTransactions.map((tran) => {
-      // Find the recipient's utorid from the event.guests (if available)
-      const guestRecord = event.guests.find((g) => g.userId === tran.userId);
-      return {
-        id: tran.id,
-        recipient:
-          guestRecord && (guestRecord as any).user.utorid
-            ? (guestRecord as any).user.utorid
-            : "",
-        awarded: amount,
-        type: "event",
-        relatedId: event.id,
-        remark: remark || "",
-        createdBy: (req as any).user?.utorid || "",
-      };
+        const created: any[] = [];
+        for (const rsvp of guests) {
+          created.push(
+            await tx.transaction.create({
+              data: {
+                type: "EVENT",
+                amount,
+                user: { connect: { id: rsvp.userId } },
+                operator: { connect: { id: operatorId } },
+                relatedEvent: { connect: { id: event.id } },
+                remarks: remark || "",
+              },
+            })
+          );
+        }
+
+        for (const rsvp of guests) {
+          await tx.user.update({
+            where: { id: rsvp.userId },
+            data: { points: { increment: amount } },
+          });
+        }
+
+        return created;
+      },
+      { isolationLevel: "Serializable" }
+    );
+
+    const recipientIds = createdTransactions
+      .map((tran) => tran.userId)
+      .filter((id): id is number => id !== null);
+    const recipients = await prisma.user.findMany({
+      where: { id: { in: recipientIds } },
+      select: { id: true, utorid: true },
     });
+    const utoridById = new Map(recipients.map((user) => [user.id, user.utorid]));
+
+    const responseTransactions = createdTransactions.map((tran) => ({
+      id: tran.id,
+      recipient: utoridById.get(tran.userId ?? -1) ?? "",
+      awarded: amount,
+      type: "event",
+      relatedId: event.id,
+      remark: remark || "",
+      createdBy: (req as any).user?.utorid || "",
+    }));
 
     res.status(201).json(responseTransactions);
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === EVENT_BUDGET_EXHAUSTED_SINGLE
+    ) {
+      res
+        .status(400)
+        .json({ error: "Not enough remaining points for this award" });
+      return;
+    }
+    if (error instanceof Error && error.message === EVENT_BUDGET_EXHAUSTED_BULK) {
+      res
+        .status(400)
+        .json({ error: "Not enough remaining points to award all guests" });
+      return;
+    }
+    if (error instanceof Error && error.message === EVENT_NO_GUESTS) {
+      res.status(201).json({
+        message: "No guests to award points to.",
+        transactions: [],
+      });
+      return;
+    }
     console.error("awardPoints error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
