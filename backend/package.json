@@ -10,6 +10,7 @@
     "test:create-su": "cross-env DATABASE_URL='file:./test.db' tsx prisma/createsu.ts clive123 clive.su@mail.utoronto.ca SuperUser123!",
     "test:run": "cross-env DATABASE_URL='file:./test.db' NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "test:teardown": "tsx ./scripts/teardown-test-db.ts",
+    "backfill:activation": "tsx ./scripts/backfill-activation.ts",
     "pretest": "npm run test:setup:db && npm run test:create-su",
     "test": "npm run test:run",
     "posttest": "npm run test:teardown",

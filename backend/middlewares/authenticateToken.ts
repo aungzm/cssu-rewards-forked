@@ -1,38 +1,67 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { PrismaClient } from "@prisma/client";
 import { AuthenticatedRequest } from "./authMiddleware.js";
 import { getJwtSecret } from "../lib/jwtSecret.js";
 
-export function authenticateToken(
+const prisma = new PrismaClient();
+
+export async function authenticateToken(
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-): void {
-  const authHeader = req.headers["authorization"];
-  if (!authHeader) {
-    res.status(401).json({ error: "No authorization header provided." });
-    return;
-  }
+): Promise<void> {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader) {
+      res.status(401).json({ error: "No authorization header provided." });
+      return;
+    }
 
-  // Expecting header value "Bearer <token>"
-  const token = authHeader.split(" ")[1];
-  if (!token) {
-    res.status(401).json({ error: "No token provided." });
-    return;
-  }
+    // Expecting header value "Bearer <token>"
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ error: "No token provided." });
+      return;
+    }
 
-  jwt.verify(token, getJwtSecret(), (err, user) => {
-    if (err) {
-      // Send a 401 error when token verification fails
+    let payload: any;
+    try {
+      payload = jwt.verify(token, getJwtSecret());
+    } catch {
       res.status(401).json({ error: "Invalid or expired token." });
       return;
     }
-    // Ensure user has a role property so that we can later check clearance
-    if (typeof user === "object" && user !== null && "role" in user) {
-      req.user = user as { [key: string]: any; role: string };
-      next();
-    } else {
+
+    if (
+      typeof payload !== "object" ||
+      payload === null ||
+      typeof payload.id !== "number"
+    ) {
       res.status(401).json({ error: "Invalid or expired token." });
+      return;
     }
-  });
+
+    // Refresh identity from the database so role changes (and deleted
+    // accounts) take effect immediately instead of when the token expires.
+    const currentUser = await prisma.user.findUnique({
+      where: { id: payload.id },
+      select: { id: true, utorid: true, role: true },
+    });
+    if (!currentUser) {
+      res.status(401).json({ error: "Invalid or expired token." });
+      return;
+    }
+
+    req.user = {
+      ...payload,
+      id: currentUser.id,
+      utorid: currentUser.utorid,
+      role: currentUser.role,
+    };
+    next();
+  } catch (error) {
+    console.error("authenticateToken error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
 }
