@@ -246,6 +246,7 @@ const awardPointsSchema = z.object({
       .nullable()
       .optional(),
     type: z.enum(["event"]),
+    remark: z.string().nullable().optional(),
   }),
 });
 

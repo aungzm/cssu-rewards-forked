@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import path from "path";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { AuthenticatedRequest } from "../middlewares/authMiddleware.js";
 
 const prisma = new PrismaClient();
@@ -609,98 +609,24 @@ export async function getMyOrganizedEvents(
       where.endTime = { gt: new Date() };
     }
 
-    // Execute both the count and the paginated query.
-    const [totalCount, events] = await Promise.all([
-      prisma.event.count({ where }),
-      prisma.event.findMany({
-        where,
-        orderBy: { startTime: "asc" },
-        skip,
-        take: pageSize,
+    const select: Prisma.EventSelect = {
+      id: true,
+      name: true,
+      description: true,
+      startTime: true,
+      endTime: true,
+      location: true,
+      capacity: true,
+      published: true,
+      _count: { select: { guests: true } },
+      organizers: {
         select: {
-          id: true,
-          name: true,
-          description: true,
-          startTime: true,
-          endTime: true,
-          location: true,
-          capacity: true,
-          published: true,
-          _count: { select: { guests: true } },
-          organizers: {
-            select: {
-              organizerId: true,
-            },
-          },
+          organizerId: true,
         },
-      }),
-    ]);
+      },
+    };
 
-    // If showFull parameter is provided, filter accordingly in-memory.
-    // (Remember that filtering in-memory may cause count changes on a per-page basis.)
-    if (showFull !== undefined) {
-      // Convince typescript that this is a boolean 
-      const showFullBool = Boolean(showFull);
-      if (showFullBool === true) {
-        const fullEvents = events.filter(
-          (event) =>
-            event.capacity !== null &&
-            event._count.guests === event.capacity
-        );
-        const results = fullEvents.map((event) => ({
-          id: event.id,
-          name: event.name,
-          description: event.description,
-          startTime: event.startTime,
-          endTime: event.endTime,
-          location: event.location,
-          capacity: event.capacity,
-          published: event.published,
-          numGuests: event._count.guests,
-          isOrganizer: event.organizers.some(
-            (org) => org.organizerId === currentUserId
-          ),
-          isGuest: !event.organizers.some(
-            (org) => org.organizerId === currentUserId
-          ),
-        }));
-        res.status(200).json({
-          count: fullEvents.length,
-          results,
-        });
-        return;
-      } else if (showFullBool === false) {
-        const nonFullEvents = events.filter(
-          (event) =>
-            event.capacity === null || event._count.guests < event.capacity
-        );
-        const results = nonFullEvents.map((event) => ({
-          id: event.id,
-          name: event.name,
-          description: event.description,
-          startTime: event.startTime,
-          endTime: event.endTime,
-          location: event.location,
-          capacity: event.capacity,
-          published: event.published,
-          numGuests: event._count.guests,
-          isOrganizer: event.organizers.some(
-            (org) => org.organizerId === currentUserId
-          ),
-          isGuest: !event.organizers.some(
-            (org) => org.organizerId === currentUserId
-          ),
-        }));
-        res.status(200).json({
-          count: nonFullEvents.length,
-          results,
-        });
-        return;
-      }
-    }
-
-    // Default case: return the paginated results without extra post-filtering.
-    const results = events.map((event) => ({
+    const mapEvent = (event: any) => ({
       id: event.id,
       name: event.name,
       description: event.description,
@@ -711,16 +637,46 @@ export async function getMyOrganizedEvents(
       published: event.published,
       numGuests: event._count.guests,
       isOrganizer: event.organizers.some(
-        (org) => org.organizerId === currentUserId
+        (org: any) => org.organizerId === currentUserId
       ),
       isGuest: !event.organizers.some(
-        (org) => org.organizerId === currentUserId
+        (org: any) => org.organizerId === currentUserId
       ),
-    }));
+    });
+
+    // `showFull: false` excludes full events; `true` or omitted includes them.
+    // Filter before paginating so count and results stay consistent.
+    if ((showFull as unknown as boolean | undefined) === false) {
+      const matching = await prisma.event.findMany({
+        where,
+        orderBy: { startTime: "asc" },
+        select,
+      });
+      const nonFull = matching.filter(
+        (event) =>
+          event.capacity === null || event._count.guests < event.capacity
+      );
+      res.status(200).json({
+        count: nonFull.length,
+        results: nonFull.slice(skip, skip + pageSize).map(mapEvent),
+      });
+      return;
+    }
+
+    const [totalCount, events] = await Promise.all([
+      prisma.event.count({ where }),
+      prisma.event.findMany({
+        where,
+        orderBy: { startTime: "asc" },
+        skip,
+        take: pageSize,
+        select,
+      }),
+    ]);
 
     res.status(200).json({
       count: totalCount,
-      results,
+      results: events.map(mapEvent),
     });
   } catch (error) {
     console.error("getMyOrganizedEvents error:", error);

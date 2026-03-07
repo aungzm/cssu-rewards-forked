@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { AuthenticatedRequest } from "middlewares/authMiddleware.js";
 
 const prisma = new PrismaClient();
@@ -149,94 +149,30 @@ export async function getEvents(req: AuthenticatedRequest, res: Response): Promi
     const skip = (pageNum - 1) * pageSize;
 
     const currentUserId = (req as any).user?.id;
-    const [totalCount, events] = await Promise.all([
-      prisma.event.count({ where }),
-      prisma.event.findMany({
-        where,
-        orderBy: { startTime: "asc" },
-        skip, 
-        take: pageSize, 
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          location: true,
-          startTime: true,
-          endTime: true,
-          capacity: true,
-          pointsAwarded:
-            userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
-          pointsRemain:
-            userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
-          published:
-            userRole === "MANAGER" || userRole === "SUPERUSER" ? true : false,
-          organizers: {
-            select: { organizerId: true },
-          },
-          guests: {
-            select: { userId: true },
-          },
-          _count: {
-            select: { guests: true },
-          },
-        },
-      }),
-    ]);
+    const isManager = userRole === "MANAGER" || userRole === "SUPERUSER";
+    const select: Prisma.EventSelect = {
+      id: true,
+      name: true,
+      description: true,
+      location: true,
+      startTime: true,
+      endTime: true,
+      capacity: true,
+      pointsAwarded: isManager,
+      pointsRemain: isManager,
+      published: isManager,
+      organizers: {
+        select: { organizerId: true },
+      },
+      guests: {
+        select: { userId: true },
+      },
+      _count: {
+        select: { guests: true },
+      },
+    };
 
-    const booleanShowFull = Boolean(showFull)
-    if (showFull !== undefined && booleanShowFull){
-      console.log("showFull is true");
-      const fullEvents = events.filter((event) => event.capacity !== null && event.guests.length === event.capacity);
-      const results = fullEvents.map((event) => ({
-        id: event.id,
-        name: event.name,
-        description: event.description,
-        location: event.location,
-        startTime: event.startTime,
-        endTime: event.endTime,
-        capacity: event.capacity,
-        pointsAwarded: event.pointsAwarded,
-        pointsRemain: event.pointsRemain,
-        numGuests: event._count.guests,
-        published: event.published,
-        isOrganizer: event.organizers.some(
-          (org) => org.organizerId === currentUserId
-        ),
-        isGuest: event.guests.some((g) => g.userId === currentUserId),
-      }));
-      res.status(200).json({
-        count: fullEvents.length,
-        results,
-      });
-      return;
-    } else if (showFull !== undefined && booleanShowFull === false) {
-      const nonFullEvents = events.filter((event) => event.capacity === null || event.guests.length < event.capacity);
-      const results = nonFullEvents.map((event) => ({
-        id: event.id,
-        name: event.name,
-        description: event.description,
-        location: event.location,
-        startTime: event.startTime,
-        endTime: event.endTime,
-        capacity: event.capacity,
-        pointsAwarded: event.pointsAwarded,
-        pointsRemain: event.pointsRemain,
-        numGuests: event._count.guests,
-        published: event.published,
-        isOrganizer: event.organizers.some(
-          (org) => org.organizerId === currentUserId
-        ),
-        isGuest: event.guests.some((g) => g.userId === currentUserId),
-      }));
-      res.status(200).json({
-        count: nonFullEvents.length,
-        results,
-      });
-      return;
-    }
-
-    // Default case: return all events regardless of capacity
-    const results = events.map((event) => ({
+    const mapEvent = (event: any) => ({
       id: event.id,
       name: event.name,
       description: event.description,
@@ -249,14 +185,44 @@ export async function getEvents(req: AuthenticatedRequest, res: Response): Promi
       numGuests: event._count.guests,
       published: event.published,
       isOrganizer: event.organizers.some(
-        (org) => org.organizerId === currentUserId
+        (org: any) => org.organizerId === currentUserId
       ),
-      isGuest: event.guests.some((g) => g.userId === currentUserId),
-    }));
+      isGuest: event.guests.some((g: any) => g.userId === currentUserId),
+    });
+
+    // `showFull: false` excludes full events; `true` or omitted includes them.
+    // Filtering happens before pagination so count and results agree.
+    if ((showFull as unknown as boolean | undefined) === false) {
+      const matching = await prisma.event.findMany({
+        where,
+        orderBy: { startTime: "asc" },
+        select,
+      });
+      const nonFull = matching.filter(
+        (event) =>
+          event.capacity === null || event._count.guests < event.capacity
+      );
+      res.status(200).json({
+        count: nonFull.length,
+        results: nonFull.slice(skip, skip + pageSize).map(mapEvent),
+      });
+      return;
+    }
+
+    const [totalCount, events] = await Promise.all([
+      prisma.event.count({ where }),
+      prisma.event.findMany({
+        where,
+        orderBy: { startTime: "asc" },
+        skip,
+        take: pageSize,
+        select,
+      }),
+    ]);
 
     res.status(200).json({
       count: totalCount,
-      results,
+      results: events.map(mapEvent),
     });
   } catch (error) {
     console.error("getEvents error:", error);
@@ -1193,7 +1159,7 @@ export async function awardPoints(req: AuthenticatedRequest, res: Response): Pro
         recipient: targetUser.utorid,
         awarded: amount,
         type: "event",
-        relatedId: operatorId,
+        relatedId: event.id,
         remark: remark || "",
         createdBy: (req as any).user?.utorid || "",
       };
