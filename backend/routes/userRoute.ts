@@ -218,7 +218,7 @@ const updatePasswordSchema = z.object({
 
 const getMyOrganizedEventsSchema = z.object({
   query: z.object({
-    past: z.coerce.boolean().optional(),
+    past: z.preprocess(parseBoolean, z.boolean()).optional(),
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().optional(),
     showFull: z.preprocess(parseBoolean, z.boolean()).optional(),
@@ -271,9 +271,17 @@ const redemptionTransactionSchema = z.object({
   }),
 });
 
+const transactionTypes = [
+  "purchase",
+  "adjustment",
+  "redemption",
+  "transfer",
+  "event",
+] as const;
+
 const getUserTransactionsSchema = z.object({
   query: z.object({
-    type: z.string().optional(),
+    type: z.enum(transactionTypes).optional(),
     relatedId: z.string().optional(),
     promotionId: z.coerce.number().int().optional(),
     amount: z.coerce.number().optional(),

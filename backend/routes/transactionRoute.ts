@@ -98,13 +98,21 @@ const wrappedTransactionSchema = z.object({
   params: z.object({}).optional(),
 });
 
+const transactionTypes = [
+  "purchase",
+  "adjustment",
+  "redemption",
+  "transfer",
+  "event",
+] as const;
+
 const getTransactionsSchema = z.object({
   query: z.object({
     name: z.string().optional(),
     createdBy: z.string().optional(),
     suspicious: z.preprocess(parseBoolean, z.boolean()).optional(),
     promotionId: z.coerce.number().optional(),
-    type: z.string().optional(),
+    type: z.enum(transactionTypes).optional(),
     relatedId: z.string().optional(),
     amount: z.coerce.number().optional(),
     operator: z.enum(["gte", "lte"]).optional(),
