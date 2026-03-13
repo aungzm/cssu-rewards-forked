@@ -124,6 +124,7 @@ const updateUserSchema = z.object({
         )
         .nullable()
         .optional(),
+      name: z.string().min(1).max(50).trim().nullable().optional(),
       role: z
         .enum(["regular", "cashier", "manager", "superuser"])
         .nullable()

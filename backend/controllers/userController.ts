@@ -278,6 +278,13 @@ export async function updateUser(req: AuthenticatedRequest, res: Response): Prom
 
     const updateData: { [key: string]: any } = {};
     if (email !== undefined && email !== null) {
+      const existingEmail = await prisma.user.findUnique({ where: { email } });
+      if (existingEmail && existingEmail.id !== userId) {
+        res
+          .status(409)
+          .json({ error: "A user with this email already exists." });
+        return;
+      }
       updateData.email = email;
     }
     if (name !== undefined && name !== null) {
@@ -341,6 +348,13 @@ export async function updateUser(req: AuthenticatedRequest, res: Response): Prom
     }
     res.status(200).json(responseObj);
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      res.status(409).json({ error: "A user with this email already exists." });
+      return;
+    }
     console.error(error);
     res.status(500).json({ error: "Internal server error." });
   }
@@ -440,6 +454,13 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
       updateData.name = name;
     }
     if (email !== undefined && email !== null) {
+      const existingEmail = await prisma.user.findUnique({ where: { email } });
+      if (existingEmail && existingEmail.id !== currentUserId) {
+        res
+          .status(409)
+          .json({ error: "A user with this email already exists." });
+        return;
+      }
       updateData.email = email;
     }
     if (birthday !== undefined && birthday !== null) {
@@ -496,6 +517,13 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
 
     res.status(200).json(responseUser);
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      res.status(409).json({ error: "A user with this email already exists." });
+      return;
+    }
     console.error(error);
     res.status(500).json({ error: "Internal server error." });
   }
