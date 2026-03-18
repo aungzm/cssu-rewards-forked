@@ -715,29 +715,47 @@ export async function getMyOrganizedEvents(
 export async function getMyGuestEvents(req :Request, res: Response): Promise<void> {
   try {
     const currentUserId = (req as any).user?.id;
-    const {past = false, page = "1", limit = "10" } = req.query; // include past events or not (users probably would not want to filter out their currently organized events)
-    const pageNum = parseInt(page as string, 10);
-    const limitNum = parseInt(limit as string, 10);
     if (!currentUserId) {
       res.status(401).json({ error: "Not authenticated" });
       return;
     }
+
+    const {
+      past = false,
+      page = "1",
+      limit = "10",
+    } = req.query as { [key: string]: any };
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = parseInt(limit as string, 10) || 10;
+
     const user = await prisma.user.findUnique({ where: { id: currentUserId } });
     if (!user) {
       res.status(404).json({ error: "User not found." });
       return;
     }
-    const events = await prisma.rsvp.findMany({
-      skip: (pageNum - 1) * limitNum,
-      take: limitNum,
-      where: {
-        userId: currentUserId,
+
+    const now = new Date();
+    const where = {
+      userId: currentUserId,
+      event: {
+        endTime: past ? { lte: now } : { gt: now },
       },
-      select: {
-        eventId: true,
-      }
-    });
-    res.status(200).json({results: events})
+    };
+
+    const [count, events] = await Promise.all([
+      prisma.rsvp.count({ where }),
+      prisma.rsvp.findMany({
+        where,
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
+        orderBy: { event: { startTime: "asc" } },
+        select: {
+          eventId: true,
+        },
+      }),
+    ]);
+
+    res.status(200).json({ count, results: events });
   } catch(error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error." }); 

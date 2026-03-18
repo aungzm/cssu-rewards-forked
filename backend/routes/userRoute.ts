@@ -228,8 +228,15 @@ const getMyOrganizedEventsSchema = z.object({
   })
 });
 
-const getUsersSchema = z.object({
+const getMyGuestEventsSchema = z.object({
   query: z.object({
+    past: z.preprocess(parseBoolean, z.boolean()).optional(),
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().optional(),
+  }),
+});
+
+const getUsersSchema = z.object({  query: z.object({
     name: z.string().optional(),
     role: z.enum(["regular", "cashier", "manager", "superuser"]).optional(),
     // Instead of using z.coerce.boolean(), we use z.preprocess to ensure that
@@ -357,6 +364,7 @@ router.get(
 router.get(
   "/me/events/guest",
   authenticateToken,
+  validate(getMyGuestEventsSchema),
   getMyGuestEvents
 );
 

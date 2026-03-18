@@ -588,6 +588,7 @@ export async function getTransactionById(
         relatedId: true,
         user: { select: { utorid: true } },
         operator: { select: { utorid: true } },
+        promotionIds: { select: { id: true } },
       },
     });
     if (!transaction) {
@@ -600,7 +601,7 @@ export async function getTransactionById(
       type: (transaction.type as string).toLowerCase(),
       spent: transaction.spent, // for purchase transactions
       amount: transaction.amount,
-      promotionIds: [],
+      promotionIds: transaction.promotionIds.map((promo) => promo.id),
       suspicious: transaction.suspicious,
       relatedId: transaction.relatedId || null,
       remark: transaction.remarks || "",
@@ -1013,6 +1014,7 @@ export async function getUserTransactions(
         operator: { select: { utorid: true, name: true } },
         sender: { select: { utorid: true, name: true } },
         receiver: { select: { utorid: true, name: true } },
+        promotionIds: { select: { id: true } },
       },
     });
 
@@ -1021,7 +1023,7 @@ export async function getUserTransactions(
       amount: transaction.amount || 0,
       type: (transaction.type as string).toLowerCase(),
       relatedId: getRelatedIdForTransaction(transaction),
-      promotionIds: [], // Add logic for promotion IDs if needed.
+      promotionIds: transaction.promotionIds.map((promo) => promo.id),
       remark: transaction.remarks || "",
       // Keep createdBy consistent with the other endpoints, which return a
       // utorid rather than an internal user id.
