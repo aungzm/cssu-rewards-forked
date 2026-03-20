@@ -185,7 +185,7 @@ export async function requestPasswordReset(
 
     res.status(202).json({
       message:
-        "Use the provided token to reset your password within 15 minutes.",
+        "Use the provided token to reset your password within 1 hour.",
       resetToken,
       expiresAt,
     });
