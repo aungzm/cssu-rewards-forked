@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
-import { Prisma, PrismaClient, RoleType, TransactionType } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { Prisma, RoleType, TransactionType } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 
 // Sentinels thrown inside transactions and translated to HTTP responses by the
 // surrounding catch blocks.

@@ -29,6 +29,8 @@ model resetToken {
   expiresAt DateTime 
   user      User     @relation(fields: [userId], references: [id])
   userId    Int      @unique
+
+  @@index([token])
 }
 
 model User {
@@ -56,6 +58,8 @@ model User {
   organizedEvents    OrganizerEvent[]  // Events organized by the user (via join table)
   rsvps              Rsvp[] // RSVPs to events
   userPromotions     UserPromotion[] @relation("UserPromotionToUser")
+
+  @@index([role])
 }
 
 model Transaction {
@@ -80,6 +84,14 @@ model Transaction {
   promotionIds           Promotion[] @relation("TransactionPromotion")
   relatedEvent           Event?          @relation("EventTransactions", fields: [relatedEventId], references: [id]) // Add relation to Event
   relatedEventId         Int?         // Add field for related event
+
+  @@index([userId])
+  @@index([operatorId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([relatedEventId])
+  @@index([createdAt])
+  @@index([type])
 }
 
 
@@ -99,6 +111,10 @@ model Event {
   transactions   Transaction[]    @relation("EventTransactions") // Add relation back to Transaction
   organizers     OrganizerEvent[] @relation("EventToOrganizer")
   guests         Rsvp[]           @relation("EventToRsvp")
+
+  @@index([startTime])
+  @@index([endTime])
+  @@index([published])
 }
 
 
@@ -111,6 +127,7 @@ model OrganizerEvent {
   organizer    User   @relation(fields: [organizerId], references: [id])
   organizerId  Int
   @@unique([eventId, organizerId])
+  @@index([organizerId])
 }
 
 model Rsvp {
@@ -121,6 +138,7 @@ model Rsvp {
   userId    Int
   confirmed Boolean  @default(false)  // true only if attendance is confirmed
   @@unique([eventId, userId])
+  @@index([userId])
 }
 
 model Promotion {
@@ -137,6 +155,10 @@ model Promotion {
   points               Int     @default(0)  
   users                UserPromotion[]  // Users who have used this promotion
   transactions         Transaction[] @relation("TransactionPromotion")     // Transactions that used this promotion
+
+  @@index([startTime])
+  @@index([endTime])
+  @@index([type])
 }
 
 model UserPromotion {
@@ -147,4 +169,5 @@ model UserPromotion {
   promotionId Int
   usedAt      DateTime  @default(now()) // Timestamp for when the promotion was used
   @@unique([userId, promotionId]) // Ensures a user can only use a promotion once
+  @@index([promotionId])
 }

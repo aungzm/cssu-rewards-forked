@@ -3,10 +3,9 @@ import bcrypt from "bcrypt";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import path from "path";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 import { AuthenticatedRequest } from "../middlewares/authMiddleware.js";
-
-const prisma = new PrismaClient();
 
 /**
  * POST /users

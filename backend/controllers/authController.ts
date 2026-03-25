@@ -1,11 +1,9 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../lib/jwtSecret.js";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma.js";
 
 /**
  * Simple in-memory map for tracking requests by IP to throttle repeated reset requests.

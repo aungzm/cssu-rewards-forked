@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 import { AuthenticatedRequest } from "middlewares/authMiddleware.js";
-
-const prisma = new PrismaClient();
 
 const EVENT_BUDGET_EXHAUSTED_SINGLE = "EVENT_BUDGET_EXHAUSTED_SINGLE";
 const EVENT_BUDGET_EXHAUSTED_BULK = "EVENT_BUDGET_EXHAUSTED_BULK";
