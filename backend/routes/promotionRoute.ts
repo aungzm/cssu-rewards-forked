@@ -147,7 +147,7 @@ const getPromotionsSchema = z.object({
     type: z.enum(["automatic", "one-time"]).optional(),
     ended: z.preprocess(parseBoolean, z.boolean()).optional(),
     page: z.coerce.number().int().positive().optional(),
-    limit: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
   }),
 });
 

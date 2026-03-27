@@ -221,7 +221,7 @@ const getMyOrganizedEventsSchema = z.object({
   query: z.object({
     past: z.preprocess(parseBoolean, z.boolean()).optional(),
     page: z.coerce.number().int().positive().optional(),
-    limit: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
     showFull: z.preprocess(parseBoolean, z.boolean()).optional(),
     ended: z.preprocess(parseBoolean, z.boolean()).optional(),
     started: z.preprocess(parseBoolean, z.boolean()).optional(),
@@ -232,7 +232,7 @@ const getMyGuestEventsSchema = z.object({
   query: z.object({
     past: z.preprocess(parseBoolean, z.boolean()).optional(),
     page: z.coerce.number().int().positive().optional(),
-    limit: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
   }),
 });
 
@@ -244,7 +244,7 @@ const getUsersSchema = z.object({  query: z.object({
     verified: z.preprocess(parseBoolean, z.boolean()).optional(),
     activated: z.preprocess(parseBoolean, z.boolean()).optional(),
     page: z.coerce.number().int().positive().optional(),
-    limit: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
     showFull: z.preprocess(parseBoolean, z.boolean()).optional(),
     ended: z.preprocess(parseBoolean, z.boolean()).optional(),
     started: z.preprocess(parseBoolean, z.boolean()).optional(),

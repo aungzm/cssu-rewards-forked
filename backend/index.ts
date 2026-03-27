@@ -80,12 +80,13 @@ if (nodeEnv === 'production') {
 } else {
   // Handles 'development' or undefined NODE_ENV
   console.log(`Running in ${nodeEnv || 'development'} mode.`);
-  // Expect port from command line argument (node dist/index.js <port>)
-  if (args.length !== 3) {
-    console.error('Usage: node dist/index.js <port>'); // Point to the compiled JS file
-    process.exit(1);
-  }
-  port = parsePort(args[2], 'command line argument');
+  // Prefer the port from the command line, then PORT, then 3000 so `npm run dev`
+  // works without arguments.
+  const portArg = args[2] ?? process.env.PORT ?? "3000";
+  port = parsePort(
+    portArg,
+    args[2] ? "command line argument" : "PORT environment variable or default"
+  );
 }
 
 // Mount Routers

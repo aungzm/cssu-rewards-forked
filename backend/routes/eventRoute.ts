@@ -155,7 +155,7 @@ const getEventsSchema = z.object({
     started: z.preprocess(parseBoolean, z.boolean()).optional(),
     ended: z.preprocess(parseBoolean, z.boolean()).optional(),
     page: z.coerce.number().int().positive().optional(),
-    limit: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
     showFull: z.preprocess(parseBoolean, z.boolean()).optional(),
     published: z.preprocess(parseBoolean, z.boolean()).optional(), // Manager+ only
   }),
