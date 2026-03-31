@@ -530,6 +530,18 @@ export async function deleteEvent(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    // Keep the ledger intact: deleting the event would null relatedEventId on
+    // every awarded transaction and lose which event the points came from.
+    const awardedTransactions = await prisma.transaction.count({
+      where: { relatedEventId: eventId },
+    });
+    if (awardedTransactions > 0) {
+      res.status(400).json({
+        error: "Cannot delete an event with awarded points",
+      });
+      return;
+    }
+
     await prisma.event.delete({
       where: { id: eventId },
     });

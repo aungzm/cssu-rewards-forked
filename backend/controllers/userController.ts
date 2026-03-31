@@ -190,6 +190,7 @@ export async function getUserById(req: AuthenticatedRequest, res: Response): Pro
         createdAt: true,
         updatedAt: true,
         lastLogin: true,
+        password: true,
       },
     });
     if (!user) {
@@ -243,8 +244,14 @@ export async function getUserById(req: AuthenticatedRequest, res: Response): Pro
           promotions: allPromotions,
         });
       } else {
-        // Manager or Superuser return full user object with promotions
-        res.status(200).json({ ...user, promotions: allPromotions });
+        // Manager or Superuser return the user, but never the hash itself.
+        // The API contract exposes a `password` field, so redact its value.
+        const { password: passwordHash, ...userWithoutPassword } = user;
+        res.status(200).json({
+          ...userWithoutPassword,
+          password: passwordHash ? "[redacted]" : null,
+          promotions: allPromotions,
+        });
       }
     } else {
       res.status(403).json({ error: "Forbidden" });
