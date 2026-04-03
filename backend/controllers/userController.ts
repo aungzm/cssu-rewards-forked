@@ -388,7 +388,6 @@ export async function getCurrentUser(req: Request, res: Response): Promise<void>
         name: true,
         birthday: true,
         avatarUrl: true,
-        avatar: true,
         role: true,
         lastLogin: true,
         verified: true,
@@ -433,10 +432,51 @@ export async function getCurrentUser(req: Request, res: Response): Promise<void>
 
     const allPromotions = automaticPromotions.concat(availableOneTimePromotions);
 
-    // Append promotions to the user object
-    const userWithPromotions = { ...user, promotions: allPromotions };
+    // Do not ship the base64 avatar with every profile load. Clients fetch it
+    // from /users/me/avatar only when hasAvatar is true.
+    const hasAvatar =
+      (await prisma.user.count({
+        where: { id: currentUserId, avatar: { not: null } },
+      })) > 0;
+
+    const userWithPromotions = {
+      ...user,
+      hasAvatar,
+      promotions: allPromotions,
+    };
 
     res.status(200).json(userWithPromotions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+}
+
+/**
+ * GET /users/me/avatar
+ * Retrieve the current user's avatar as base64, on demand.
+ */
+export async function getCurrentUserAvatar(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const currentUserId = (req as any).user?.id;
+    if (!currentUserId) {
+      res.status(401).json({ error: "Not authenticated" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: currentUserId },
+      select: { avatar: true },
+    });
+    if (!user) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+
+    res.status(200).json({ avatar: user.avatar ?? null });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error." });

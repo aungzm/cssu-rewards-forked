@@ -1,39 +1,38 @@
+/**
+ * Remove the SQLite test database and restore the PostgreSQL Prisma client so
+ * development and builds continue to target the real database.
+ */
+import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url"; 
+import { fileURLToPath } from "url";
 
-const dbFileName = "test.db";
-const __filename = fileURLToPath(import.meta.url); // Get the full path of the current file
-const __dirname = path.dirname(__filename); // Get the directory of the current file (scripts/)
-// Go one level up from the script's directory (__dirname) to the project root
-const projectRoot = path.join(__dirname, "..");
-const dbPath = path.join(projectRoot, "prisma", dbFileName); 
-const journalPath = dbPath + "-journal";
-const walPath = dbPath + "-wal";
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+process.chdir(root);
 
-console.log("Starting test database teardown...");
-console.log(`Targeting database file at: ${dbPath}`); // Optional: Log the path for debugging
+const dbPath = path.join(root, "prisma", "test.db");
 
+console.log("Tearing down SQLite test database...");
+
+for (const suffix of ["", "-journal", "-wal", "-shm"]) {
+  const file = dbPath + suffix;
+  if (fs.existsSync(file)) {
+    fs.unlinkSync(file);
+    console.log(`Removed ${path.relative(root, file)}`);
+  }
+}
+
+const generatedSchema = path.join(root, "prisma", "schema.test.prisma");
+if (fs.existsSync(generatedSchema)) {
+  fs.unlinkSync(generatedSchema);
+}
+
+// Restore the production client. Regenerating does not need a live database.
 try {
-  if (fs.existsSync(dbPath)) {
-    fs.unlinkSync(dbPath);
-    console.log(`Removed ${dbFileName}`);
-  } else {
-    console.log(`${dbFileName} not found, skipping removal.`);
-  }
-
-  // Clean up potential journal and WAL files
-  if (fs.existsSync(journalPath)) {
-    fs.unlinkSync(journalPath);
-    console.log(`Removed ${dbFileName}-journal`);
-  }
-  if (fs.existsSync(walPath)) {
-    fs.unlinkSync(walPath);
-    console.log(`Removed ${dbFileName}-wal`);
-  }
-
-  console.log("Test database teardown complete.");
-} catch (error: unknown) {
-  console.error("Failed to tear down test database:", error);
-  process.exit(1); // Exit with error code if teardown fails
+  execSync("npx prisma generate", { stdio: "inherit" });
+  console.log("Restored the PostgreSQL Prisma client.");
+} catch (error) {
+  console.error(
+    "Could not regenerate the PostgreSQL client. Run `npx prisma generate` before building."
+  );
 }

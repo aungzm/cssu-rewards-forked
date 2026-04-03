@@ -2,6 +2,8 @@ node_modules
 # Keep environment variables out of version control
 .env
 prisma/dev*
+prisma/test.db*
+prisma/schema.test.prisma
 package-lock.json
 uploads
 dist/

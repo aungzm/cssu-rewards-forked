@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { isSqliteProvider, serializableOptions } from "../lib/dbProvider.js";
 import { AuthenticatedRequest } from "middlewares/authMiddleware.js";
 
 const EVENT_BUDGET_EXHAUSTED_SINGLE = "EVENT_BUDGET_EXHAUSTED_SINGLE";
@@ -113,8 +114,12 @@ export async function getEvents(req: AuthenticatedRequest, res: Response): Promi
     if (location) {
       where.location = {
         contains: location,
-        mode: "insensitive",
       };
+      // PostgreSQL needs mode for case-insensitive matching; SQLite's LIKE is
+      // already case-insensitive and rejects the option.
+      if (!isSqliteProvider()) {
+        where.location.mode = "insensitive";
+      }
     }
 
     // Filter events by startTime based on query
@@ -803,7 +808,7 @@ export async function addGuest(req: Request, res: Response): Promise<void> {
           },
         });
       },
-      { isolationLevel: "Serializable" }
+      serializableOptions()
     );
 
     res.status(201).json({
@@ -973,7 +978,7 @@ export async function addSelfAsGuest(
 
         return tx.rsvp.count({ where: { eventId } });
       },
-      { isolationLevel: "Serializable" }
+      serializableOptions()
     );
 
     const guestAdded = await prisma.user.findUnique({
@@ -1162,7 +1167,7 @@ export async function awardPoints(req: AuthenticatedRequest, res: Response): Pro
 
           return [created];
         },
-        { isolationLevel: "Serializable" }
+        serializableOptions()
       );
 
       const responseTransaction = {
@@ -1246,7 +1251,7 @@ export async function awardPoints(req: AuthenticatedRequest, res: Response): Pro
 
         return created;
       },
-      { isolationLevel: "Serializable" }
+      serializableOptions()
     );
 
     const recipientIds = createdTransactions

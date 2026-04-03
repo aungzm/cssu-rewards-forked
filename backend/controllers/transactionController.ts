@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import { Prisma, RoleType, TransactionType } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { serializableOptions } from "../lib/dbProvider.js";
 
 // Sentinels thrown inside transactions and translated to HTTP responses by the
 // surrounding catch blocks.
@@ -131,7 +132,7 @@ export async function createPurchaseTransaction(
       const transactionResult = await prisma.$transaction(async (tx) => {
         const createdTx = await tx.transaction.create({
           data: {
-            type: TransactionType.PURCHASE, // Use Enum
+            type: "PURCHASE", // Use Enum
             spent: spent, // Use 'spent' field from schema
             amount: pointsForDatabase,
             suspicious: isSuspicious,
@@ -192,7 +193,7 @@ export async function createPurchaseTransaction(
       // No return needed here as res.json() sends the response
     } else if (type.toLowerCase() === "adjustment") {
       // Check permissions
-      if (!(operator.role === RoleType.MANAGER || operator.role === RoleType.SUPERUSER)) { // Use Enum
+      if (!(operator.role === "MANAGER" || operator.role === "SUPERUSER")) { // Use Enum
         res.status(403).json({
           error: "Insufficient clearance to create an adjustment transaction.",
         });
@@ -233,7 +234,7 @@ export async function createPurchaseTransaction(
       const transactionResult = await prisma.$transaction(async (tx) => {
         const createdTx = await tx.transaction.create({
           data: {
-            type: TransactionType.ADJUSTMENT, // Use Enum
+            type: "ADJUSTMENT", // Use Enum
             // 'amount' is not a direct field in Transaction schema based on provided schema
             // Adjustments modify points directly. Let's store the adjustment value in 'points'.
             amount: adjustmentAmount,
@@ -682,7 +683,7 @@ export async function createTransferTransaction(
 
         return sent;
       },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+      serializableOptions()
     );
     res.status(201).json({
       id: senderTransaction.id,
@@ -780,7 +781,7 @@ export async function createRedemptionTransaction(
         const pending = await tx.transaction.aggregate({
           where: {
             userId: currentUser.id,
-            type: TransactionType.REDEMPTION,
+            type: "REDEMPTION",
             operatorId: null,
           },
           _sum: { amount: true },
@@ -806,7 +807,7 @@ export async function createRedemptionTransaction(
           },
         });
       },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+      serializableOptions()
     );
     res.status(201).json({
       id: transaction.id,
@@ -1016,7 +1017,7 @@ export async function markRedemptionAsProcessed(
         const claimed = await tx.transaction.updateMany({
           where: {
             id: transactionId,
-            type: TransactionType.REDEMPTION,
+            type: "REDEMPTION",
             operatorId: null,
           },
           data: { operatorId: operator.id },
@@ -1047,7 +1048,7 @@ export async function markRedemptionAsProcessed(
         }
         return updated;
       },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+      serializableOptions()
     );
 
     const positiveRedeemedAmount = Math.abs(updatedTransaction.amount ?? 0);

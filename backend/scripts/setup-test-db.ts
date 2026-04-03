@@ -1,47 +1,37 @@
+/**
+ * Prepare an isolated SQLite database for the test suite and generate a Prisma
+ * client that targets it. The PostgreSQL client is restored by the teardown
+ * script after the tests finish.
+ */
 import { execSync } from "child_process";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const dbUrl: string | undefined = process.env.DATABASE_URL;
-const nodeEnv: string | undefined = process.env.NODE_ENV;
-const expectedDbFile = "test.db";
-const expectedNodeEnv = "test";
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+process.chdir(root);
 
-console.log("Starting test database setup...");
+const env = {
+  ...process.env,
+  NODE_ENV: "test",
+  PRISMA_PROVIDER: "sqlite",
+  DATABASE_URL: "file:./test.db",
+};
 
-if (!dbUrl || !dbUrl.includes(expectedDbFile)) {
-    console.error(
-        `Error: DATABASE_URL environment variable is not set or does not point to '${expectedDbFile}'.`
-    );
-    console.error(`Current DATABASE_URL: ${dbUrl}`);
-    console.error(
-        "Ensure you run tests using 'npm run test' or similar script that sets DATABASE_URL via cross-env."
-    );
-    process.exit(1);
-}
+console.log("Preparing SQLite test database...");
 
-console.log(`Using database URL: ${dbUrl}`);
+execSync("npx tsx scripts/generate-test-schema.ts", {
+  stdio: "inherit",
+  env,
+});
 
-if (nodeEnv !== expectedNodeEnv) {
-    console.error(
-        `Error: NODE_ENV is not set to '${expectedNodeEnv}'. Current NODE_ENV: ${nodeEnv}`
-    );
-    console.error(
-        "Ensure you run tests using 'npm run test' or similar script that sets NODE_ENV to 'test'."
-    );
-    process.exit(1);
-}
-console.log(`Using NODE_ENV: ${process.env.NODE_ENV}`);
+execSync(
+  "npx prisma db push --force-reset --skip-generate --schema prisma/schema.test.prisma",
+  { stdio: "inherit", env }
+);
 
-try {
-    console.log("Running: npx prisma generate");
-    execSync("npx prisma generate", { stdio: "inherit" });
+execSync("npx prisma generate --schema prisma/schema.test.prisma", {
+  stdio: "inherit",
+  env,
+});
 
-    console.log("Running: npx prisma db push --force-reset --skip-generate");
-    execSync("npx prisma db push --force-reset --skip-generate", {
-        stdio: "inherit",
-    });
-
-    console.log(" Test database setup complete.");
-} catch (error: unknown) {
-    console.error(" Failed to setup test database:", error);
-    process.exit(1);
-}
+console.log("SQLite test database ready.");

@@ -16,6 +16,7 @@ interface UserData {
   verified: boolean;
   avatarUrl?: string;
   avatar?: string;
+  hasAvatar?: boolean;
 }
 
 interface UserContextType {
@@ -42,6 +43,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(`Failed to fetch user data: ${response.status}`);
       }
       const data = await response.json();
+
+      // The avatar is intentionally excluded from /users/me (it can be several
+      // megabytes); fetch it separately when one exists.
+      if (data?.hasAvatar) {
+        try {
+          const avatarResponse = await fetchWithAuth(
+            `${API_BASE_URL}/users/me/avatar`
+          );
+          if (avatarResponse.ok) {
+            const avatarData = await avatarResponse.json();
+            data.avatar = avatarData.avatar ?? undefined;
+          }
+        } catch (avatarError) {
+          console.error("Error fetching avatar:", avatarError);
+        }
+      }
+
       setUserData(data);
     } catch (err) {
       console.error('Error fetching user data:', err);

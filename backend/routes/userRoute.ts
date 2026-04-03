@@ -12,6 +12,7 @@ import {
   getUserById,
   updateUser,
   getCurrentUser,
+  getCurrentUserAvatar,
   updateCurrentUser,
   updateCurrentUserPassword,
   getMyOrganizedEvents,
@@ -317,6 +318,12 @@ router.patch(
  * @desc    Retrieve the current logged-in user's information
  */
 router.get("/me", authenticateToken, getCurrentUser);
+
+/**
+ * @route   GET /users/me/avatar
+ * @desc    Retrieve the current user's base64 avatar on demand
+ */
+router.get("/me/avatar", authenticateToken, getCurrentUserAvatar);
 
 /**
  * @route   PATCH /users/me
