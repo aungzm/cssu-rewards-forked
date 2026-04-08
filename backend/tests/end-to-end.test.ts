@@ -1777,6 +1777,15 @@ describe("End-to-End API Tests (Strict Order)", () => {
   }
 
   it(`Log #144: should create Event 0 with null capacity (201)`, async () => {
+    // Anchor Event 0 to the moment it is created rather than to module load.
+    // The organizer and guest tests below must run while it is still running,
+    // and a slow database used to consume the old one-second window.
+    const createdAt = Date.now();
+    eventTimes[0] = {
+      start: new Date(createdAt - 1000).toISOString(),
+      end: new Date(createdAt + 60000).toISOString(),
+    };
+
     const response = await request(app)
       .post("/events")
       .set("Authorization", `Bearer ${userTokens["johndoe1_manager_temp"]}`)
@@ -2245,12 +2254,21 @@ describe("End-to-End API Tests (Strict Order)", () => {
   // --- Event Ended Restrictions (Logs #198-204) ---
   // Wait for Event 0 to end
   it("should wait for Event 0 to end", async () => {
-    const endTime = new Date(eventTimes[0].end).getTime();
-    const waitTime = endTime - Date.now() + 100; // Wait 100ms past end time
-    if (waitTime > 0) {
-      await delay(waitTime);
-    }
-    expect(Date.now()).toBeGreaterThan(endTime);
+    // Shorten the event ourselves instead of sleeping for the one-minute
+    // safety window, which would exceed the per-test timeout.
+    const eventId = eventIds["Event 0"];
+    const endTime = new Date(Date.now() + 500).toISOString();
+    const response = await request(app)
+      .patch(`/events/${eventId}`)
+      .set("Authorization", `Bearer ${userTokens["johndoe1_manager_temp"]}`)
+      .send({ endTime })
+      .set("Content-Type", "application/json");
+
+    expect(response.status).toBe(200);
+    eventTimes[0].end = endTime;
+
+    await delay(700);
+    expect(Date.now()).toBeGreaterThan(new Date(endTime).getTime());
   });
 
   // Log #200
@@ -3902,7 +3920,11 @@ const promotionStartTimes: { [key: string]: number } = {};
   // Log #295
   it("Log #295: should successfully update promotion (ID 1) endTime (200)", async () => {
     const promoId = promotionIds["Spring Sale"]; // ID 1
-    const newEndTime = "2025-04-12T01:58:15.005Z"; // From log
+    // Relative date: the promotion was created with a start time of "now + 1
+    // minute", so a hard-coded 2025 timestamp is always before its start.
+    const newEndTime = new Date(
+      Date.now() + 2 * 24 * 60 * 60 * 1000
+    ).toISOString();
     const response = await request(app)
       .patch(`/promotions/${promoId}`)
       .set("Authorization", `Bearer ${userTokens["johndoe1_manager_temp"]}`)
