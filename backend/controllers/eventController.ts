@@ -363,7 +363,7 @@ export async function updateEvent(req: Request, res: Response): Promise<void> {
       userRole === "MANAGER" || userRole === "SUPERUSER";
 
     if (!isManagerOrHigher && !isOrganizer) {
-      res.status(403).json({ error: "Not authorized to update this event" });
+      res.status(403).json({ error: "Insufficient clearance" });
       return;
     }
 
@@ -459,7 +459,7 @@ export async function updateEvent(req: Request, res: Response): Promise<void> {
     }
     if (points !== undefined && points !== null && points!== event.pointsAwarded+event.pointsRemain) {
       if (!isManagerOrHigher) {
-        res.status(403).json({ error: "Not authorized to update points." });
+        res.status(403).json({ error: "Insufficient clearance" });
         return;
       }
       const pointsAwarded = event.pointsAwarded || 0;
@@ -475,7 +475,7 @@ export async function updateEvent(req: Request, res: Response): Promise<void> {
     }
     if (published !== undefined && published !== null) {
       if (!isManagerOrHigher) {
-        res.status(403).json({ error: "Not authorized to set published." });
+        res.status(403).json({ error: "Insufficient clearance" });
         return;
       }
       if (published !== true) {

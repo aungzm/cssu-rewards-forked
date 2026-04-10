@@ -4,6 +4,7 @@ import multer from "multer";
 import { authenticateToken } from "../middlewares/authenticateToken.js";
 import {
   requireCashierOrHigher,
+  requireCashierOrHigherClearance,
   requireManagerOrHigher,
 } from "../middlewares/authMiddleware.js";
 import {
@@ -443,7 +444,7 @@ router.post(
 router.get(
   "/",
   authenticateToken,
-  requireCashierOrHigher,
+  requireCashierOrHigherClearance,
   validate(getUsersSchema),
   getUsers
 );
