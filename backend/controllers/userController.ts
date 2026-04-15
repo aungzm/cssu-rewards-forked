@@ -533,6 +533,19 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
       updateData.avatarUrl = `/uploads/avatars/${currentUserId}`;
     }
 
+    if (Object.keys(updateData).length === 0) {
+      res.status(400).json({
+        error: [
+          {
+            path: "body",
+            message:
+              "At least one field must be provided with a non-null value",
+          },
+        ],
+      });
+      return;
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: currentUserId },
       data: updateData,

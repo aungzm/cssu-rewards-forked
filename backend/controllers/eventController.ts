@@ -1102,7 +1102,7 @@ export async function awardPoints(req: AuthenticatedRequest, res: Response): Pro
     const isOrganizerOrManagerOrHigher = isManagerOrHigher || isOrganizer;
     if (!isOrganizerOrManagerOrHigher) {
       res.status(403).json({
-        error: "Not authorized to award points for this event",
+        error: "Insufficient clearance",
       });
       return;
     }
