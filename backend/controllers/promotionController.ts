@@ -98,6 +98,13 @@ export async function getPromotions(req: AuthenticatedRequest, res: Response): P
   try {
     const { name,type, started, ended, page = "1", limit = "10" } = req.query; 
 
+    if (started !== undefined && ended !== undefined) {
+      res.status(400).json({
+        error: 'Cannot specify both "started" and "ended" simultaneously.',
+      });
+      return;
+    }
+
     // note ended and started comes in as boolean because zod schema
     const now = new Date();
     const where: any = {};

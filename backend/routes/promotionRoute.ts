@@ -74,18 +74,18 @@ const createPromotionSchema = z.object({
     }),
     rate: z
       .number({ invalid_type_error: "rate must be a number" })
-      .nonnegative("rate must be 0 or a positive number")
+      .nonnegative("rate must be a positive number")
       .nullable()
       .optional(),
     minSpending: z
       .number({ invalid_type_error: "minSpending must be a number" })
-      .nonnegative("rate must be 0 or a positive number")
+      .nonnegative("minSpending must be a positive number")
       .nullable()
       .optional(),
     points: z
       .number({ invalid_type_error: "points must be a number" })
       .int("points must be an integer")
-      .nonnegative("rate must be 0 or a positive number")
+      .nonnegative("points must be a positive integer")
       .nullable()
       .optional(),
     type: z.enum(["automatic", "one-time"]),
@@ -119,12 +119,12 @@ const updatePromotionSchema = z.object({
       .optional(),
     rate: z
       .number({ invalid_type_error: "rate must be a number" })
-      .nonnegative("rate must be 0 or a positive number")
+      .nonnegative("rate must be a positive number")
       .nullable()
       .optional(),
     minSpending: z
       .number({ invalid_type_error: "minSpending must be a number" })
-      .nonnegative("rate must be 0 or a positive number")
+      .nonnegative("minSpending must be a positive number")
       .nullable()
       .optional(),
     points: z

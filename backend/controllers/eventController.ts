@@ -501,6 +501,9 @@ export async function updateEvent(req: Request, res: Response): Promise<void> {
       name: updatedEvent.name,
       location: updatedEvent.location,
       ...updatedFields,
+      // Always report the budget, even when the caller sent the current total.
+      pointsRemain: updatedEvent.pointsRemain,
+      pointsAwarded: updatedEvent.pointsAwarded,
     });
   } catch (error) {
     console.error("updateEvent error:", error);
