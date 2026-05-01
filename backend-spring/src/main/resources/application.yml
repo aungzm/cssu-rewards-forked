@@ -1,0 +1,4 @@
+server:
+  port: 3001
+
+# TODO: Add datasource, Flyway, and security settings when those features are implemented.
