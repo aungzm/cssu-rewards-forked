@@ -1,5 +1,8 @@
 package com.cssurewards.user;
 
-// TODO: Extend JpaRepository<User, Integer> after mapping User and adding JPA.
-public interface UserRepository {
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface UserRepository extends JpaRepository<User, Integer> {
+    Optional<User> findByUtorid(String utorid);
 }
