@@ -64,6 +64,15 @@ public class User {
         this.updatedAt = this.createdAt;
     }
 
+    public User(String utorid, String email, String name) {
+        this.utorid = utorid;
+        this.email = email;
+        this.name = name;
+        this.role = RoleType.REGULAR;
+        this.createdAt = Instant.now();
+        this.updatedAt = this.createdAt;
+    }
+
     public Integer getId() { return id; }
     public String getUtorid() { return utorid; }
     public String getEmail() { return email; }

@@ -15,8 +15,12 @@ are implemented; other API features are still placeholders. The profile's
 Most class stubs remain unimplemented. Implement one feature at a time, keeping
 business rules in services and HTTP handling in controllers. Flyway's first
 migration creates a fresh `users` table; do not apply it to an existing populated
-database. The API has no user-creation endpoint yet, so login requires an
-activated user with a BCrypt password hash already inserted into the new database.
+database. Authorized staff can create users with `POST /users`. The first
+superuser can be created at startup by setting `BOOTSTRAP_SUPERUSER_UTORID`
+(8 alphanumeric characters), `BOOTSTRAP_SUPERUSER_EMAIL`, and
+`BOOTSTRAP_SUPERUSER_PASSWORD` (at least 8 characters). This happens only if
+the database has no users; remove the bootstrap variables afterward. Password
+reset and activation are not yet ported, so newly created accounts cannot log in.
 
 ## Run
 

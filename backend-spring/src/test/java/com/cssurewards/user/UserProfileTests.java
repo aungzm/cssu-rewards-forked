@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.cssurewards.auth.ResetTokenRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,12 +22,14 @@ import org.springframework.test.web.servlet.MockMvc;
 class UserProfileTests {
     @Autowired MockMvc mvc;
     @Autowired UserRepository users;
+    @Autowired ResetTokenRepository resetTokens;
     @Autowired PasswordEncoder passwords;
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
 
     @BeforeEach
     void createUsers() {
+        resetTokens.deleteAll();
         users.deleteAll();
         users.save(new User("clive123", "clive@example.com", passwords.encode("SuperUser123!"), RoleType.SUPERUSER));
         users.save(new User("jane1234", "jane@example.com", passwords.encode("Secret123!"), RoleType.REGULAR));

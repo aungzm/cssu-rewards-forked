@@ -30,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AuthControllerTests {
     @Autowired MockMvc mvc;
     @Autowired UserRepository users;
+    @Autowired ResetTokenRepository resetTokens;
     @Autowired PasswordEncoder passwords;
     @Autowired JwtDecoder decoder;
     @Autowired ObjectMapper json;
@@ -37,6 +38,7 @@ class AuthControllerTests {
 
     @BeforeEach
     void createUser() {
+        resetTokens.deleteAll();
         users.deleteAll();
         users.save(new User("clive123", "clive@example.com", passwords.encode("SuperUser123!"), RoleType.SUPERUSER));
     }
