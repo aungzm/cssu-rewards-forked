@@ -94,4 +94,10 @@ public class User {
         this.lastLogin = lastLogin;
         this.updatedAt = lastLogin;
     }
+
+    public void activate(String hashedPassword) {
+        this.password = hashedPassword;
+        this.activated = true;
+        this.updatedAt = Instant.now();
+    }
 }

@@ -20,7 +20,11 @@ superuser can be created at startup by setting `BOOTSTRAP_SUPERUSER_UTORID`
 (8 alphanumeric characters), `BOOTSTRAP_SUPERUSER_EMAIL`, and
 `BOOTSTRAP_SUPERUSER_PASSWORD` (at least 8 characters). This happens only if
 the database has no users; remove the bootstrap variables afterward. Password
-reset and activation are not yet ported, so newly created accounts cannot log in.
+Activation and password reset use `POST /auth/resets` and
+`POST /auth/resets/{resetToken}`. For compatibility with Express, the public
+reset-request endpoint returns the token directly. **This allows account
+takeover if someone knows a UTORid. Do not use this flow with real accounts.**
+Replace it with email delivery before production deployment.
 
 ## Run
 

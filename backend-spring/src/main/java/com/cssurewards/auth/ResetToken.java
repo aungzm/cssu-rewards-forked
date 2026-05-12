@@ -36,4 +36,9 @@ public class ResetToken {
     public String getToken() { return token; }
     public Instant getExpiresAt() { return expiresAt; }
     public User getUser() { return user; }
+
+    public void replace(String token, Instant expiresAt) {
+        this.token = token;
+        this.expiresAt = expiresAt;
+    }
 }

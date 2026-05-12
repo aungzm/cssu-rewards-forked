@@ -2,10 +2,14 @@ package com.cssurewards.auth;
 
 import com.cssurewards.auth.dto.LoginRequest;
 import com.cssurewards.auth.dto.LoginResponse;
+import com.cssurewards.auth.dto.ResetRequest;
+import com.cssurewards.auth.dto.ResetResponse;
+import com.cssurewards.auth.dto.CompleteResetRequest;
 import com.cssurewards.user.User;
 import com.cssurewards.user.UserRepository;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,12 +31,16 @@ public class AuthService {
     private final UserRepository users;
     private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
+    private final ResetTokenRepository resetTokens;
     private final ConcurrentHashMap<String, Failure> failures = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Instant> resetRequests = new ConcurrentHashMap<>();
 
-    public AuthService(UserRepository users, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder) {
+    public AuthService(UserRepository users, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder,
+            ResetTokenRepository resetTokens) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.jwtEncoder = jwtEncoder;
+        this.resetTokens = resetTokens;
     }
 
     @Transactional
@@ -67,5 +75,43 @@ public class AuthService {
     }
 
     private record Failure(int attempts, Instant started) {
+    }
+
+    @Transactional
+    public ResetResponse requestReset(ResetRequest request, String ipAddress) {
+        Instant now = Instant.now();
+        Instant last = resetRequests.get(ipAddress);
+        if (last != null && now.isBefore(last.plusSeconds(60))) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                "Too many requests. Please wait before requesting another reset.");
+        }
+        User user = users.findByUtorid(request.utorid()).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        resetRequests.put(ipAddress, now);
+        String token = UUID.randomUUID().toString();
+        Instant expiresAt = now.plus(TOKEN_LIFETIME);
+        ResetToken record = resetTokens.findByUserId(user.getId()).orElse(null);
+        if (record == null) {
+            record = new ResetToken(token, expiresAt, user);
+        } else {
+            record.replace(token, expiresAt);
+        }
+        resetTokens.save(record);
+        return new ResetResponse("Use the provided token to reset your password within 1 hour.",
+            token, expiresAt);
+    }
+
+    @Transactional
+    public void completeReset(String token, CompleteResetRequest request) {
+        ResetToken record = resetTokens.findByToken(token).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid reset token."));
+        if (!record.getUser().getUtorid().equals(request.utorid())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token does not match the user.");
+        }
+        if (record.getExpiresAt().isBefore(Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.GONE, "Expired reset token.");
+        }
+        record.getUser().activate(passwordEncoder.encode(request.password()));
+        resetTokens.delete(record);
     }
 }
