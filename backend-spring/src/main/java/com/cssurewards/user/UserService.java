@@ -3,6 +3,7 @@ package com.cssurewards.user;
 import com.cssurewards.user.dto.UserResponse;
 import com.cssurewards.user.dto.CreateUserRequest;
 import com.cssurewards.user.dto.CreatedUserResponse;
+import com.cssurewards.user.dto.ChangePasswordRequest;
 import com.cssurewards.auth.ResetToken;
 import com.cssurewards.auth.ResetTokenRepository;
 import java.time.Instant;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -18,10 +20,12 @@ import org.springframework.web.server.ResponseStatusException;
 public class UserService {
     private final UserRepository users;
     private final ResetTokenRepository resetTokens;
+    private final PasswordEncoder passwords;
 
-    public UserService(UserRepository users, ResetTokenRepository resetTokens) {
+    public UserService(UserRepository users, ResetTokenRepository resetTokens, PasswordEncoder passwords) {
         this.users = users;
         this.resetTokens = resetTokens;
+        this.passwords = passwords;
     }
 
     @Transactional(readOnly = true)
@@ -53,6 +57,15 @@ public class UserService {
         return new CreatedUserResponse(user.getId(), user.getUtorid(), user.getName(),
             user.getEmail(), user.isVerified(), token, expiresAt,
             "User created successfully. Activation token included in response.");
+    }
+
+    @Transactional
+    public void changePassword(Integer id, ChangePasswordRequest request) {
+        User user = findUser(id);
+        if (user.getPassword() == null || !passwords.matches(request.old(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Old password is incorrect.");
+        }
+        user.activate(passwords.encode(request.newPassword()));
     }
 
     private User findUser(Integer id) {

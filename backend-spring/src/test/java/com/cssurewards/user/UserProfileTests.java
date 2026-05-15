@@ -2,6 +2,7 @@ package com.cssurewards.user;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -72,5 +73,28 @@ class UserProfileTests {
         users.delete(users.findByUtorid("clive123").orElseThrow());
         mvc.perform(get("/users/me").header("Authorization", token))
             .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void changePasswordRequiresCurrentPasswordAndValidNewPassword() throws Exception {
+        String token = login();
+        mvc.perform(patch("/users/me/password").header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"old\":\"BadPassword1!\",\"new\":\"NewPassword1!\"}"))
+            .andExpect(status().isForbidden());
+        mvc.perform(patch("/users/me/password").header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"old\":\"SuperUser123!\",\"new\":\"short\"}"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(patch("/users/me/password").header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"old\":\"SuperUser123!\",\"new\":\"NewPassword1!\"}"))
+            .andExpect(status().isOk());
+        mvc.perform(post("/auth/tokens").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"utorid\":\"clive123\",\"password\":\"SuperUser123!\"}"))
+            .andExpect(status().isUnauthorized());
+        mvc.perform(post("/auth/tokens").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"utorid\":\"clive123\",\"password\":\"NewPassword1!\"}"))
+            .andExpect(status().isOk());
     }
 }
