@@ -4,6 +4,10 @@ import com.cssurewards.user.dto.UserResponse;
 import com.cssurewards.user.dto.CreateUserRequest;
 import com.cssurewards.user.dto.CreatedUserResponse;
 import com.cssurewards.user.dto.ChangePasswordRequest;
+import com.cssurewards.user.dto.UpdateProfileRequest;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import com.cssurewards.auth.ResetToken;
 import com.cssurewards.auth.ResetTokenRepository;
 import java.time.Instant;
@@ -66,6 +70,39 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Old password is incorrect.");
         }
         user.activate(passwords.encode(request.newPassword()));
+    }
+
+    @Transactional
+    public UserResponse updateProfile(Integer id, UpdateProfileRequest request) {
+        User user = findUser(id);
+        String name = request.name() == null ? null : request.name().trim();
+        if (name != null && name.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name cannot be blank");
+        }
+        if (name == null && request.email() == null && request.birthday() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "At least one field must be provided with a non-null value");
+        }
+        Instant birthday = null;
+        if (request.birthday() != null) {
+            try {
+                LocalDate date = LocalDate.parse(request.birthday());
+                if (date.isAfter(LocalDate.now(ZoneOffset.UTC))) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "birthday cannot be set in the future");
+                }
+                birthday = date.atStartOfDay(ZoneOffset.UTC).toInstant();
+            } catch (DateTimeParseException exception) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid date. Please provide a valid calendar date.");
+            }
+        }
+        if (request.email() != null && !request.email().equals(user.getEmail())
+                && users.existsByEmail(request.email())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A user with this email already exists.");
+        }
+        user.updateProfile(name, request.email(), birthday);
+        return getCurrentUser(id);
     }
 
     private User findUser(Integer id) {

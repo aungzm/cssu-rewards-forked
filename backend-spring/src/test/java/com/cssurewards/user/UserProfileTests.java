@@ -97,4 +97,29 @@ class UserProfileTests {
                 .content("{\"utorid\":\"clive123\",\"password\":\"NewPassword1!\"}"))
             .andExpect(status().isOk());
     }
+
+    @Test
+    void profileEditsValidateOwnershipAndDates() throws Exception {
+        String token = login();
+        mvc.perform(patch("/users/me").header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON).content("{}"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(patch("/users/me").header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"birthday\":\"2025-02-30\"}"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(patch("/users/me").header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"jane@example.com\"}"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(patch("/users/me").header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"New Name\",\"birthday\":\"2001-04-05\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("New Name"))
+            .andExpect(jsonPath("$.birthday").value("2001-04-05T00:00:00Z"));
+        mvc.perform(get("/users/me").header("Authorization", token))
+            .andExpect(jsonPath("$.name").value("New Name"));
+        org.assertj.core.api.Assertions.assertThat(users.findByUtorid("jane1234").orElseThrow().getName()).isNull();
+    }
 }

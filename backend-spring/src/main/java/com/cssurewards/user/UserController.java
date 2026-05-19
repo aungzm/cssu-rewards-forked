@@ -4,6 +4,7 @@ import com.cssurewards.user.dto.UserResponse;
 import com.cssurewards.user.dto.CreateUserRequest;
 import com.cssurewards.user.dto.CreatedUserResponse;
 import com.cssurewards.user.dto.ChangePasswordRequest;
+import com.cssurewards.user.dto.UpdateProfileRequest;
 import jakarta.validation.Valid;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -49,5 +50,11 @@ public class UserController {
             @Valid @RequestBody ChangePasswordRequest request) {
         userService.changePassword((Integer) authentication.getPrincipal(), request);
         return Map.of("message", "Password updated successfully.");
+    }
+
+    @PatchMapping("/me")
+    public UserResponse updateProfile(Authentication authentication,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        return userService.updateProfile((Integer) authentication.getPrincipal(), request);
     }
 }

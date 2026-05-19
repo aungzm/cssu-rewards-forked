@@ -100,4 +100,11 @@ public class User {
         this.activated = true;
         this.updatedAt = Instant.now();
     }
+
+    public void updateProfile(String name, String email, Instant birthday) {
+        if (name != null) this.name = name;
+        if (email != null) this.email = email;
+        if (birthday != null) this.birthday = birthday;
+        this.updatedAt = Instant.now();
+    }
 }
