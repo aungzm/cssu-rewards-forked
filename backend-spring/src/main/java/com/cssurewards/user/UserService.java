@@ -14,11 +14,15 @@ import java.time.Instant;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.Base64;
+import java.util.Map;
+import java.util.Arrays;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class UserService {
@@ -103,6 +107,22 @@ public class UserService {
         }
         user.updateProfile(name, request.email(), birthday);
         return getCurrentUser(id);
+    }
+
+    @Transactional
+    public Map<String, String> updateAvatar(Integer id, MultipartFile file) throws java.io.IOException {
+        byte[] bytes = file.getBytes();
+        byte[] pngSignature = {(byte) 137, 80, 78, 71, 13, 10, 26, 10};
+        if (bytes.length == 0 || bytes.length > 5 * 1024 * 1024
+                || !"image/png".equals(file.getContentType())
+                || bytes.length < pngSignature.length
+                || !Arrays.equals(Arrays.copyOf(bytes, pngSignature.length), pngSignature)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only PNG images up to 5 MB are supported.");
+        }
+        User user = findUser(id);
+        String encoded = Base64.getEncoder().encodeToString(bytes);
+        user.updateAvatar(encoded);
+        return Map.of("avatar", encoded, "avatarUrl", user.getAvatarUrl());
     }
 
     private User findUser(Integer id) {

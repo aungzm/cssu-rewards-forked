@@ -107,4 +107,10 @@ public class User {
         if (birthday != null) this.birthday = birthday;
         this.updatedAt = Instant.now();
     }
+
+    public void updateAvatar(String base64) {
+        this.avatar = base64;
+        this.avatarUrl = "/uploads/avatars/" + id + ".png";
+        this.updatedAt = Instant.now();
+    }
 }

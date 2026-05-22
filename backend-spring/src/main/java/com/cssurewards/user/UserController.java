@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -56,5 +59,11 @@ public class UserController {
     public UserResponse updateProfile(Authentication authentication,
             @Valid @RequestBody UpdateProfileRequest request) {
         return userService.updateProfile((Integer) authentication.getPrincipal(), request);
+    }
+
+    @PatchMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Map<String, String> updateAvatar(Authentication authentication,
+            @RequestParam("avatar") MultipartFile avatar) throws java.io.IOException {
+        return userService.updateAvatar((Integer) authentication.getPrincipal(), avatar);
     }
 }

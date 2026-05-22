@@ -2,6 +2,10 @@ server:
   port: 3001
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/cssu_rewards_spring}
     username: ${DB_USER:postgres}

@@ -3,6 +3,7 @@ package com.cssurewards.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -17,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockMultipartFile;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -121,5 +123,24 @@ class UserProfileTests {
         mvc.perform(get("/users/me").header("Authorization", token))
             .andExpect(jsonPath("$.name").value("New Name"));
         org.assertj.core.api.Assertions.assertThat(users.findByUtorid("jane1234").orElseThrow().getName()).isNull();
+    }
+
+    @Test
+    void uploadPngRequiresAuthenticationAndRejectsWrongMediaType() throws Exception {
+        byte[] png = java.util.Base64.getDecoder().decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aDrkAAAAASUVORK5CYII=");
+        MockMultipartFile avatar = new MockMultipartFile("avatar", "avatar.png", "image/png", png);
+        mvc.perform(multipart("/users/me").file(avatar).with(req -> { req.setMethod("PATCH"); return req; }))
+            .andExpect(status().isUnauthorized());
+        mvc.perform(multipart("/users/me").file(avatar).header("Authorization", login())
+                .with(req -> { req.setMethod("PATCH"); return req; }))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.avatar").isString());
+        org.assertj.core.api.Assertions.assertThat(users.findByUtorid("clive123").orElseThrow().getAvatar())
+            .isEqualTo(java.util.Base64.getEncoder().encodeToString(png));
+        MockMultipartFile badFile = new MockMultipartFile("avatar", "avatar.jpg", "image/jpeg", png);
+        mvc.perform(multipart("/users/me").file(badFile).header("Authorization", login())
+                .with(req -> { req.setMethod("PATCH"); return req; }))
+            .andExpect(status().isBadRequest());
     }
 }
