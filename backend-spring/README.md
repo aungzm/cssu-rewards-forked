@@ -1,8 +1,8 @@
 # CSSU Rewards Spring backend
 
 Spring Boot REST API replacing the Express backend in `../backend`.
-The React UI remains in `../frontend`. Login and current-user profile reads
-are implemented; other API features are still placeholders. The profile's
+The React UI remains in `../frontend`. Login, current-user profile, and staff
+user listing are implemented; other API features are still placeholders. The profile's
 `promotions` array is empty until promotions are ported.
 
 ## Layout

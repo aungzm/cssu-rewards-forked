@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.MediaType;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -65,5 +67,18 @@ public class UserController {
     public Map<String, String> updateAvatar(Authentication authentication,
             @RequestParam("avatar") MultipartFile avatar) throws java.io.IOException {
         return userService.updateAvatar((Integer) authentication.getPrincipal(), avatar);
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('CASHIER', 'MANAGER', 'SUPERUSER')")
+    public Map<String, Object> listUsers(Authentication authentication,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) Boolean verified,
+            @RequestParam(required = false) Boolean activated,
+            @RequestParam(defaultValue = "1") @Min(1) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit) {
+        return userService.listUsers(name, role, verified, activated, page, limit,
+            authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_CASHIER")));
     }
 }

@@ -17,12 +17,17 @@ import java.util.UUID;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 @Service
 public class UserService {
@@ -123,6 +128,49 @@ public class UserService {
         String encoded = Base64.getEncoder().encodeToString(bytes);
         user.updateAvatar(encoded);
         return Map.of("avatar", encoded, "avatarUrl", user.getAvatarUrl());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> listUsers(String name, String role, Boolean verified,
+            Boolean activated, int page, int limit, boolean cashier) {
+        RoleType roleFilter = null;
+        if (role != null) {
+            try {
+                roleFilter = RoleType.valueOf(role.toUpperCase(java.util.Locale.ROOT));
+            } catch (IllegalArgumentException exception) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid role.");
+            }
+        }
+        RoleType requestedRole = roleFilter;
+        Specification<User> filters = (root, query, cb) -> {
+            var conditions = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (name != null) conditions.add(cb.like(root.get("name"), "%" + name + "%"));
+            if (requestedRole != null) conditions.add(cb.equal(root.get("role"), requestedRole));
+            if (verified != null) conditions.add(cb.equal(root.get("verified"), verified));
+            if (activated != null) conditions.add(cb.equal(root.get("activated"), activated));
+            return cb.and(conditions.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        };
+        Page<User> usersPage = users.findAll(filters,
+            PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "createdAt")));
+        List<Map<String, Object>> results = usersPage.stream().map(user -> {
+            Map<String, Object> fields = new LinkedHashMap<>();
+            fields.put("id", user.getId());
+            fields.put("name", user.getName());
+            fields.put("utorid", user.getUtorid());
+            fields.put("avatarUrl", user.getAvatarUrl());
+            fields.put("verified", user.isVerified());
+            if (!cashier) {
+                fields.put("email", user.getEmail());
+                fields.put("role", user.getRole());
+                fields.put("birthday", user.getBirthday());
+                fields.put("points", user.getPoints());
+                fields.put("activated", user.isActivated());
+                fields.put("createdAt", user.getCreatedAt());
+                fields.put("lastLogin", user.getLastLogin());
+            }
+            return fields;
+        }).toList();
+        return Map.of("count", usersPage.getTotalElements(), "results", results);
     }
 
     private User findUser(Integer id) {
