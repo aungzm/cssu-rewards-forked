@@ -5,6 +5,7 @@ import com.cssurewards.user.dto.CreateUserRequest;
 import com.cssurewards.user.dto.CreatedUserResponse;
 import com.cssurewards.user.dto.ChangePasswordRequest;
 import com.cssurewards.user.dto.UpdateProfileRequest;
+import com.cssurewards.user.dto.UpdateUserRequest;
 import jakarta.validation.Valid;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.MediaType;
@@ -80,5 +82,20 @@ public class UserController {
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit) {
         return userService.listUsers(name, role, verified, activated, page, limit,
             authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_CASHIER")));
+    }
+
+    @GetMapping("/{userId}")
+    @PreAuthorize("hasAnyRole('CASHIER', 'MANAGER', 'SUPERUSER')")
+    public Map<String, Object> getUser(@PathVariable Integer userId, Authentication authentication) {
+        return userService.getUser(userId,
+            authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_CASHIER")));
+    }
+
+    @PatchMapping("/{userId}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
+    public Map<String, Object> updateUser(@PathVariable Integer userId, Authentication authentication,
+            @Valid @RequestBody UpdateUserRequest request) {
+        return userService.updateUser(userId, request,
+            authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER")));
     }
 }

@@ -113,4 +113,14 @@ public class User {
         this.avatarUrl = "/uploads/avatars/" + id + ".png";
         this.updatedAt = Instant.now();
     }
+
+    public void updateAdmin(String name, String email, RoleType role, Boolean verified, Boolean suspicious) {
+        if (name != null) this.name = name;
+        if (email != null) this.email = email;
+        if (role != null) this.role = role;
+        if (verified != null) this.verified = verified;
+        if (suspicious != null) this.suspicious = suspicious;
+        if (role == RoleType.CASHIER) this.suspicious = false;
+        this.updatedAt = Instant.now();
+    }
 }

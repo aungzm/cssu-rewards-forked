@@ -5,6 +5,7 @@ import com.cssurewards.user.dto.CreateUserRequest;
 import com.cssurewards.user.dto.CreatedUserResponse;
 import com.cssurewards.user.dto.ChangePasswordRequest;
 import com.cssurewards.user.dto.UpdateProfileRequest;
+import com.cssurewards.user.dto.UpdateUserRequest;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
@@ -171,6 +172,62 @@ public class UserService {
             return fields;
         }).toList();
         return Map.of("count", usersPage.getTotalElements(), "results", results);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getUser(Integer id, boolean cashier) {
+        User user = findUser(id);
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("id", user.getId());
+        fields.put("utorid", user.getUtorid());
+        fields.put("name", user.getName());
+        fields.put("verified", user.isVerified());
+        fields.put("points", user.getPoints());
+        fields.put("promotions", List.of());
+        if (!cashier) {
+            fields.put("email", user.getEmail());
+            fields.put("birthday", user.getBirthday());
+            fields.put("avatarUrl", user.getAvatarUrl());
+            fields.put("role", user.getRole());
+            fields.put("activated", user.isActivated());
+            fields.put("suspicious", user.isSuspicious());
+            fields.put("createdAt", user.getCreatedAt());
+            fields.put("updatedAt", user.getUpdatedAt());
+            fields.put("lastLogin", user.getLastLogin());
+            fields.put("password", user.getPassword() == null ? null : "[redacted]");
+        }
+        return fields;
+    }
+
+    @Transactional
+    public Map<String, Object> updateUser(Integer id, UpdateUserRequest request, boolean manager) {
+        User user = findUser(id);
+        if (request.email() == null && request.name() == null && request.role() == null
+                && request.verified() == null && request.suspicious() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one field must be provided");
+        }
+        if (request.email() != null && !request.email().equals(user.getEmail())
+                && users.existsByEmail(request.email())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A user with this email already exists.");
+        }
+        if (Boolean.FALSE.equals(request.verified())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid verified value.");
+        }
+        RoleType newRole = request.role() == null ? null : RoleType.valueOf(request.role().toUpperCase(java.util.Locale.ROOT));
+        if (manager && (newRole == RoleType.MANAGER || newRole == RoleType.SUPERUSER)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "Forbidden. Managers cannot promote users to Manager or Superuser.");
+        }
+        user.updateAdmin(request.name(), request.email(), newRole, request.verified(), request.suspicious());
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("id", user.getId());
+        fields.put("utorid", user.getUtorid());
+        fields.put("name", user.getName());
+        if (request.email() != null) fields.put("email", user.getEmail());
+        if (request.role() != null) fields.put("role", user.getRole());
+        if (request.verified() != null) fields.put("verified", user.isVerified());
+        if (request.suspicious() != null || newRole == RoleType.CASHIER) fields.put("suspicious", user.isSuspicious());
+        return fields;
     }
 
     private User findUser(Integer id) {
