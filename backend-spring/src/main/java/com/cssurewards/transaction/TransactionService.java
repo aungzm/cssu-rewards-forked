@@ -1,5 +1,42 @@
 package com.cssurewards.transaction;
 
-// TODO: Implement atomic transfers, purchases, adjustments, and redemptions.
+import com.cssurewards.transaction.dto.TransferRequest;
+import com.cssurewards.transaction.dto.TransferResponse;
+import com.cssurewards.user.User;
+import com.cssurewards.user.UserRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+@Service
 public class TransactionService {
+    private final UserRepository users;
+    private final TransactionRepository transactions;
+
+    public TransactionService(UserRepository users, TransactionRepository transactions) {
+        this.users = users;
+        this.transactions = transactions;
+    }
+
+    @Transactional
+    public TransferResponse transfer(Integer senderId, Integer receiverId, TransferRequest request) {
+        User recipient = users.findById(receiverId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipient user not found."));
+        if (senderId.equals(receiverId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot transfer points to yourself.");
+        }
+        User sender = users.findById(senderId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired token."));
+        if (users.debitIfEnough(senderId, request.amount()) != 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient points for transfer.");
+        }
+        users.credit(receiverId, request.amount());
+        String remark = request.remark() == null ? "" : request.remark();
+        Transaction sent = transactions.save(Transaction.transfer(senderId, senderId, receiverId,
+            -request.amount(), remark));
+        transactions.save(Transaction.transfer(receiverId, senderId, receiverId, request.amount(), remark));
+        return new TransferResponse(sent.getId(), sender.getUtorid(), recipient.getUtorid(),
+            "transfer", request.amount(), remark, sender.getUtorid());
+    }
 }

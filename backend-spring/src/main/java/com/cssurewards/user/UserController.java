@@ -6,6 +6,9 @@ import com.cssurewards.user.dto.CreatedUserResponse;
 import com.cssurewards.user.dto.ChangePasswordRequest;
 import com.cssurewards.user.dto.UpdateProfileRequest;
 import com.cssurewards.user.dto.UpdateUserRequest;
+import com.cssurewards.transaction.TransactionService;
+import com.cssurewards.transaction.dto.TransferRequest;
+import com.cssurewards.transaction.dto.TransferResponse;
 import jakarta.validation.Valid;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -29,9 +32,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
+    private final TransactionService transactions;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, TransactionService transactions) {
         this.userService = userService;
+        this.transactions = transactions;
     }
 
     @GetMapping("/me")
@@ -97,5 +102,12 @@ public class UserController {
             @Valid @RequestBody UpdateUserRequest request) {
         return userService.updateUser(userId, request,
             authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER")));
+    }
+
+    @PostMapping("/{userId}/transactions")
+    @ResponseStatus(HttpStatus.CREATED)
+    public TransferResponse transfer(@PathVariable Integer userId, Authentication authentication,
+            @Valid @RequestBody TransferRequest request) {
+        return transactions.transfer((Integer) authentication.getPrincipal(), userId, request);
     }
 }
