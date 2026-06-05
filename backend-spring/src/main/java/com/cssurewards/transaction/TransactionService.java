@@ -2,6 +2,8 @@ package com.cssurewards.transaction;
 
 import com.cssurewards.transaction.dto.TransferRequest;
 import com.cssurewards.transaction.dto.TransferResponse;
+import com.cssurewards.transaction.dto.RedemptionRequest;
+import com.cssurewards.transaction.dto.RedemptionResponse;
 import com.cssurewards.user.User;
 import com.cssurewards.user.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -38,5 +40,23 @@ public class TransactionService {
         transactions.save(Transaction.transfer(receiverId, senderId, receiverId, request.amount(), remark));
         return new TransferResponse(sent.getId(), sender.getUtorid(), recipient.getUtorid(),
             "transfer", request.amount(), remark, sender.getUtorid());
+    }
+
+    @Transactional
+    public RedemptionResponse redeem(Integer userId, RedemptionRequest request) {
+        User user = users.findByIdForUpdate(userId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        int amount = request.amount() == null ? user.getPoints() : request.amount();
+        if (amount <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Amount must be a positive integer.");
+        }
+        long reserved = -transactions.sumPendingRedemptions(userId);
+        if (amount > (long) user.getPoints() - reserved) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient points for redemption.");
+        }
+        String remark = request.remark() == null ? "" : request.remark();
+        Transaction redemption = transactions.save(Transaction.redemption(userId, amount, remark));
+        return new RedemptionResponse(redemption.getId(), user.getUtorid(), "redemption",
+            null, amount, remark, user.getUtorid());
     }
 }

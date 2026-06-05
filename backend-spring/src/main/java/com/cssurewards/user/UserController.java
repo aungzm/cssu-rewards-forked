@@ -9,6 +9,8 @@ import com.cssurewards.user.dto.UpdateUserRequest;
 import com.cssurewards.transaction.TransactionService;
 import com.cssurewards.transaction.dto.TransferRequest;
 import com.cssurewards.transaction.dto.TransferResponse;
+import com.cssurewards.transaction.dto.RedemptionRequest;
+import com.cssurewards.transaction.dto.RedemptionResponse;
 import jakarta.validation.Valid;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -109,5 +111,12 @@ public class UserController {
     public TransferResponse transfer(@PathVariable Integer userId, Authentication authentication,
             @Valid @RequestBody TransferRequest request) {
         return transactions.transfer((Integer) authentication.getPrincipal(), userId, request);
+    }
+
+    @PostMapping("/me/transactions")
+    @ResponseStatus(HttpStatus.CREATED)
+    public RedemptionResponse redeem(Authentication authentication,
+            @Valid @RequestBody RedemptionRequest request) {
+        return transactions.redeem((Integer) authentication.getPrincipal(), request);
     }
 }

@@ -50,6 +50,16 @@ public class Transaction {
         return transaction;
     }
 
+    public static Transaction redemption(Integer userId, int amount, String remark) {
+        Transaction transaction = new Transaction();
+        transaction.type = TransactionType.REDEMPTION;
+        transaction.userId = userId;
+        transaction.amount = -amount;
+        transaction.remarks = remark == null ? "" : remark;
+        transaction.createdAt = Instant.now();
+        return transaction;
+    }
+
     public Integer getId() { return id; }
     public TransactionType getType() { return type; }
     public BigDecimal getSpent() { return spent; }
