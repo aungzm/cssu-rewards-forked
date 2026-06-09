@@ -2,6 +2,7 @@ package com.cssurewards.transaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -38,6 +39,7 @@ class RedemptionTests {
         tokens.deleteAll();
         users.deleteAll();
         users.save(new User("member01", "member@example.com", passwords.encode("Password123!"), RoleType.REGULAR));
+        users.save(new User("cashier1", "cashier@example.com", passwords.encode("Password123!"), RoleType.CASHIER));
         jdbc.update("UPDATE users SET points = 100 WHERE utorid = 'member01'");
     }
 
@@ -47,8 +49,12 @@ class RedemptionTests {
     }
 
     private String bearer() throws Exception {
+        return bearer("member01");
+    }
+
+    private String bearer(String utorid) throws Exception {
         String body = mvc.perform(post("/auth/tokens").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"utorid\":\"member01\",\"password\":\"Password123!\"}"))
+                .content("{\"utorid\":\"" + utorid + "\",\"password\":\"Password123!\"}"))
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         return "Bearer " + json.readTree(body).get("token").asText();
     }
@@ -82,5 +88,38 @@ class RedemptionTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"type\":\"redemption\"}"))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.amount").value(100));
+    }
+
+    @Test
+    void onlyStaffCanProcessAndProcessingDebitsExactlyOnce() throws Exception {
+        String body = mvc.perform(post("/users/me/transactions").header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON).content("{\"type\":\"redemption\",\"amount\":70}"))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        int id = json.readTree(body).get("id").asInt();
+        mvc.perform(patch("/transactions/" + id + "/processed").header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON).content("{\"processed\":true}"))
+            .andExpect(status().isForbidden());
+        mvc.perform(patch("/transactions/" + id + "/processed").header("Authorization", bearer("cashier1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"processed\":true}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.redeemed").value(70))
+            .andExpect(jsonPath("$.processedBy").value("cashier1"));
+        mvc.perform(patch("/transactions/" + id + "/processed").header("Authorization", bearer("cashier1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"processed\":true}"))
+            .andExpect(status().isBadRequest());
+        assertThat(users.findByUtorid("member01").orElseThrow().getPoints()).isEqualTo(30);
+    }
+
+    @Test
+    void insufficientPointsRollBackClaim() throws Exception {
+        String body = mvc.perform(post("/users/me/transactions").header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON).content("{\"type\":\"redemption\",\"amount\":70}"))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        int id = json.readTree(body).get("id").asInt();
+        jdbc.update("UPDATE users SET points = 20 WHERE utorid = 'member01'");
+        mvc.perform(patch("/transactions/" + id + "/processed").header("Authorization", bearer("cashier1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"processed\":true}"))
+            .andExpect(status().isBadRequest());
+        assertThat(transactions.findById(id).orElseThrow().getOperatorId()).isNull();
+        assertThat(users.findByUtorid("member01").orElseThrow().getPoints()).isEqualTo(20);
     }
 }

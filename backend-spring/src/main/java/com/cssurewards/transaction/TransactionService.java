@@ -4,6 +4,7 @@ import com.cssurewards.transaction.dto.TransferRequest;
 import com.cssurewards.transaction.dto.TransferResponse;
 import com.cssurewards.transaction.dto.RedemptionRequest;
 import com.cssurewards.transaction.dto.RedemptionResponse;
+import com.cssurewards.transaction.dto.ProcessedRedemptionResponse;
 import com.cssurewards.user.User;
 import com.cssurewards.user.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -58,5 +59,34 @@ public class TransactionService {
         Transaction redemption = transactions.save(Transaction.redemption(userId, amount, remark));
         return new RedemptionResponse(redemption.getId(), user.getUtorid(), "redemption",
             null, amount, remark, user.getUtorid());
+    }
+
+    @Transactional
+    public ProcessedRedemptionResponse processRedemption(Integer transactionId, Integer operatorId) {
+        Transaction redemption = transactions.findById(transactionId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found."));
+        if (redemption.getType() != TransactionType.REDEMPTION) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Transaction is not of type 'redemption'.");
+        }
+        if (redemption.getOperatorId() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transaction has already been processed.");
+        }
+        if (redemption.getUserId() == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found.");
+        }
+        User user = users.findById(redemption.getUserId()).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        User operator = users.findById(operatorId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired token."));
+        if (transactions.claimRedemption(transactionId, operatorId) != 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Transaction has already been processed.");
+        }
+        int amount = Math.abs(redemption.getAmount());
+        if (users.debitIfEnough(user.getId(), amount) != 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient points for redemption.");
+        }
+        return new ProcessedRedemptionResponse(transactionId, user.getUtorid(), "redemption",
+            operator.getUtorid(), amount, redemption.getRemarks(), user.getUtorid());
     }
 }
