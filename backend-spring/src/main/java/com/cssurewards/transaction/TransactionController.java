@@ -2,6 +2,8 @@ package com.cssurewards.transaction;
 
 import com.cssurewards.transaction.dto.ProcessRedemptionRequest;
 import com.cssurewards.transaction.dto.ProcessedRedemptionResponse;
+import com.cssurewards.transaction.dto.SuspiciousRequest;
+import java.util.Map;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -25,5 +27,12 @@ public class TransactionController {
     public ProcessedRedemptionResponse process(@PathVariable Integer transactionId,
             @Valid @RequestBody ProcessRedemptionRequest request, Authentication authentication) {
         return service.processRedemption(transactionId, (Integer) authentication.getPrincipal());
+    }
+
+    @PatchMapping("/{transactionId}/suspicious")
+    @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
+    public Map<String, Object> suspicious(@PathVariable Integer transactionId,
+            @Valid @RequestBody SuspiciousRequest request) {
+        return service.setSuspicious(transactionId, request.suspicious());
     }
 }

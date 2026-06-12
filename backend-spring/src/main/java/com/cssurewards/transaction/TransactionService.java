@@ -5,6 +5,9 @@ import com.cssurewards.transaction.dto.TransferResponse;
 import com.cssurewards.transaction.dto.RedemptionRequest;
 import com.cssurewards.transaction.dto.RedemptionResponse;
 import com.cssurewards.transaction.dto.ProcessedRedemptionResponse;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import com.cssurewards.user.User;
 import com.cssurewards.user.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -88,5 +91,41 @@ public class TransactionService {
         }
         return new ProcessedRedemptionResponse(transactionId, user.getUtorid(), "redemption",
             operator.getUtorid(), amount, redemption.getRemarks(), user.getUtorid());
+    }
+
+    @Transactional
+    public Map<String, Object> setSuspicious(Integer transactionId, boolean suspicious) {
+        Transaction transaction = transactions.findByIdForUpdate(transactionId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found."));
+        int adjustment = 0;
+        if (transaction.isSuspicious() != suspicious && transaction.getAmount() != null) {
+            int amount = transaction.getAmount();
+            switch (transaction.getType()) {
+                case PURCHASE, EVENT -> adjustment = suspicious ? -amount : amount;
+                case REDEMPTION -> {
+                    if (transaction.getOperatorId() != null) {
+                        adjustment = suspicious ? Math.abs(amount) : -Math.abs(amount);
+                    }
+                }
+                default -> { }
+            }
+        }
+        if (adjustment != 0 && transaction.getUserId() != null) {
+            users.credit(transaction.getUserId(), adjustment);
+        }
+        transaction.setSuspicious(suspicious);
+        User user = transaction.getUserId() == null ? null : users.findById(transaction.getUserId()).orElse(null);
+        User operator = transaction.getOperatorId() == null ? null : users.findById(transaction.getOperatorId()).orElse(null);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", transaction.getId());
+        response.put("utorid", user == null ? null : user.getUtorid());
+        response.put("type", transaction.getType().name().toLowerCase(java.util.Locale.ROOT));
+        response.put("spent", transaction.getSpent());
+        response.put("amount", transaction.getAmount());
+        response.put("promotionIds", List.of());
+        response.put("suspicious", suspicious);
+        response.put("remark", transaction.getRemarks() == null ? "" : transaction.getRemarks());
+        response.put("createdBy", operator == null ? null : operator.getUtorid());
+        return response;
     }
 }

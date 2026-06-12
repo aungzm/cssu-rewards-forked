@@ -40,6 +40,7 @@ class RedemptionTests {
         users.deleteAll();
         users.save(new User("member01", "member@example.com", passwords.encode("Password123!"), RoleType.REGULAR));
         users.save(new User("cashier1", "cashier@example.com", passwords.encode("Password123!"), RoleType.CASHIER));
+        users.save(new User("manager1", "manager@example.com", passwords.encode("Password123!"), RoleType.MANAGER));
         jdbc.update("UPDATE users SET points = 100 WHERE utorid = 'member01'");
     }
 
@@ -121,5 +122,40 @@ class RedemptionTests {
             .andExpect(status().isBadRequest());
         assertThat(transactions.findById(id).orElseThrow().getOperatorId()).isNull();
         assertThat(users.findByUtorid("member01").orElseThrow().getPoints()).isEqualTo(20);
+    }
+
+    @Test
+    void suspiciousProcessedRedemptionRefundsOnceAndRestoringChargesOnce() throws Exception {
+        String body = mvc.perform(post("/users/me/transactions").header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON).content("{\"type\":\"redemption\",\"amount\":70}"))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        int id = json.readTree(body).get("id").asInt();
+        String url = "/transactions/" + id + "/suspicious";
+        mvc.perform(patch(url).header("Authorization", bearer("cashier1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"suspicious\":true}"))
+            .andExpect(status().isForbidden());
+        mvc.perform(patch(url).header("Authorization", bearer("manager1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"suspicious\":true}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.suspicious").value(true));
+        assertThat(users.findByUtorid("member01").orElseThrow().getPoints()).isEqualTo(100);
+        mvc.perform(patch(url).header("Authorization", bearer("manager1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"suspicious\":false}"))
+            .andExpect(status().isOk());
+        mvc.perform(patch("/transactions/" + id + "/processed").header("Authorization", bearer("cashier1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"processed\":true}"))
+            .andExpect(status().isOk());
+        assertThat(users.findByUtorid("member01").orElseThrow().getPoints()).isEqualTo(30);
+        mvc.perform(patch(url).header("Authorization", bearer("manager1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"suspicious\":true}"))
+            .andExpect(status().isOk());
+        assertThat(users.findByUtorid("member01").orElseThrow().getPoints()).isEqualTo(100);
+        mvc.perform(patch(url).header("Authorization", bearer("manager1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"suspicious\":true}"))
+            .andExpect(status().isOk());
+        assertThat(users.findByUtorid("member01").orElseThrow().getPoints()).isEqualTo(100);
+        mvc.perform(patch(url).header("Authorization", bearer("manager1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"suspicious\":false}"))
+            .andExpect(status().isOk());
+        assertThat(users.findByUtorid("member01").orElseThrow().getPoints()).isEqualTo(30);
     }
 }

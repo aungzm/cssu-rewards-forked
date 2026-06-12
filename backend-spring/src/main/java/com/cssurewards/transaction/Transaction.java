@@ -72,4 +72,6 @@ public class Transaction {
     public Integer getReceiverId() { return receiverId; }
     public boolean isSuspicious() { return suspicious; }
     public Integer getRelatedId() { return relatedId; }
+
+    public void setSuspicious(boolean suspicious) { this.suspicious = suspicious; }
 }
