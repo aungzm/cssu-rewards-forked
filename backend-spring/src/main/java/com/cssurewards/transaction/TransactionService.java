@@ -128,4 +128,24 @@ public class TransactionService {
         response.put("createdBy", operator == null ? null : operator.getUtorid());
         return response;
     }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getTransaction(Integer id) {
+        Transaction transaction = transactions.findById(id).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found."));
+        User user = transaction.getUserId() == null ? null : users.findById(transaction.getUserId()).orElse(null);
+        User operator = transaction.getOperatorId() == null ? null : users.findById(transaction.getOperatorId()).orElse(null);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", transaction.getId());
+        response.put("utorid", user == null ? null : user.getUtorid());
+        response.put("type", transaction.getType().name().toLowerCase(java.util.Locale.ROOT));
+        response.put("spent", transaction.getSpent());
+        response.put("amount", transaction.getAmount());
+        response.put("promotionIds", List.of());
+        response.put("suspicious", transaction.isSuspicious());
+        response.put("relatedId", transaction.getRelatedId());
+        response.put("remark", transaction.getRemarks() == null ? "" : transaction.getRemarks());
+        response.put("createdBy", operator == null ? null : operator.getUtorid());
+        return response;
+    }
 }

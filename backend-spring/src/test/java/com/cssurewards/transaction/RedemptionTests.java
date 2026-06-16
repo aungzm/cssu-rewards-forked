@@ -3,6 +3,7 @@ package com.cssurewards.transaction;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -157,5 +158,23 @@ class RedemptionTests {
                 .contentType(MediaType.APPLICATION_JSON).content("{\"suspicious\":false}"))
             .andExpect(status().isOk());
         assertThat(users.findByUtorid("member01").orElseThrow().getPoints()).isEqualTo(30);
+    }
+
+    @Test
+    void transactionDetailIsRestrictedToManagersAndNeverExposesPrivateFields() throws Exception {
+        String body = mvc.perform(post("/users/me/transactions").header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON).content("{\"type\":\"redemption\",\"amount\":10}"))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        int id = json.readTree(body).get("id").asInt();
+        mvc.perform(get("/transactions/" + id).header("Authorization", bearer("cashier1")))
+            .andExpect(status().isForbidden());
+        mvc.perform(get("/transactions/" + id).header("Authorization", bearer("manager1")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.utorid").value("member01"))
+            .andExpect(jsonPath("$.type").value("redemption"))
+            .andExpect(jsonPath("$.amount").value(-10))
+            .andExpect(jsonPath("$.promotionIds").isArray())
+            .andExpect(jsonPath("$.password").doesNotExist());
+        mvc.perform(get("/transactions/987654321").header("Authorization", bearer("manager1")))
+            .andExpect(status().isNotFound());
     }
 }

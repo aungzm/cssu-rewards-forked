@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping("/transactions")
@@ -34,5 +35,11 @@ public class TransactionController {
     public Map<String, Object> suspicious(@PathVariable Integer transactionId,
             @Valid @RequestBody SuspiciousRequest request) {
         return service.setSuspicious(transactionId, request.suspicious());
+    }
+
+    @GetMapping("/{transactionId}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
+    public Map<String, Object> getTransaction(@PathVariable Integer transactionId) {
+        return service.getTransaction(transactionId);
     }
 }
