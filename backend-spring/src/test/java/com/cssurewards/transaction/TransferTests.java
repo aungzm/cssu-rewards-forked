@@ -2,6 +2,7 @@ package com.cssurewards.transaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -132,5 +133,25 @@ class TransferTests {
         } finally {
             pool.shutdownNow();
         }
+    }
+
+    @Test
+    void ownHistoryIncludesOnlyOwnSideAndSupportsFiltering() throws Exception {
+        String senderToken = token();
+        mvc.perform(post("/users/" + receiverId() + "/transactions")
+                .header("Authorization", senderToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"type\":\"transfer\",\"amount\":40}"))
+            .andExpect(status().isCreated());
+        mvc.perform(get("/users/me/transactions?type=transfer&amount=-40&operator=gte")
+                .header("Authorization", senderToken))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
+            .andExpect(jsonPath("$.results[0].amount").value(-40))
+            .andExpect(jsonPath("$.results[0].relatedId").value(receiverId()))
+            .andExpect(jsonPath("$.results[0].createdBy").value("sender01"));
+        mvc.perform(get("/users/me/transactions?type=redemption").header("Authorization", senderToken))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(0));
+        mvc.perform(get("/users/me/transactions?limit=101").header("Authorization", senderToken))
+            .andExpect(status().isBadRequest());
+        mvc.perform(get("/users/me/transactions")).andExpect(status().isUnauthorized());
     }
 }

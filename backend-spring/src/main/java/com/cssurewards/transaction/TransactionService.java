@@ -8,6 +8,12 @@ import com.cssurewards.transaction.dto.ProcessedRedemptionResponse;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import com.cssurewards.transaction.dto.TransactionFilters;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
 import com.cssurewards.user.User;
 import com.cssurewards.user.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -147,5 +153,80 @@ public class TransactionService {
         response.put("remark", transaction.getRemarks() == null ? "" : transaction.getRemarks());
         response.put("createdBy", operator == null ? null : operator.getUtorid());
         return response;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getMyTransactions(Integer userId, TransactionFilters filters) {
+        if (filters.page() < 1 || filters.limit() < 1 || filters.limit() > 100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid pagination parameters.");
+        }
+        TransactionType type = null;
+        if (filters.type() != null) {
+            try {
+                type = TransactionType.valueOf(filters.type().toUpperCase(java.util.Locale.ROOT));
+            } catch (IllegalArgumentException exception) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid transaction type.");
+            }
+        }
+        if (filters.operator() != null && !List.of("gte", "lte").contains(filters.operator())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid amount operator.");
+        }
+        if (filters.promotionId() != null) {
+            // No promotions can be attached before the promotions feature is migrated.
+            return Map.of("count", 0, "results", List.of());
+        }
+        TransactionType requestedType = type;
+        Specification<Transaction> specification = (root, query, cb) -> {
+            List<Predicate> conditions = new java.util.ArrayList<>();
+            conditions.add(cb.equal(root.get("userId"), userId));
+            if (requestedType != null) conditions.add(cb.equal(root.get("type"), requestedType));
+            if (filters.relatedId() != null && requestedType != null) {
+                int relatedId = filters.relatedId();
+                switch (requestedType) {
+                    case TRANSFER -> conditions.add(cb.or(cb.equal(root.get("senderId"), relatedId),
+                        cb.equal(root.get("receiverId"), relatedId)));
+                    case REDEMPTION -> conditions.add(cb.equal(root.get("operatorId"), relatedId));
+                    case ADJUSTMENT -> conditions.add(cb.equal(root.get("relatedId"), relatedId));
+                    case EVENT -> conditions.add(cb.disjunction()); // Events are not ported yet.
+                    default -> { }
+                }
+            }
+            if (filters.amount() != null && filters.operator() != null) {
+                if (filters.operator().equals("gte")) {
+                    conditions.add(cb.ge(root.get("amount"), filters.amount()));
+                } else {
+                    conditions.add(cb.le(root.get("amount"), filters.amount()));
+                }
+            }
+            return cb.and(conditions.toArray(Predicate[]::new));
+        };
+        Page<Transaction> page = transactions.findAll(specification,
+            PageRequest.of(filters.page() - 1, filters.limit(), Sort.by(Sort.Direction.DESC, "createdAt")));
+        List<Map<String, Object>> results = page.getContent().stream().map(transaction -> {
+            User operator = transaction.getOperatorId() == null ? null : users.findById(transaction.getOperatorId()).orElse(null);
+            User sender = transaction.getSenderId() == null ? null : users.findById(transaction.getSenderId()).orElse(null);
+            User owner = users.findById(userId).orElse(null);
+            Integer relatedId = switch (transaction.getType()) {
+                case TRANSFER -> userId.equals(transaction.getSenderId())
+                    ? transaction.getReceiverId() : transaction.getSenderId();
+                case REDEMPTION -> transaction.getOperatorId();
+                case ADJUSTMENT -> transaction.getRelatedId();
+                default -> null;
+            };
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", transaction.getId());
+            item.put("amount", transaction.getAmount() == null ? 0 : transaction.getAmount());
+            item.put("type", transaction.getType().name().toLowerCase(java.util.Locale.ROOT));
+            item.put("relatedId", relatedId);
+            item.put("promotionIds", List.of());
+            item.put("remark", transaction.getRemarks() == null ? "" : transaction.getRemarks());
+            item.put("createdBy", operator != null ? operator.getUtorid()
+                : sender != null ? sender.getUtorid() : owner == null ? null : owner.getUtorid());
+            item.put("createdAt", transaction.getCreatedAt());
+            item.put("suspicious", transaction.isSuspicious());
+            item.put("operatorId", transaction.getOperatorId());
+            return item;
+        }).toList();
+        return Map.of("count", page.getTotalElements(), "results", results);
     }
 }

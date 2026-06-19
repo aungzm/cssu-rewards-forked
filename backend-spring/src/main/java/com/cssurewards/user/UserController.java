@@ -11,6 +11,7 @@ import com.cssurewards.transaction.dto.TransferRequest;
 import com.cssurewards.transaction.dto.TransferResponse;
 import com.cssurewards.transaction.dto.RedemptionRequest;
 import com.cssurewards.transaction.dto.RedemptionResponse;
+import com.cssurewards.transaction.dto.TransactionFilters;
 import jakarta.validation.Valid;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -118,5 +119,18 @@ public class UserController {
     public RedemptionResponse redeem(Authentication authentication,
             @Valid @RequestBody RedemptionRequest request) {
         return transactions.redeem((Integer) authentication.getPrincipal(), request);
+    }
+
+    @GetMapping("/me/transactions")
+    public Map<String, Object> myTransactions(Authentication authentication,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Integer relatedId,
+            @RequestParam(required = false) Integer promotionId,
+            @RequestParam(required = false) Integer amount,
+            @RequestParam(required = false) String operator,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit) {
+        return transactions.getMyTransactions((Integer) authentication.getPrincipal(),
+            new TransactionFilters(type, relatedId, promotionId, amount, operator, page, limit));
     }
 }

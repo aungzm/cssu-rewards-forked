@@ -7,8 +7,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface TransactionRepository extends JpaRepository<Transaction, Integer> {
+public interface TransactionRepository extends JpaRepository<Transaction, Integer>, JpaSpecificationExecutor<Transaction> {
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.userId = :userId "
         + "AND t.type = com.cssurewards.transaction.TransactionType.REDEMPTION AND t.operatorId IS NULL")
     long sumPendingRedemptions(@Param("userId") Integer userId);
