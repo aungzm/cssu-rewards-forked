@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/transactions")
@@ -41,5 +42,22 @@ public class TransactionController {
     @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
     public Map<String, Object> getTransaction(@PathVariable Integer transactionId) {
         return service.getTransaction(transactionId);
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
+    public Map<String, Object> listTransactions(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String createdBy,
+            @RequestParam(required = false) Boolean suspicious,
+            @RequestParam(required = false) Integer promotionId,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Integer relatedId,
+            @RequestParam(required = false) Integer amount,
+            @RequestParam(required = false) String operator,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit) {
+        return service.listTransactions(name, createdBy, suspicious, promotionId,
+            type, relatedId, amount, operator, page, limit);
     }
 }

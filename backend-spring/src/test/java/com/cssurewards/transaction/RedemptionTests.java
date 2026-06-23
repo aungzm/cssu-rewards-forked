@@ -177,4 +177,28 @@ class RedemptionTests {
         mvc.perform(get("/transactions/987654321").header("Authorization", bearer("manager1")))
             .andExpect(status().isNotFound());
     }
+
+    @Test
+    void managerCanFilterAndPageTransactionList() throws Exception {
+        String created = mvc.perform(post("/users/me/transactions").header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON).content("{\"type\":\"redemption\",\"amount\":20}"))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        int id = json.readTree(created).get("id").asInt();
+        mvc.perform(patch("/transactions/" + id + "/processed")
+                .header("Authorization", bearer("cashier1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"processed\":true}"))
+            .andExpect(status().isOk());
+        mvc.perform(get("/transactions?type=redemption&name=member&createdBy=cashier&amount=-20&operator=gte&page=1&limit=1")
+                .header("Authorization", bearer("manager1")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
+            .andExpect(jsonPath("$.results[0].id").value(id))
+            .andExpect(jsonPath("$.results[0].redeemed").value(20))
+            .andExpect(jsonPath("$.results[0].createdBy").value("cashier1"));
+        mvc.perform(get("/transactions?type=transfer").header("Authorization", bearer("manager1")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(0));
+        mvc.perform(get("/transactions").header("Authorization", bearer("cashier1")))
+            .andExpect(status().isForbidden());
+        mvc.perform(get("/transactions?limit=0").header("Authorization", bearer("manager1")))
+            .andExpect(status().isBadRequest());
+    }
 }

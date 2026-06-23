@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Subquery;
 import com.cssurewards.user.User;
 import com.cssurewards.user.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -225,6 +226,106 @@ public class TransactionService {
             item.put("createdAt", transaction.getCreatedAt());
             item.put("suspicious", transaction.isSuspicious());
             item.put("operatorId", transaction.getOperatorId());
+            return item;
+        }).toList();
+        return Map.of("count", page.getTotalElements(), "results", results);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> listTransactions(String name, String createdBy, Boolean suspicious,
+            Integer promotionId, String typeName, Integer relatedId, Integer amount,
+            String operator, int pageNumber, int limit) {
+        if (pageNumber < 1 || limit < 1 || limit > 100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid pagination parameters.");
+        }
+        TransactionType type = null;
+        if (typeName != null) {
+            try {
+                type = TransactionType.valueOf(typeName.toUpperCase(java.util.Locale.ROOT));
+            } catch (IllegalArgumentException exception) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid transaction type.");
+            }
+        }
+        if (operator != null && !List.of("gte", "lte").contains(operator)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid amount operator.");
+        }
+        if (promotionId != null) {
+            return Map.of("count", 0, "results", List.of());
+        }
+        TransactionType requestedType = type;
+        Specification<Transaction> filters = (root, query, cb) -> {
+            List<Predicate> predicates = new java.util.ArrayList<>();
+            if (requestedType != null) predicates.add(cb.equal(root.get("type"), requestedType));
+            if (suspicious != null) predicates.add(cb.equal(root.get("suspicious"), suspicious));
+            if (name != null) {
+                Subquery<Integer> owner = query.subquery(Integer.class);
+                var u = owner.from(User.class);
+                owner.select(u.get("id")).where(cb.equal(u.get("id"), root.get("userId")),
+                    cb.or(cb.like(u.get("utorid"), "%" + name + "%"), cb.like(u.get("name"), "%" + name + "%")));
+                predicates.add(cb.exists(owner));
+            }
+            if (createdBy != null) {
+                Subquery<Integer> creator = query.subquery(Integer.class);
+                var u = creator.from(User.class);
+                creator.select(u.get("id")).where(cb.equal(u.get("id"), root.get("operatorId")),
+                    cb.or(cb.like(u.get("utorid"), "%" + createdBy + "%"), cb.like(u.get("name"), "%" + createdBy + "%")));
+                predicates.add(cb.exists(creator));
+            }
+            if (relatedId != null && requestedType != null) {
+                switch (requestedType) {
+                    case TRANSFER -> predicates.add(cb.or(cb.equal(root.get("senderId"), relatedId),
+                        cb.equal(root.get("receiverId"), relatedId)));
+                    case REDEMPTION -> predicates.add(cb.equal(root.get("operatorId"), relatedId));
+                    case ADJUSTMENT -> predicates.add(cb.equal(root.get("relatedId"), relatedId));
+                    case EVENT -> predicates.add(cb.disjunction());
+                    default -> { }
+                }
+            }
+            if (amount != null && operator != null) {
+                predicates.add(operator.equals("gte") ? cb.ge(root.get("amount"), amount)
+                    : cb.le(root.get("amount"), amount));
+            }
+            return cb.and(predicates.toArray(Predicate[]::new));
+        };
+        Page<Transaction> page = transactions.findAll(filters,
+            PageRequest.of(pageNumber - 1, limit, Sort.by(Sort.Direction.DESC, "createdAt")));
+        List<Map<String, Object>> results = page.getContent().stream().map(transaction -> {
+            User owner = transaction.getUserId() == null ? null : users.findById(transaction.getUserId()).orElse(null);
+            User creator = transaction.getOperatorId() == null ? null : users.findById(transaction.getOperatorId()).orElse(null);
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", transaction.getId());
+            item.put("utorid", owner == null ? null : owner.getUtorid());
+            item.put("type", transaction.getType().name().toLowerCase(java.util.Locale.ROOT));
+            item.put("promotionIds", List.of());
+            item.put("suspicious", transaction.isSuspicious());
+            item.put("remark", transaction.getRemarks() == null ? "" : transaction.getRemarks());
+            item.put("createdBy", creator == null ? null : creator.getUtorid());
+            item.put("createdAt", transaction.getCreatedAt());
+            switch (transaction.getType()) {
+                case PURCHASE -> {
+                    item.put("spent", transaction.getSpent());
+                    item.put("amount", transaction.getAmount());
+                }
+                case REDEMPTION -> {
+                    item.put("amount", transaction.getAmount());
+                    item.put("redeemed", Math.abs(transaction.getAmount() == null ? 0 : transaction.getAmount()));
+                    item.put("relatedId", transaction.getOperatorId());
+                }
+                case ADJUSTMENT -> {
+                    item.put("amount", transaction.getAmount());
+                    item.put("relatedId", transaction.getRelatedId());
+                }
+                case TRANSFER -> {
+                    item.put("amount", transaction.getAmount());
+                    item.put("relatedId", transaction.getUserId() != null
+                        && transaction.getUserId().equals(transaction.getSenderId())
+                        ? transaction.getReceiverId() : transaction.getSenderId());
+                }
+                case EVENT -> {
+                    item.put("amount", transaction.getAmount());
+                    item.put("relatedId", null);
+                }
+            }
             return item;
         }).toList();
         return Map.of("count", page.getTotalElements(), "results", results);
