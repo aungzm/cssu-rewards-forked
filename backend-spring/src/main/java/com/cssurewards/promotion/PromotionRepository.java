@@ -1,5 +1,6 @@
 package com.cssurewards.promotion;
 
-// TODO: Extend JpaRepository<Promotion, Integer> after adding JPA.
-public interface PromotionRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PromotionRepository extends JpaRepository<Promotion, Integer> {
 }
