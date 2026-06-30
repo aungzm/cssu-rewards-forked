@@ -1,6 +1,7 @@
 package com.cssurewards.promotion;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -83,6 +84,27 @@ class PromotionCreateTests {
             .andExpect(status().isBadRequest());
         mvc.perform(post("/promotions").header("Authorization", bearer).contentType(MediaType.APPLICATION_JSON)
                 .content(prefix + "\"startTime\":\"" + future + "\",\"endTime\":\"" + past + "\"}"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void regularUsersSeeOnlyActivePromotionsWhileManagersCanBrowseAll() throws Exception {
+        Instant now = Instant.now();
+        Promotion active = promotions.save(new Promotion("Active", "Live", now.minusSeconds(100),
+            now.plusSeconds(3600), 0, 0, 5, "automatic"));
+        Promotion upcoming = promotions.save(new Promotion("Soon", "Future", now.plusSeconds(3600),
+            now.plusSeconds(7200), 0, 0, 10, "one-time"));
+        mvc.perform(get("/promotions").header("Authorization", token("regular1")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
+            .andExpect(jsonPath("$.results[0].name").value("Active"));
+        mvc.perform(get("/promotions/" + upcoming.getId()).header("Authorization", token("regular1")))
+            .andExpect(status().isNotFound());
+        mvc.perform(get("/promotions/" + active.getId()).header("Authorization", token("regular1")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Active"));
+        mvc.perform(get("/promotions?started=false&type=one-time").header("Authorization", token("manager1")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
+            .andExpect(jsonPath("$.results[0].id").value(upcoming.getId()));
+        mvc.perform(get("/promotions?started=true&ended=false").header("Authorization", token("manager1")))
             .andExpect(status().isBadRequest());
     }
 }

@@ -6,6 +6,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import java.util.Map;
+import java.util.List;
+import jakarta.persistence.criteria.Predicate;
 
 @Service
 public class PromotionService {
@@ -27,5 +34,51 @@ public class PromotionService {
             request.startTime(), request.endTime(), request.rate() == null ? 0 : request.rate(),
             request.minSpending() == null ? 0 : request.minSpending(),
             request.points() == null ? 0 : request.points(), request.type()));
+    }
+
+    @Transactional(readOnly = true)
+    public Promotion get(Integer id, boolean manager) {
+        Promotion promotion = promotions.findById(id).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Promotion not found"));
+        Instant now = Instant.now();
+        if (!manager && (promotion.getStartTime().isAfter(now) || promotion.getEndTime().isBefore(now))) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Promotion not found");
+        }
+        return promotion;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> list(String name, String type, Boolean started, Boolean ended,
+            int pageNumber, int limit, boolean manager) {
+        if (pageNumber < 1 || limit < 1 || limit > 100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid pagination parameters.");
+        }
+        if (started != null && ended != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Cannot specify both \"started\" and \"ended\" simultaneously.");
+        }
+        if (type != null && !List.of("automatic", "one-time").contains(type)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid promotion type.");
+        }
+        Instant now = Instant.now();
+        Specification<Promotion> filter = (root, query, cb) -> {
+            List<Predicate> conditions = new java.util.ArrayList<>();
+            if (name != null) conditions.add(cb.like(root.get("name"), "%" + name + "%"));
+            if (type != null) conditions.add(cb.equal(root.get("type"), type));
+            if (!manager) {
+                conditions.add(cb.lessThanOrEqualTo(root.get("startTime"), now));
+                conditions.add(cb.greaterThanOrEqualTo(root.get("endTime"), now));
+            } else if (started != null) {
+                conditions.add(started ? cb.lessThanOrEqualTo(root.get("startTime"), now)
+                    : cb.greaterThan(root.get("startTime"), now));
+            } else if (ended != null) {
+                conditions.add(ended ? cb.lessThanOrEqualTo(root.get("endTime"), now)
+                    : cb.greaterThan(root.get("endTime"), now));
+            }
+            return cb.and(conditions.toArray(Predicate[]::new));
+        };
+        Page<Promotion> result = promotions.findAll(filter,
+            PageRequest.of(pageNumber - 1, limit, Sort.by("startTime")));
+        return Map.of("count", result.getTotalElements(), "results", result.getContent());
     }
 }
