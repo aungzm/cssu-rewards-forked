@@ -1,6 +1,7 @@
 package com.cssurewards.promotion;
 
 import com.cssurewards.promotion.dto.CreatePromotionRequest;
+import com.cssurewards.promotion.dto.UpdatePromotionRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.core.Authentication;
@@ -45,6 +47,13 @@ public class PromotionController {
     @GetMapping("/{promotionId}")
     public Promotion get(@PathVariable Integer promotionId, Authentication authentication) {
         return service.get(promotionId, isManager(authentication));
+    }
+
+    @PatchMapping("/{promotionId}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
+    public Map<String, Object> update(@PathVariable Integer promotionId,
+            @Valid @RequestBody UpdatePromotionRequest request) {
+        return service.update(promotionId, request);
     }
 
     private boolean isManager(Authentication authentication) {

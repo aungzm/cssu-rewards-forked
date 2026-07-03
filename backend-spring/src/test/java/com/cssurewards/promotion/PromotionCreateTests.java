@@ -2,6 +2,7 @@ package com.cssurewards.promotion;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -106,5 +107,31 @@ class PromotionCreateTests {
             .andExpect(jsonPath("$.results[0].id").value(upcoming.getId()));
         mvc.perform(get("/promotions?started=true&ended=false").header("Authorization", token("manager1")))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void managerCanEditFuturePromotionButCannotMoveStartIntoPast() throws Exception {
+        Instant now = Instant.now();
+        Promotion offer = promotions.save(new Promotion("Before", "Old", now.plusSeconds(3600),
+            now.plusSeconds(7200), 0, 0, 0, "automatic"));
+        String url = "/promotions/" + offer.getId();
+        String manager = token("manager1");
+        mvc.perform(patch(url).header("Authorization", token("regular1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"After\"}"))
+            .andExpect(status().isForbidden());
+        mvc.perform(patch(url).header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON).content("{}"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(patch(url).header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"startTime\":\"" + now.minusSeconds(3600) + "\"}"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(patch(url).header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"After\",\"points\":25,\"type\":\"one-time\"}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("After"))
+            .andExpect(jsonPath("$.points").value(25));
+        mvc.perform(get(url).header("Authorization", manager))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.type").value("one-time"));
     }
 }

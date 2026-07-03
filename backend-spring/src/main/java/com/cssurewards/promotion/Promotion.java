@@ -61,4 +61,17 @@ public class Promotion {
     public int getPoints() { return points; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+
+    public void update(String name, String description, Instant startTime, Instant endTime,
+            Double rate, Double minSpending, Integer points, String type) {
+        if (name != null) this.name = name;
+        if (description != null) this.description = description;
+        if (startTime != null) this.startTime = startTime;
+        if (endTime != null) this.endTime = endTime;
+        if (rate != null) this.rate = rate;
+        if (minSpending != null) this.minSpending = minSpending;
+        if (points != null) this.points = points;
+        if (type != null) this.type = type;
+        this.updatedAt = Instant.now();
+    }
 }

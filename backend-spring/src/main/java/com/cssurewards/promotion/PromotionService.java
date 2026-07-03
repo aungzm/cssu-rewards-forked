@@ -1,6 +1,7 @@
 package com.cssurewards.promotion;
 
 import com.cssurewards.promotion.dto.CreatePromotionRequest;
+import com.cssurewards.promotion.dto.UpdatePromotionRequest;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import java.util.Map;
 import java.util.List;
+import java.util.LinkedHashMap;
 import jakarta.persistence.criteria.Predicate;
 
 @Service
@@ -80,5 +82,37 @@ public class PromotionService {
         Page<Promotion> result = promotions.findAll(filter,
             PageRequest.of(pageNumber - 1, limit, Sort.by("startTime")));
         return Map.of("count", result.getTotalElements(), "results", result.getContent());
+    }
+
+    @Transactional
+    public Map<String, Object> update(Integer id, UpdatePromotionRequest request) {
+        Promotion promotion = promotions.findById(id).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Promotion not found"));
+        if (request.name() == null && request.description() == null && request.startTime() == null
+                && request.endTime() == null && request.rate() == null && request.minSpending() == null
+                && request.points() == null && request.type() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No valid fields to update");
+        }
+        if (request.startTime() != null && request.startTime().isBefore(Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot set a start time in the past");
+        }
+        Instant start = request.startTime() == null ? promotion.getStartTime() : request.startTime();
+        Instant end = request.endTime() == null ? promotion.getEndTime() : request.endTime();
+        if (end.isBefore(start)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End time must be after start time");
+        }
+        promotion.update(request.name(), request.description(), request.startTime(), request.endTime(),
+            request.rate(), request.minSpending(), request.points(), request.type());
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", id);
+        response.put("name", promotion.getName());
+        response.put("type", promotion.getType());
+        response.put("startTime", promotion.getStartTime());
+        response.put("endTime", promotion.getEndTime());
+        if (request.description() != null) response.put("description", promotion.getDescription());
+        if (request.rate() != null) response.put("rate", promotion.getRate());
+        if (request.minSpending() != null) response.put("minSpending", promotion.getMinSpending());
+        if (request.points() != null) response.put("points", promotion.getPoints());
+        return response;
     }
 }
