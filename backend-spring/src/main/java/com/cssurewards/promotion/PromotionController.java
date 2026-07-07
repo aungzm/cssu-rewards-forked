@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.core.Authentication;
@@ -54,6 +55,13 @@ public class PromotionController {
     public Map<String, Object> update(@PathVariable Integer promotionId,
             @Valid @RequestBody UpdatePromotionRequest request) {
         return service.update(promotionId, request);
+    }
+
+    @DeleteMapping("/{promotionId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
+    public void delete(@PathVariable Integer promotionId) {
+        service.delete(promotionId);
     }
 
     private boolean isManager(Authentication authentication) {

@@ -3,6 +3,7 @@ package com.cssurewards.promotion;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -133,5 +134,22 @@ class PromotionCreateTests {
             .andExpect(jsonPath("$.points").value(25));
         mvc.perform(get(url).header("Authorization", manager))
             .andExpect(status().isOk()).andExpect(jsonPath("$.type").value("one-time"));
+    }
+
+    @Test
+    void onlyManagersMayRemoveNotYetStartedPromotions() throws Exception {
+        Instant now = Instant.now();
+        Promotion active = promotions.save(new Promotion("Active", "Live", now.minusSeconds(100),
+            now.plusSeconds(3600), 0, 0, 5, "automatic"));
+        Promotion upcoming = promotions.save(new Promotion("Soon", "Future", now.plusSeconds(3600),
+            now.plusSeconds(7200), 0, 0, 10, "one-time"));
+        mvc.perform(delete("/promotions/" + upcoming.getId()).header("Authorization", token("regular1")))
+            .andExpect(status().isForbidden());
+        mvc.perform(delete("/promotions/" + active.getId()).header("Authorization", token("manager1")))
+            .andExpect(status().isForbidden());
+        mvc.perform(delete("/promotions/" + upcoming.getId()).header("Authorization", token("manager1")))
+            .andExpect(status().isNoContent());
+        mvc.perform(delete("/promotions/" + upcoming.getId()).header("Authorization", token("manager1")))
+            .andExpect(status().isNotFound());
     }
 }

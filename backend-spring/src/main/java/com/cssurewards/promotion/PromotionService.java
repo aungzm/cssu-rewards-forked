@@ -115,4 +115,15 @@ public class PromotionService {
         if (request.points() != null) response.put("points", promotion.getPoints());
         return response;
     }
+
+    @Transactional
+    public void delete(Integer id) {
+        Promotion promotion = promotions.findById(id).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Promotion not found"));
+        if (!Instant.now().isBefore(promotion.getStartTime())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "Cannot delete a promotion that has started");
+        }
+        promotions.delete(promotion);
+    }
 }
