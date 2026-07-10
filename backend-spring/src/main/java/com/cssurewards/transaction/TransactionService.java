@@ -15,6 +15,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Subquery;
+import com.cssurewards.transaction.dto.PurchaseRequest;
+import com.cssurewards.promotion.Promotion;
+import com.cssurewards.promotion.PromotionRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
+import java.math.BigDecimal;
+import java.time.Instant;
 import com.cssurewards.user.User;
 import com.cssurewards.user.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -26,10 +32,15 @@ import org.springframework.web.server.ResponseStatusException;
 public class TransactionService {
     private final UserRepository users;
     private final TransactionRepository transactions;
+    private final PromotionRepository promotions;
+    private final JdbcTemplate jdbc;
 
-    public TransactionService(UserRepository users, TransactionRepository transactions) {
+    public TransactionService(UserRepository users, TransactionRepository transactions,
+            PromotionRepository promotions, JdbcTemplate jdbc) {
         this.users = users;
         this.transactions = transactions;
+        this.promotions = promotions;
+        this.jdbc = jdbc;
     }
 
     @Transactional
@@ -329,5 +340,68 @@ public class TransactionService {
             return item;
         }).toList();
         return Map.of("count", page.getTotalElements(), "results", results);
+    }
+
+    @Transactional
+    public Map<String, Object> purchase(PurchaseRequest request, Integer operatorId) {
+        User operator = users.findById(operatorId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired token."));
+        User user = users.findByUtorid(request.utorid()).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        user = users.findByIdForUpdate(user.getId()).orElseThrow();
+        List<Integer> ids = request.promotionIds() == null ? List.of() : request.promotionIds();
+        if (ids.stream().anyMatch(id -> id == null) || ids.size() != ids.stream().distinct().count()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid format for promotion IDs.");
+        }
+        List<Promotion> applied = promotions.findAllById(ids);
+        Instant now = Instant.now();
+        if (applied.size() != ids.size() || applied.stream().anyMatch(p -> p.getStartTime().isAfter(now)
+                || p.getEndTime().isBefore(now))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "One or more promotion IDs are invalid, expired, or not yet active.");
+        }
+        double spent = request.spent().doubleValue();
+        if (!Double.isFinite(spent) || spent <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The spent amount must be a positive number.");
+        }
+        long points = Math.round(spent / 0.25);
+        for (Promotion promotion : applied) {
+            if (spent < promotion.getMinSpending()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Promotion " + promotion.getId() + " requires a minimum spending of " + promotion.getMinSpending() + ".");
+            }
+            if (promotion.getType().equals("one-time") && jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM user_promotions WHERE user_id = ? AND promotion_id = ?",
+                    Integer.class, user.getId(), promotion.getId()) > 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Promotion " + promotion.getId() + " has already been used by this user.");
+            }
+            points += Math.round(spent * 100 * promotion.getRate()) + promotion.getPoints();
+        }
+        if (points > Integer.MAX_VALUE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Purchase points exceed the supported range.");
+        }
+        int earned = (int) points;
+        Transaction transaction = transactions.save(Transaction.purchase(user.getId(), operatorId,
+            request.spent(), earned, request.remark(), operator.isSuspicious()));
+        if (!operator.isSuspicious()) users.credit(user.getId(), earned);
+        for (Promotion promotion : applied) {
+            jdbc.update("INSERT INTO transaction_promotions(transaction_id, promotion_id) VALUES (?, ?)",
+                transaction.getId(), promotion.getId());
+            if (promotion.getType().equals("one-time")) {
+                jdbc.update("INSERT INTO user_promotions(user_id, promotion_id) VALUES (?, ?)",
+                    user.getId(), promotion.getId());
+            }
+        }
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", transaction.getId());
+        response.put("utorid", user.getUtorid());
+        response.put("type", "purchase");
+        response.put("spent", request.spent());
+        response.put("earned", operator.isSuspicious() ? 0 : earned);
+        response.put("remark", transaction.getRemarks());
+        response.put("promotionIds", applied.stream().map(Promotion::getId).toList());
+        response.put("createdBy", operator.getUtorid());
+        return response;
     }
 }

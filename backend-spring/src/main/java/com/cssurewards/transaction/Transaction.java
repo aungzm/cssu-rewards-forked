@@ -60,6 +60,20 @@ public class Transaction {
         return transaction;
     }
 
+    public static Transaction purchase(Integer userId, Integer operatorId, BigDecimal spent,
+            int amount, String remark, boolean suspicious) {
+        Transaction transaction = new Transaction();
+        transaction.type = TransactionType.PURCHASE;
+        transaction.userId = userId;
+        transaction.operatorId = operatorId;
+        transaction.spent = spent;
+        transaction.amount = amount;
+        transaction.remarks = remark == null ? "" : remark;
+        transaction.suspicious = suspicious;
+        transaction.createdAt = Instant.now();
+        return transaction;
+    }
+
     public Integer getId() { return id; }
     public TransactionType getType() { return type; }
     public BigDecimal getSpent() { return spent; }

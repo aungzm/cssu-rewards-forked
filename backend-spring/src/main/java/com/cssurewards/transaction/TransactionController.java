@@ -3,6 +3,7 @@ package com.cssurewards.transaction;
 import com.cssurewards.transaction.dto.ProcessRedemptionRequest;
 import com.cssurewards.transaction.dto.ProcessedRedemptionResponse;
 import com.cssurewards.transaction.dto.SuspiciousRequest;
+import com.cssurewards.transaction.dto.PurchaseRequest;
 import java.util.Map;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,6 +14,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
@@ -59,5 +63,13 @@ public class TransactionController {
             @RequestParam(defaultValue = "10") int limit) {
         return service.listTransactions(name, createdBy, suspicious, promotionId,
             type, relatedId, amount, operator, page, limit);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('CASHIER', 'MANAGER', 'SUPERUSER')")
+    public Map<String, Object> createPurchase(@Valid @RequestBody PurchaseRequest request,
+            Authentication authentication) {
+        return service.purchase(request, (Integer) authentication.getPrincipal());
     }
 }
