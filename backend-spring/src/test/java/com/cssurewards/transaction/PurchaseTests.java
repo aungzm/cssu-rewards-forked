@@ -40,18 +40,21 @@ class PurchaseTests {
     void setup() {
         jdbc.update("DELETE FROM transaction_promotions");
         jdbc.update("DELETE FROM user_promotions");
+        jdbc.update("DELETE FROM transactions WHERE related_id IS NOT NULL");
         transactions.deleteAll();
         promotions.deleteAll();
         tokens.deleteAll();
         users.deleteAll();
         users.save(new User("member01", "member@example.com", passwords.encode("Password123!"), RoleType.REGULAR));
         users.save(new User("cashier1", "cashier@example.com", passwords.encode("Password123!"), RoleType.CASHIER));
+        users.save(new User("manager1", "manager@example.com", passwords.encode("Password123!"), RoleType.MANAGER));
     }
 
     @AfterEach
     void cleanup() {
         jdbc.update("DELETE FROM transaction_promotions");
         jdbc.update("DELETE FROM user_promotions");
+        jdbc.update("DELETE FROM transactions WHERE related_id IS NOT NULL");
         transactions.deleteAll();
         promotions.deleteAll();
     }
@@ -97,5 +100,31 @@ class PurchaseTests {
                 .contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isForbidden());
         assertThat(users.findByUtorid("member01").orElseThrow().getPoints()).isZero();
+    }
+
+    @Test
+    void adjustmentRequiresManagerAndExistingRelatedTransaction() throws Exception {
+        String manager = token("manager1");
+        String cashier = token("cashier1");
+        String purchase = mvc.perform(post("/transactions").header("Authorization", cashier)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"utorid\":\"member01\",\"type\":\"purchase\",\"spent\":2}"))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        int relatedId = json.readTree(purchase).get("id").asInt();
+        String adjustment = "{\"utorid\":\"member01\",\"type\":\"adjustment\",\"amount\":-3,\"relatedId\":"
+            + relatedId + "}";
+        mvc.perform(post("/transactions").header("Authorization", cashier)
+                .contentType(MediaType.APPLICATION_JSON).content(adjustment))
+            .andExpect(status().isForbidden());
+        mvc.perform(post("/transactions").header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON).content(adjustment))
+            .andExpect(status().isCreated()).andExpect(jsonPath("$.amount").value(-3))
+            .andExpect(jsonPath("$.relatedId").value(relatedId));
+        assertThat(users.findByUtorid("member01").orElseThrow().getPoints()).isEqualTo(5);
+        mvc.perform(post("/transactions").header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"utorid\":\"member01\",\"type\":\"adjustment\",\"amount\":1,\"relatedId\":9999}"))
+            .andExpect(status().isNotFound());
+        assertThat(transactions.count()).isEqualTo(2);
     }
 }

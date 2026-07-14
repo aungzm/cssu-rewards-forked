@@ -74,6 +74,19 @@ public class Transaction {
         return transaction;
     }
 
+    public static Transaction adjustment(Integer userId, Integer operatorId, int amount,
+            Integer relatedId, String remark) {
+        Transaction transaction = new Transaction();
+        transaction.type = TransactionType.ADJUSTMENT;
+        transaction.userId = userId;
+        transaction.operatorId = operatorId;
+        transaction.amount = amount;
+        transaction.relatedId = relatedId;
+        transaction.remarks = remark == null ? "" : remark;
+        transaction.createdAt = Instant.now();
+        return transaction;
+    }
+
     public Integer getId() { return id; }
     public TransactionType getType() { return type; }
     public BigDecimal getSpent() { return spent; }

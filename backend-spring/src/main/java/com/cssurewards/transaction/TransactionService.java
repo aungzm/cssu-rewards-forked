@@ -16,6 +16,7 @@ import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Subquery;
 import com.cssurewards.transaction.dto.PurchaseRequest;
+import com.cssurewards.transaction.dto.AdjustmentRequest;
 import com.cssurewards.promotion.Promotion;
 import com.cssurewards.promotion.PromotionRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -399,6 +400,63 @@ public class TransactionService {
         response.put("type", "purchase");
         response.put("spent", request.spent());
         response.put("earned", operator.isSuspicious() ? 0 : earned);
+        response.put("remark", transaction.getRemarks());
+        response.put("promotionIds", applied.stream().map(Promotion::getId).toList());
+        response.put("createdBy", operator.getUtorid());
+        return response;
+    }
+
+    @Transactional
+    public Map<String, Object> adjustment(AdjustmentRequest request, Integer operatorId) {
+        User operator = users.findById(operatorId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired token."));
+        if (operator.getRole() != com.cssurewards.user.RoleType.MANAGER
+                && operator.getRole() != com.cssurewards.user.RoleType.SUPERUSER) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "Insufficient clearance to create an adjustment transaction.");
+        }
+        User user = users.findByUtorid(request.utorid()).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        user = users.findByIdForUpdate(user.getId()).orElseThrow();
+        if (!transactions.existsById(request.relatedId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Related transaction not found.");
+        }
+        List<Integer> ids = request.promotionIds() == null ? List.of() : request.promotionIds();
+        if (ids.stream().anyMatch(id -> id == null) || ids.size() != ids.stream().distinct().count()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid format for promotion IDs.");
+        }
+        List<Promotion> applied = promotions.findAllById(ids);
+        Instant now = Instant.now();
+        if (applied.size() != ids.size() || applied.stream().anyMatch(p -> p.getStartTime().isAfter(now)
+                || p.getEndTime().isBefore(now))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "One or more promotion IDs are invalid, expired, or not yet active.");
+        }
+        for (Promotion promotion : applied) {
+            if (promotion.getType().equals("one-time") && jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM user_promotions WHERE user_id = ? AND promotion_id = ?",
+                    Integer.class, user.getId(), promotion.getId()) > 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Promotion " + promotion.getId() + " has already been used by this user.");
+            }
+        }
+        Transaction transaction = transactions.save(Transaction.adjustment(user.getId(), operatorId,
+            request.amount(), request.relatedId(), request.remark()));
+        users.credit(user.getId(), request.amount());
+        for (Promotion promotion : applied) {
+            jdbc.update("INSERT INTO transaction_promotions(transaction_id, promotion_id) VALUES (?, ?)",
+                transaction.getId(), promotion.getId());
+            if (promotion.getType().equals("one-time")) {
+                jdbc.update("INSERT INTO user_promotions(user_id, promotion_id) VALUES (?, ?)",
+                    user.getId(), promotion.getId());
+            }
+        }
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", transaction.getId());
+        response.put("utorid", user.getUtorid());
+        response.put("amount", request.amount());
+        response.put("type", "adjustment");
+        response.put("relatedId", request.relatedId());
         response.put("remark", transaction.getRemarks());
         response.put("promotionIds", applied.stream().map(Promotion::getId).toList());
         response.put("createdBy", operator.getUtorid());

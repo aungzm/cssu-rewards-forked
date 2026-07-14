@@ -4,6 +4,12 @@ import com.cssurewards.transaction.dto.ProcessRedemptionRequest;
 import com.cssurewards.transaction.dto.ProcessedRedemptionResponse;
 import com.cssurewards.transaction.dto.SuspiciousRequest;
 import com.cssurewards.transaction.dto.PurchaseRequest;
+import com.cssurewards.transaction.dto.AdjustmentRequest;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.validation.Validator;
+import org.springframework.web.server.ResponseStatusException;
 import java.util.Map;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,9 +29,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/transactions")
 public class TransactionController {
     private final TransactionService service;
+    private final ObjectMapper mapper;
+    private final Validator validator;
 
-    public TransactionController(TransactionService service) {
+    public TransactionController(TransactionService service, ObjectMapper mapper, Validator validator) {
         this.service = service;
+        this.mapper = mapper;
+        this.validator = validator;
     }
 
     @PatchMapping("/{transactionId}/processed")
@@ -68,8 +78,28 @@ public class TransactionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('CASHIER', 'MANAGER', 'SUPERUSER')")
-    public Map<String, Object> createPurchase(@Valid @RequestBody PurchaseRequest request,
+    public Map<String, Object> createTransaction(@RequestBody JsonNode body,
             Authentication authentication) {
-        return service.purchase(request, (Integer) authentication.getPrincipal());
+        try {
+            if (body.path("type").asText().equals("purchase")) {
+                PurchaseRequest request = mapper.treeToValue(body, PurchaseRequest.class);
+                validateRequest(request);
+                return service.purchase(request, (Integer) authentication.getPrincipal());
+            }
+            if (body.path("type").asText().equals("adjustment")) {
+                AdjustmentRequest request = mapper.treeToValue(body, AdjustmentRequest.class);
+                validateRequest(request);
+                return service.adjustment(request, (Integer) authentication.getPrincipal());
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid transaction type specified.");
+        } catch (JsonProcessingException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid transaction request.");
+        }
+    }
+
+    private <T> void validateRequest(T request) {
+        if (!validator.validate(request).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid transaction request.");
+        }
     }
 }
