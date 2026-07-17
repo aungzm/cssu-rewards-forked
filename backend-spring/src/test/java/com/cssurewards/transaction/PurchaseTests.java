@@ -2,6 +2,7 @@ package com.cssurewards.transaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -78,6 +79,17 @@ class PurchaseTests {
                 .contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.earned").value(40))
             .andExpect(jsonPath("$.promotionIds[0]").value(offer.getId()));
+        int transactionId = transactions.findAll().get(0).getId();
+        String manager = token("manager1");
+        mvc.perform(get("/transactions/" + transactionId).header("Authorization", manager))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.promotionIds[0]").value(offer.getId()));
+        mvc.perform(get("/transactions?promotionId=" + offer.getId()).header("Authorization", manager))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
+            .andExpect(jsonPath("$.results[0].promotionIds[0]").value(offer.getId()));
+        mvc.perform(get("/users/me/transactions?promotionId=" + offer.getId())
+                .header("Authorization", token("member01")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
+            .andExpect(jsonPath("$.results[0].promotionIds[0]").value(offer.getId()));
         assertThat(users.findByUtorid("member01").orElseThrow().getPoints()).isEqualTo(40);
         mvc.perform(post("/transactions").header("Authorization", cashier)
                 .contentType(MediaType.APPLICATION_JSON).content(body))

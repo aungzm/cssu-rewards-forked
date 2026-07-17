@@ -141,7 +141,7 @@ public class TransactionService {
         response.put("type", transaction.getType().name().toLowerCase(java.util.Locale.ROOT));
         response.put("spent", transaction.getSpent());
         response.put("amount", transaction.getAmount());
-        response.put("promotionIds", List.of());
+        response.put("promotionIds", promotionIds(transaction.getId()));
         response.put("suspicious", suspicious);
         response.put("remark", transaction.getRemarks() == null ? "" : transaction.getRemarks());
         response.put("createdBy", operator == null ? null : operator.getUtorid());
@@ -160,7 +160,7 @@ public class TransactionService {
         response.put("type", transaction.getType().name().toLowerCase(java.util.Locale.ROOT));
         response.put("spent", transaction.getSpent());
         response.put("amount", transaction.getAmount());
-        response.put("promotionIds", List.of());
+        response.put("promotionIds", promotionIds(transaction.getId()));
         response.put("suspicious", transaction.isSuspicious());
         response.put("relatedId", transaction.getRelatedId());
         response.put("remark", transaction.getRemarks() == null ? "" : transaction.getRemarks());
@@ -184,14 +184,14 @@ public class TransactionService {
         if (filters.operator() != null && !List.of("gte", "lte").contains(filters.operator())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid amount operator.");
         }
-        if (filters.promotionId() != null) {
-            // No promotions can be attached before the promotions feature is migrated.
-            return Map.of("count", 0, "results", List.of());
-        }
+        List<Integer> promotedTransactions = filters.promotionId() == null ? null : jdbc.queryForList(
+            "SELECT transaction_id FROM transaction_promotions WHERE promotion_id = ?",
+            Integer.class, filters.promotionId());
         TransactionType requestedType = type;
         Specification<Transaction> specification = (root, query, cb) -> {
             List<Predicate> conditions = new java.util.ArrayList<>();
             conditions.add(cb.equal(root.get("userId"), userId));
+            if (promotedTransactions != null) conditions.add(root.get("id").in(promotedTransactions));
             if (requestedType != null) conditions.add(cb.equal(root.get("type"), requestedType));
             if (filters.relatedId() != null && requestedType != null) {
                 int relatedId = filters.relatedId();
@@ -231,7 +231,7 @@ public class TransactionService {
             item.put("amount", transaction.getAmount() == null ? 0 : transaction.getAmount());
             item.put("type", transaction.getType().name().toLowerCase(java.util.Locale.ROOT));
             item.put("relatedId", relatedId);
-            item.put("promotionIds", List.of());
+            item.put("promotionIds", promotionIds(transaction.getId()));
             item.put("remark", transaction.getRemarks() == null ? "" : transaction.getRemarks());
             item.put("createdBy", operator != null ? operator.getUtorid()
                 : sender != null ? sender.getUtorid() : owner == null ? null : owner.getUtorid());
@@ -261,12 +261,13 @@ public class TransactionService {
         if (operator != null && !List.of("gte", "lte").contains(operator)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid amount operator.");
         }
-        if (promotionId != null) {
-            return Map.of("count", 0, "results", List.of());
-        }
+        List<Integer> promotedTransactions = promotionId == null ? null : jdbc.queryForList(
+            "SELECT transaction_id FROM transaction_promotions WHERE promotion_id = ?",
+            Integer.class, promotionId);
         TransactionType requestedType = type;
         Specification<Transaction> filters = (root, query, cb) -> {
             List<Predicate> predicates = new java.util.ArrayList<>();
+            if (promotedTransactions != null) predicates.add(root.get("id").in(promotedTransactions));
             if (requestedType != null) predicates.add(cb.equal(root.get("type"), requestedType));
             if (suspicious != null) predicates.add(cb.equal(root.get("suspicious"), suspicious));
             if (name != null) {
@@ -308,7 +309,7 @@ public class TransactionService {
             item.put("id", transaction.getId());
             item.put("utorid", owner == null ? null : owner.getUtorid());
             item.put("type", transaction.getType().name().toLowerCase(java.util.Locale.ROOT));
-            item.put("promotionIds", List.of());
+            item.put("promotionIds", promotionIds(transaction.getId()));
             item.put("suspicious", transaction.isSuspicious());
             item.put("remark", transaction.getRemarks() == null ? "" : transaction.getRemarks());
             item.put("createdBy", creator == null ? null : creator.getUtorid());
@@ -461,5 +462,10 @@ public class TransactionService {
         response.put("promotionIds", applied.stream().map(Promotion::getId).toList());
         response.put("createdBy", operator.getUtorid());
         return response;
+    }
+
+    private List<Integer> promotionIds(Integer transactionId) {
+        return jdbc.queryForList("SELECT promotion_id FROM transaction_promotions WHERE transaction_id = ? ORDER BY promotion_id",
+            Integer.class, transactionId);
     }
 }
