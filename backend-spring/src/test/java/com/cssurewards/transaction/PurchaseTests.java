@@ -75,6 +75,8 @@ class PurchaseTests {
         String body = "{\"utorid\":\"member01\",\"type\":\"purchase\",\"spent\":2.5,\"promotionIds\":["
             + offer.getId() + "]}";
         String cashier = token("cashier1");
+        mvc.perform(get("/users/me").header("Authorization", token("member01")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.promotions[0].id").value(offer.getId()));
         mvc.perform(post("/transactions").header("Authorization", cashier)
                 .contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.earned").value(40))
@@ -91,6 +93,8 @@ class PurchaseTests {
             .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
             .andExpect(jsonPath("$.results[0].promotionIds[0]").value(offer.getId()));
         assertThat(users.findByUtorid("member01").orElseThrow().getPoints()).isEqualTo(40);
+        mvc.perform(get("/users/me").header("Authorization", token("member01")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.promotions").isEmpty());
         mvc.perform(post("/transactions").header("Authorization", cashier)
                 .contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isBadRequest());

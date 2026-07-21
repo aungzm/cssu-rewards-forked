@@ -11,6 +11,8 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import com.cssurewards.auth.ResetToken;
 import com.cssurewards.auth.ResetTokenRepository;
+import com.cssurewards.promotion.PromotionRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
 import java.time.Instant;
 import java.time.Duration;
 import java.util.List;
@@ -35,11 +37,16 @@ public class UserService {
     private final UserRepository users;
     private final ResetTokenRepository resetTokens;
     private final PasswordEncoder passwords;
+    private final PromotionRepository promotions;
+    private final JdbcTemplate jdbc;
 
-    public UserService(UserRepository users, ResetTokenRepository resetTokens, PasswordEncoder passwords) {
+    public UserService(UserRepository users, ResetTokenRepository resetTokens, PasswordEncoder passwords,
+            PromotionRepository promotions, JdbcTemplate jdbc) {
         this.users = users;
         this.resetTokens = resetTokens;
         this.passwords = passwords;
+        this.promotions = promotions;
+        this.jdbc = jdbc;
     }
 
     @Transactional(readOnly = true)
@@ -48,7 +55,7 @@ public class UserService {
         return new UserResponse(user.getId(), user.getUtorid(), user.getEmail(),
             user.getName(), user.getBirthday(), user.getAvatarUrl(), user.getRole(),
             user.getLastLogin(), user.isVerified(), user.getPoints(), user.getCreatedAt(),
-            user.getAvatar() != null, List.of());
+            user.getAvatar() != null, availablePromotions(id));
     }
 
     @Transactional(readOnly = true)
@@ -183,7 +190,7 @@ public class UserService {
         fields.put("name", user.getName());
         fields.put("verified", user.isVerified());
         fields.put("points", user.getPoints());
-        fields.put("promotions", List.of());
+        fields.put("promotions", availablePromotions(id));
         if (!cashier) {
             fields.put("email", user.getEmail());
             fields.put("birthday", user.getBirthday());
@@ -233,5 +240,18 @@ public class UserService {
     private User findUser(Integer id) {
         return users.findById(id).orElseThrow(() ->
             new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+    }
+
+    private List<com.cssurewards.user.dto.UserResponse.PromotionSummary> availablePromotions(Integer userId) {
+        Instant now = Instant.now();
+        List<Integer> used = jdbc.queryForList(
+            "SELECT promotion_id FROM user_promotions WHERE user_id = ?", Integer.class, userId);
+        return promotions.findAll().stream()
+            .filter(p -> !p.getStartTime().isAfter(now) && !p.getEndTime().isBefore(now))
+            .filter(p -> !p.getType().equals("one-time") || !used.contains(p.getId()))
+            .sorted(java.util.Comparator.comparing(p -> p.getType().equals("automatic") ? 0 : 1))
+            .map(p -> new com.cssurewards.user.dto.UserResponse.PromotionSummary(
+                p.getId(), p.getName(), p.getPoints(), p.getMinSpending()))
+            .toList();
     }
 }
