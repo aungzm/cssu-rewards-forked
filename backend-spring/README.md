@@ -1,15 +1,15 @@
 # CSSU Rewards Spring backend
 
 Spring Boot REST API replacing the Express backend in `../backend`.
-The React UI remains in `../frontend`. Login, current-user profile, and staff
-user listing, and point transfers are implemented; other API features are still
-placeholders. The profile's
-`promotions` array is empty until promotions are ported.
+The React UI remains in `../frontend`. Authentication, user management,
+transfers, redemptions, purchases, adjustments, promotion management, and
+event creation are implemented. Event browsing, registration, organizers,
+attendance awards, and event history are still being ported.
 
 ## Layout
 
 - `auth/`, `user/`, `transaction/`, `event/`, `promotion/`: feature folders.
-- `security/`: future Spring Security configuration and authentication.
+- `security/`: Spring Security and JWT authentication.
 - `common/`: shared API error handling.
 - `src/main/resources/db/migration/`: Flyway SQL migrations for a new database.
 
@@ -20,7 +20,7 @@ database. Authorized staff can create users with `POST /users`. The first
 superuser can be created at startup by setting `BOOTSTRAP_SUPERUSER_UTORID`
 (8 alphanumeric characters), `BOOTSTRAP_SUPERUSER_EMAIL`, and
 `BOOTSTRAP_SUPERUSER_PASSWORD` (at least 8 characters). This happens only if
-the database has no users; remove the bootstrap variables afterward. Password
+the database has no users; remove the bootstrap variables afterward.
 Activation and password reset use `POST /auth/resets` and
 `POST /auth/resets/{resetToken}`. For compatibility with Express, the public
 reset-request endpoint returns the token directly. **This allows account

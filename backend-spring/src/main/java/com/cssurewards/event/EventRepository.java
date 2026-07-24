@@ -1,5 +1,6 @@
 package com.cssurewards.event;
 
-// TODO: Extend JpaRepository<Event, Integer> after adding JPA.
-public interface EventRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface EventRepository extends JpaRepository<Event, Integer> {
 }
