@@ -1,6 +1,7 @@
 package com.cssurewards.event;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -18,6 +19,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
@@ -29,6 +31,7 @@ class EventCreateTests {
     @Autowired ResetTokenRepository tokens;
     @Autowired PasswordEncoder passwords;
     @Autowired ObjectMapper json;
+    @Autowired JdbcTemplate jdbc;
 
     @BeforeEach
     void setup() {
@@ -76,5 +79,29 @@ class EventCreateTests {
                     + "\"startTime\":\"" + future + "\",\"endTime\":\"" + future + "\",\"points\":500}"))
             .andExpect(status().isBadRequest());
         org.assertj.core.api.Assertions.assertThat(events.count()).isZero();
+    }
+
+    @Test
+    void regularUsersOnlyListPublishedEventsAndFullFilterPrecedesPagination() throws Exception {
+        Instant now = Instant.now();
+        Event open = events.save(new Event("Open", "All welcome", "Main Hall",
+            now.plusSeconds(3600), now.plusSeconds(7200), 2, 100));
+        Event full = events.save(new Event("Full", "Limited", "Main Hall",
+            now.plusSeconds(7200), now.plusSeconds(9000), 1, 100));
+        events.save(new Event("Hidden", "Private", "Other", now.plusSeconds(10000),
+            now.plusSeconds(12000), 2, 100));
+        jdbc.update("UPDATE events SET published = TRUE WHERE id IN (?, ?)", open.getId(), full.getId());
+        jdbc.update("INSERT INTO rsvps(event_id, user_id) VALUES (?, ?)", full.getId(),
+            users.findByUtorid("manager1").orElseThrow().getId());
+        mvc.perform(get("/events?showFull=false&limit=1&location=HALL")
+                .header("Authorization", token("member01")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
+            .andExpect(jsonPath("$.results[0].name").value("Open"))
+            .andExpect(jsonPath("$.results[0].published").doesNotExist());
+        mvc.perform(get("/events").header("Authorization", token("manager1")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(3));
+        mvc.perform(get("/events?started=true&ended=false").header("Authorization", token("manager1")))
+            .andExpect(status().isBadRequest());
+        jdbc.update("DELETE FROM rsvps");
     }
 }

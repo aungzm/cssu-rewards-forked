@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/events")
@@ -41,5 +44,21 @@ public class EventController {
         result.put("organizers", List.of());
         result.put("guests", List.of());
         return result;
+    }
+
+    @GetMapping
+    public Map<String, Object> list(@RequestParam(required = false) String name,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Boolean started,
+            @RequestParam(required = false) Boolean ended,
+            @RequestParam(required = false) Boolean showFull,
+            @RequestParam(required = false) Boolean published,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit,
+            Authentication authentication) {
+        boolean manager = authentication.getAuthorities().stream().anyMatch(a ->
+            a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_SUPERUSER"));
+        return service.list(name, location, started, ended, showFull, published,
+            page, limit, (Integer) authentication.getPrincipal(), manager);
     }
 }
