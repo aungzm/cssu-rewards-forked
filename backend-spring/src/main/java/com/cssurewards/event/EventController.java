@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.security.core.Authentication;
 
 @RestController
@@ -60,5 +61,12 @@ public class EventController {
             a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_SUPERUSER"));
         return service.list(name, location, started, ended, showFull, published,
             page, limit, (Integer) authentication.getPrincipal(), manager);
+    }
+
+    @GetMapping("/{eventId}")
+    public Map<String, Object> get(@PathVariable Integer eventId, Authentication authentication) {
+        boolean manager = authentication.getAuthorities().stream().anyMatch(a ->
+            a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_SUPERUSER"));
+        return service.get(eventId, (Integer) authentication.getPrincipal(), manager);
     }
 }

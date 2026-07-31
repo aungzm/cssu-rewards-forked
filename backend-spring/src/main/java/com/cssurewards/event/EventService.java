@@ -13,15 +13,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import jakarta.persistence.criteria.Predicate;
+import com.cssurewards.user.User;
+import com.cssurewards.user.UserRepository;
 
 @Service
 public class EventService {
     private final EventRepository events;
     private final JdbcTemplate jdbc;
+    private final UserRepository users;
 
-    public EventService(EventRepository events, JdbcTemplate jdbc) {
+    public EventService(EventRepository events, JdbcTemplate jdbc, UserRepository users) {
         this.events = events;
         this.jdbc = jdbc;
+        this.users = users;
     }
 
     @Transactional
@@ -91,5 +95,47 @@ public class EventService {
 
     private int guestCount(Integer eventId) {
         return jdbc.queryForObject("SELECT COUNT(*) FROM rsvps WHERE event_id = ?", Integer.class, eventId);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> get(Integer eventId, Integer userId, boolean manager) {
+        Event event = events.findById(eventId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        List<Integer> organizerIds = jdbc.queryForList(
+            "SELECT organizer_id FROM organizer_events WHERE event_id = ?", Integer.class, eventId);
+        boolean full = manager || organizerIds.contains(userId);
+        if (!full && !event.isPublished()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found");
+        }
+        List<Integer> guestIds = jdbc.queryForList("SELECT user_id FROM rsvps WHERE event_id = ?",
+            Integer.class, eventId);
+        List<Map<String, Object>> organizers = organizerIds.stream().map(this::person).toList();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", event.getId());
+        result.put("name", event.getName());
+        result.put("description", event.getDescription());
+        result.put("location", event.getLocation());
+        result.put("startTime", event.getStartTime());
+        result.put("endTime", event.getEndTime());
+        result.put("capacity", event.getCapacity());
+        result.put("organizers", organizers);
+        if (full) {
+            result.put("pointsRemain", event.getPointsRemain());
+            result.put("pointsAwarded", event.getPointsAwarded());
+            result.put("published", event.isPublished());
+            result.put("guests", guestIds.stream().map(this::person).toList());
+        } else {
+            result.put("numGuests", guestIds.size());
+        }
+        return result;
+    }
+
+    private Map<String, Object> person(Integer id) {
+        User user = users.findById(id).orElseThrow();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", user.getId());
+        result.put("utorid", user.getUtorid());
+        result.put("name", user.getName());
+        return result;
     }
 }

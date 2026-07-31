@@ -104,4 +104,24 @@ class EventCreateTests {
             .andExpect(status().isBadRequest());
         jdbc.update("DELETE FROM rsvps");
     }
+
+    @Test
+    void eventDetailsRedactBudgetAndGuestRosterForRegularUsers() throws Exception {
+        Instant now = Instant.now();
+        Event event = events.save(new Event("Open", "All welcome", "Main Hall",
+            now.plusSeconds(3600), now.plusSeconds(7200), 2, 100));
+        String manager = token("manager1");
+        String member = token("member01");
+        mvc.perform(get("/events/" + event.getId()).header("Authorization", member))
+            .andExpect(status().isNotFound());
+        mvc.perform(get("/events/" + event.getId()).header("Authorization", manager))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.pointsRemain").value(100));
+        jdbc.update("UPDATE events SET published = TRUE WHERE id = ?", event.getId());
+        mvc.perform(get("/events/" + event.getId()).header("Authorization", member))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.numGuests").value(0))
+            .andExpect(jsonPath("$.pointsRemain").doesNotExist())
+            .andExpect(jsonPath("$.guests").doesNotExist());
+        mvc.perform(get("/events/987654321").header("Authorization", manager))
+            .andExpect(status().isNotFound());
+    }
 }
