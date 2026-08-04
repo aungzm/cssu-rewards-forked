@@ -1,6 +1,7 @@
 package com.cssurewards.event;
 
 import com.cssurewards.event.dto.CreateEventRequest;
+import com.cssurewards.event.dto.UpdateEventRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -137,5 +138,65 @@ public class EventService {
         result.put("utorid", user.getUtorid());
         result.put("name", user.getName());
         return result;
+    }
+
+    @Transactional
+    public Map<String, Object> update(Integer eventId, UpdateEventRequest request, Integer userId, boolean manager) {
+        Event event = events.findById(eventId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        boolean organizer = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM organizer_events WHERE event_id = ? AND organizer_id = ?",
+            Integer.class, eventId, userId) > 0;
+        if (!manager && !organizer) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient clearance");
+        }
+        if (request.name() == null && request.description() == null && request.location() == null
+                && request.startTime() == null && request.endTime() == null && request.capacity() == null
+                && request.points() == null && request.published() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one field must have a value.");
+        }
+        if (event.getStartTime().isBefore(Instant.now()) && (request.name() != null
+                || request.description() != null || request.location() != null || request.capacity() != null)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot update event details after the event has started.");
+        }
+        Instant start = request.startTime() == null ? event.getStartTime() : request.startTime();
+        Instant end = request.endTime() == null ? event.getEndTime() : request.endTime();
+        if (request.startTime() != null && start.isBefore(Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot set a start time in the past");
+        }
+        if (!end.isAfter(start)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "endTime must be after startTime");
+        }
+        if (request.endTime() != null && end.isBefore(Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot set endTime to a past date");
+        }
+        if (request.capacity() != null && request.capacity() < guestCount(eventId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Cannot reduce capacity below the number of guests already attending.");
+        }
+        if (!manager && (request.points() != null || request.published() != null)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient clearance");
+        }
+        if (request.points() != null && request.points() < event.getPointsAwarded()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Total points cannot be reduced below the points already awarded.");
+        }
+        if (Boolean.FALSE.equals(request.published())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Published can only be set to true.");
+        }
+        event.update(request.name(), request.description(), request.location(), request.startTime(),
+            request.endTime(), request.capacity(), request.points(), request.published());
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", eventId);
+        response.put("name", event.getName());
+        response.put("location", event.getLocation());
+        response.put("startTime", event.getStartTime());
+        response.put("endTime", event.getEndTime());
+        if (request.description() != null) response.put("description", event.getDescription());
+        if (request.capacity() != null) response.put("capacity", event.getCapacity());
+        if (request.published() != null) response.put("published", event.isPublished());
+        response.put("pointsRemain", event.getPointsRemain());
+        response.put("pointsAwarded", event.getPointsAwarded());
+        return response;
     }
 }

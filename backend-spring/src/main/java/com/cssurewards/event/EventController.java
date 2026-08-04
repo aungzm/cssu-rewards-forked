@@ -1,6 +1,7 @@
 package com.cssurewards.event;
 
 import com.cssurewards.event.dto.CreateEventRequest;
+import com.cssurewards.event.dto.UpdateEventRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.security.core.Authentication;
@@ -68,5 +70,13 @@ public class EventController {
         boolean manager = authentication.getAuthorities().stream().anyMatch(a ->
             a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_SUPERUSER"));
         return service.get(eventId, (Integer) authentication.getPrincipal(), manager);
+    }
+
+    @PatchMapping("/{eventId}")
+    public Map<String, Object> update(@PathVariable Integer eventId,
+            @Valid @RequestBody UpdateEventRequest request, Authentication authentication) {
+        boolean manager = authentication.getAuthorities().stream().anyMatch(a ->
+            a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_SUPERUSER"));
+        return service.update(eventId, request, (Integer) authentication.getPrincipal(), manager);
     }
 }

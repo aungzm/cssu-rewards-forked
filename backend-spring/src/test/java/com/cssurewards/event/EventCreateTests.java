@@ -2,6 +2,7 @@ package com.cssurewards.event;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -123,5 +124,30 @@ class EventCreateTests {
             .andExpect(jsonPath("$.guests").doesNotExist());
         mvc.perform(get("/events/987654321").header("Authorization", manager))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void onlyManagersMayPublishOrChangeEventBudget() throws Exception {
+        Instant now = Instant.now();
+        Event event = events.save(new Event("Meetup", "Description", "Hall",
+            now.plusSeconds(3600), now.plusSeconds(7200), 2, 100));
+        String url = "/events/" + event.getId();
+        String manager = token("manager1");
+        mvc.perform(patch(url).header("Authorization", token("member01"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"published\":true}"))
+            .andExpect(status().isForbidden());
+        mvc.perform(patch(url).header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"published\":false}"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(patch(url).header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"capacity\":0,\"points\":200,\"published\":true}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.pointsRemain").value(200))
+            .andExpect(jsonPath("$.published").value(true));
+        mvc.perform(get(url).header("Authorization", manager))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.capacity").value(0));
+        mvc.perform(patch(url).header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"endTime\":\"" + now.plusSeconds(1800) + "\"}"))
+            .andExpect(status().isBadRequest());
     }
 }

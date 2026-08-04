@@ -62,4 +62,17 @@ public class Event {
     public boolean isPublished() { return published; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+
+    public void update(String name, String description, String location, Instant startTime,
+            Instant endTime, Integer capacity, Integer totalPoints, Boolean published) {
+        if (name != null) this.name = name;
+        if (description != null) this.description = description;
+        if (location != null) this.location = location;
+        if (startTime != null) this.startTime = startTime;
+        if (endTime != null) this.endTime = endTime;
+        if (capacity != null) this.capacity = capacity;
+        if (totalPoints != null) this.pointsRemain = totalPoints - this.pointsAwarded;
+        if (published != null) this.published = published;
+        this.updatedAt = Instant.now();
+    }
 }
