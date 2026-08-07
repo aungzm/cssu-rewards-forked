@@ -199,4 +199,19 @@ public class EventService {
         response.put("pointsAwarded", event.getPointsAwarded());
         return response;
     }
+
+    @Transactional
+    public void delete(Integer eventId) {
+        Event event = events.findById(eventId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        if (event.isPublished()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete a published event");
+        }
+        if (jdbc.queryForObject("SELECT COUNT(*) FROM transactions WHERE related_event_id = ?",
+                Integer.class, eventId) > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Cannot delete an event with awarded points");
+        }
+        events.delete(event);
+    }
 }

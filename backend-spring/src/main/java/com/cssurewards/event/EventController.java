@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.security.core.Authentication;
@@ -78,5 +79,12 @@ public class EventController {
         boolean manager = authentication.getAuthorities().stream().anyMatch(a ->
             a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_SUPERUSER"));
         return service.update(eventId, request, (Integer) authentication.getPrincipal(), manager);
+    }
+
+    @DeleteMapping("/{eventId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
+    public void delete(@PathVariable Integer eventId) {
+        service.delete(eventId);
     }
 }

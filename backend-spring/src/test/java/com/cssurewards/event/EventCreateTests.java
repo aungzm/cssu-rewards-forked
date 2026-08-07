@@ -3,6 +3,7 @@ package com.cssurewards.event;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -149,5 +150,23 @@ class EventCreateTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"endTime\":\"" + now.plusSeconds(1800) + "\"}"))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void managerMayOnlyDeleteUnpublishedEvent() throws Exception {
+        Instant now = Instant.now();
+        Event event = events.save(new Event("Draft", "Description", "Hall",
+            now.plusSeconds(3600), now.plusSeconds(7200), 2, 100));
+        String url = "/events/" + event.getId();
+        mvc.perform(delete(url).header("Authorization", token("member01")))
+            .andExpect(status().isForbidden());
+        jdbc.update("UPDATE events SET published = TRUE WHERE id = ?", event.getId());
+        mvc.perform(delete(url).header("Authorization", token("manager1")))
+            .andExpect(status().isBadRequest());
+        jdbc.update("UPDATE events SET published = FALSE WHERE id = ?", event.getId());
+        mvc.perform(delete(url).header("Authorization", token("manager1")))
+            .andExpect(status().isNoContent());
+        mvc.perform(delete(url).header("Authorization", token("manager1")))
+            .andExpect(status().isNotFound());
     }
 }
