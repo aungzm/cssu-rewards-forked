@@ -2,6 +2,7 @@ package com.cssurewards.event;
 
 import com.cssurewards.event.dto.CreateEventRequest;
 import com.cssurewards.event.dto.UpdateEventRequest;
+import com.cssurewards.event.dto.AddOrganizerRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -86,5 +87,20 @@ public class EventController {
     @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
     public void delete(@PathVariable Integer eventId) {
         service.delete(eventId);
+    }
+
+    @PostMapping("/{eventId}/organizers")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
+    public Map<String, Object> addOrganizer(@PathVariable Integer eventId,
+            @Valid @RequestBody AddOrganizerRequest request) {
+        return service.addOrganizer(eventId, request.utorid());
+    }
+
+    @DeleteMapping("/{eventId}/organizers/{userId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
+    public void removeOrganizer(@PathVariable Integer eventId, @PathVariable Integer userId) {
+        service.removeOrganizer(eventId, userId);
     }
 }

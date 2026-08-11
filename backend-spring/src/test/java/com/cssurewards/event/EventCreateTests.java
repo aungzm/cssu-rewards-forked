@@ -169,4 +169,55 @@ class EventCreateTests {
         mvc.perform(delete(url).header("Authorization", token("manager1")))
             .andExpect(status().isNotFound());
     }
+
+    @Test
+    void organizerMembershipChecksGuestConflictsAndPermissions() throws Exception {
+        Instant now = Instant.now();
+        Event event = events.save(new Event("Draft", "Description", "Hall",
+            now.plusSeconds(3600), now.plusSeconds(7200), 2, 100));
+        int memberId = users.findByUtorid("member01").orElseThrow().getId();
+        String url = "/events/" + event.getId() + "/organizers";
+        String manager = token("manager1");
+        String body = "{\"utorid\":\"member01\"}";
+        mvc.perform(post(url).header("Authorization", token("member01"))
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isForbidden());
+        mvc.perform(post(url).header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"utorid\":\"unknown1\"}"))
+            .andExpect(status().isNotFound());
+        mvc.perform(post(url).header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"utorid\":\"short\"}"))
+            .andExpect(status().isBadRequest());
+        jdbc.update("INSERT INTO rsvps(event_id, user_id) VALUES (?, ?)", event.getId(), memberId);
+        mvc.perform(post(url).header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isBadRequest());
+        jdbc.update("DELETE FROM rsvps WHERE event_id = ?", event.getId());
+        mvc.perform(post(url).header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isCreated()).andExpect(jsonPath("$.name").value("Draft"))
+            .andExpect(jsonPath("$.organizers[0].utorid").value("member01"));
+        mvc.perform(get("/events/" + event.getId()).header("Authorization", token("member01")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.pointsRemain").value(100));
+        mvc.perform(post(url).header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isConflict());
+        mvc.perform(delete(url + "/" + memberId).header("Authorization", token("member01")))
+            .andExpect(status().isForbidden());
+        mvc.perform(delete(url + "/" + memberId).header("Authorization", manager))
+            .andExpect(status().isNoContent());
+        mvc.perform(delete(url + "/" + memberId).header("Authorization", manager))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void endedEventCannotGainOrganizers() throws Exception {
+        Instant now = Instant.now();
+        Event event = events.save(new Event("Past", "Description", "Hall",
+            now.minusSeconds(7200), now.minusSeconds(3600), null, 100));
+        mvc.perform(post("/events/" + event.getId() + "/organizers")
+                .header("Authorization", token("manager1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"utorid\":\"member01\"}"))
+            .andExpect(status().isGone());
+    }
 }

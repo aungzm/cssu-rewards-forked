@@ -214,4 +214,56 @@ public class EventService {
         }
         events.delete(event);
     }
+
+    @Transactional
+    public Map<String, Object> addOrganizer(Integer eventId, String utorid) {
+        if (eventId < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid eventId");
+        }
+        Event event = events.findByIdForUpdate(eventId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        User user = users.findByUtorid(utorid).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        if (Instant.now().isAfter(event.getEndTime())) {
+            throw new ResponseStatusException(HttpStatus.GONE, "Event has ended");
+        }
+        if (membershipCount("rsvps", eventId, user.getId()) > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "User is currently a guest; remove them as a guest first before adding as an organizer");
+        }
+        if (membershipCount("organizer_events", eventId, user.getId()) > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User is already an organizer");
+        }
+        jdbc.update("INSERT INTO organizer_events(event_id, organizer_id) VALUES (?, ?)", eventId, user.getId());
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", eventId);
+        response.put("name", event.getName());
+        response.put("location", event.getLocation());
+        response.put("organizers", jdbc.queryForList(
+            "SELECT organizer_id FROM organizer_events WHERE event_id = ? ORDER BY id", Integer.class, eventId)
+            .stream().map(this::person).toList());
+        return response;
+    }
+
+    @Transactional
+    public void removeOrganizer(Integer eventId, Integer userId) {
+        if (eventId < 1 || userId < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid eventId or userId");
+        }
+        events.findByIdForUpdate(eventId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        if (membershipCount("organizer_events", eventId, userId) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User is not an organizer of this event");
+        }
+        if (membershipCount("rsvps", eventId, userId) > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "User is currently a guest; remove them as a guest first before removing as an organizer");
+        }
+        jdbc.update("DELETE FROM organizer_events WHERE event_id = ? AND organizer_id = ?", eventId, userId);
+    }
+
+    private int membershipCount(String table, Integer eventId, Integer userId) {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM " + table + " WHERE event_id = ? AND "
+            + (table.equals("rsvps") ? "user_id" : "organizer_id") + " = ?", Integer.class, eventId, userId);
+    }
 }
