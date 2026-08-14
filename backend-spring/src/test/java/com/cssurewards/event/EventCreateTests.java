@@ -37,6 +37,8 @@ class EventCreateTests {
 
     @BeforeEach
     void setup() {
+        jdbc.update("DELETE FROM rsvps");
+        jdbc.update("DELETE FROM organizer_events");
         events.deleteAll();
         tokens.deleteAll();
         users.deleteAll();
@@ -45,7 +47,11 @@ class EventCreateTests {
     }
 
     @AfterEach
-    void cleanup() { events.deleteAll(); }
+    void cleanup() {
+        jdbc.update("DELETE FROM rsvps");
+        jdbc.update("DELETE FROM organizer_events");
+        events.deleteAll();
+    }
 
     String token(String utorid) throws Exception {
         String result = mvc.perform(post("/auth/tokens").contentType(MediaType.APPLICATION_JSON)
@@ -219,5 +225,62 @@ class EventCreateTests {
                 .header("Authorization", token("manager1"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"utorid\":\"member01\"}"))
             .andExpect(status().isGone());
+    }
+
+    @Test
+    void guestRegistrationHonorsCapacityAndAllowsSelfRemoval() throws Exception {
+        Instant now = Instant.now();
+        Event event = events.save(new Event("Meetup", "Description", "Hall",
+            now.plusSeconds(3600), now.plusSeconds(7200), 1, 100));
+        String url = "/events/" + event.getId() + "/guests";
+        String member = token("member01");
+        String manager = token("manager1");
+        mvc.perform(post(url).header("Authorization", member)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"utorid\":\"manager1\"}"))
+            .andExpect(status().isForbidden());
+        mvc.perform(post(url + "/me").header("Authorization", member))
+            .andExpect(status().isCreated()).andExpect(jsonPath("$.guestAdded.utorid").value("member01"))
+            .andExpect(jsonPath("$.numGuests").value(1));
+        mvc.perform(post(url + "/me").header("Authorization", member))
+            .andExpect(status().isConflict());
+        mvc.perform(post(url).header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"utorid\":\"manager1\"}"))
+            .andExpect(status().isGone());
+        mvc.perform(delete(url + "/me").header("Authorization", member))
+            .andExpect(status().isNoContent());
+        mvc.perform(delete(url + "/me").header("Authorization", member))
+            .andExpect(status().isNotFound());
+        mvc.perform(post(url).header("Authorization", manager)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"utorid\":\"member01\"}"))
+            .andExpect(status().isCreated()).andExpect(jsonPath("$.numGuests").value(1));
+        mvc.perform(delete(url + "/" + users.findByUtorid("member01").orElseThrow().getId())
+                .header("Authorization", manager))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void organizerCanAddButNotRemoveGuestsAndCannotRegisterAsGuest() throws Exception {
+        Instant now = Instant.now();
+        Event event = events.save(new Event("Meetup", "Description", "Hall",
+            now.plusSeconds(3600), now.plusSeconds(7200), null, 100));
+        int organizerId = users.findByUtorid("member01").orElseThrow().getId();
+        jdbc.update("INSERT INTO organizer_events(event_id, organizer_id) VALUES (?, ?)", event.getId(), organizerId);
+        String url = "/events/" + event.getId() + "/guests";
+        String organizer = token("member01");
+        mvc.perform(post(url + "/me").header("Authorization", organizer))
+            .andExpect(status().isBadRequest());
+        mvc.perform(post(url).header("Authorization", organizer)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"utorid\":\"manager1\"}"))
+            .andExpect(status().isCreated());
+        mvc.perform(delete(url + "/" + users.findByUtorid("manager1").orElseThrow().getId())
+                .header("Authorization", organizer))
+            .andExpect(status().isForbidden());
+        mvc.perform(delete(url + "/" + users.findByUtorid("manager1").orElseThrow().getId())
+                .header("Authorization", token("manager1")))
+            .andExpect(status().isNoContent());
+        jdbc.update("INSERT INTO rsvps(event_id, user_id) VALUES (?, ?)", event.getId(), organizerId);
+        mvc.perform(post(url).header("Authorization", token("manager1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"utorid\":\"member01\"}"))
+            .andExpect(status().isBadRequest());
     }
 }

@@ -266,4 +266,75 @@ public class EventService {
         return jdbc.queryForObject("SELECT COUNT(*) FROM " + table + " WHERE event_id = ? AND "
             + (table.equals("rsvps") ? "user_id" : "organizer_id") + " = ?", Integer.class, eventId, userId);
     }
+
+    @Transactional
+    public Map<String, Object> addGuest(Integer eventId, String utorid, Integer requesterId,
+            boolean manager, boolean self) {
+        if (eventId < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid eventId");
+        }
+        if (!self && !manager && membershipCount("organizer_events", eventId, requesterId) == 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient clearance to add a guest");
+        }
+        Event event = events.findByIdForUpdate(eventId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        User guest = self ? users.findById(requesterId).orElseThrow()
+            : users.findByUtorid(utorid).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        if (Instant.now().isAfter(event.getEndTime())) {
+            throw new ResponseStatusException(HttpStatus.GONE, "Event has ended");
+        }
+        if (membershipCount("organizer_events", eventId, guest.getId()) > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, self
+                ? "You are currently an organizer; remove yourself as organizer first"
+                : "User is currently an organizer; remove them as organizer first");
+        }
+        if (membershipCount("rsvps", eventId, guest.getId()) > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, self
+                ? "You are already on the guest list" : "User is already a guest");
+        }
+        if (event.getCapacity() != null && guestCount(eventId) >= event.getCapacity()) {
+            throw new ResponseStatusException(HttpStatus.GONE, "Event is full");
+        }
+        jdbc.update("INSERT INTO rsvps(event_id, user_id) VALUES (?, ?)", eventId, guest.getId());
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", eventId);
+        result.put("name", event.getName());
+        result.put("location", event.getLocation());
+        result.put("guestAdded", person(guest.getId()));
+        result.put("numGuests", guestCount(eventId));
+        return result;
+    }
+
+    @Transactional
+    public void removeGuest(Integer eventId, Integer userId, Integer requesterId) {
+        if (eventId < 1 || userId < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid eventId or userId");
+        }
+        events.findByIdForUpdate(eventId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        if (membershipCount("organizer_events", eventId, requesterId) > 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Organizers are not allowed to remove guests.");
+        }
+        if (membershipCount("rsvps", eventId, userId) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User is not a guest of this event");
+        }
+        jdbc.update("DELETE FROM rsvps WHERE event_id = ? AND user_id = ?", eventId, userId);
+    }
+
+    @Transactional
+    public void unregister(Integer eventId, Integer userId) {
+        if (eventId < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid eventId");
+        }
+        Event event = events.findByIdForUpdate(eventId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        if (Instant.now().isAfter(event.getEndTime())) {
+            throw new ResponseStatusException(HttpStatus.GONE, "Event has ended");
+        }
+        if (membershipCount("rsvps", eventId, userId) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "You did not RSVP to this event");
+        }
+        jdbc.update("DELETE FROM rsvps WHERE event_id = ? AND user_id = ?", eventId, userId);
+    }
 }

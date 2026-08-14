@@ -3,6 +3,7 @@ package com.cssurewards.event;
 import com.cssurewards.event.dto.CreateEventRequest;
 import com.cssurewards.event.dto.UpdateEventRequest;
 import com.cssurewards.event.dto.AddOrganizerRequest;
+import com.cssurewards.event.dto.AddGuestRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -102,5 +103,39 @@ public class EventController {
     @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
     public void removeOrganizer(@PathVariable Integer eventId, @PathVariable Integer userId) {
         service.removeOrganizer(eventId, userId);
+    }
+
+    @PostMapping("/{eventId}/guests")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Map<String, Object> addGuest(@PathVariable Integer eventId,
+            @Valid @RequestBody AddGuestRequest request, Authentication authentication) {
+        return service.addGuest(eventId, request.utorid(), (Integer) authentication.getPrincipal(),
+            isManager(authentication), false);
+    }
+
+    @PostMapping("/{eventId}/guests/me")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Map<String, Object> register(@PathVariable Integer eventId, Authentication authentication) {
+        return service.addGuest(eventId, null, (Integer) authentication.getPrincipal(),
+            isManager(authentication), true);
+    }
+
+    @DeleteMapping("/{eventId}/guests/{userId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
+    public void removeGuest(@PathVariable Integer eventId, @PathVariable Integer userId,
+            Authentication authentication) {
+        service.removeGuest(eventId, userId, (Integer) authentication.getPrincipal());
+    }
+
+    @DeleteMapping("/{eventId}/guests/me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unregister(@PathVariable Integer eventId, Authentication authentication) {
+        service.unregister(eventId, (Integer) authentication.getPrincipal());
+    }
+
+    private boolean isManager(Authentication authentication) {
+        return authentication.getAuthorities().stream().anyMatch(a ->
+            a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_SUPERUSER"));
     }
 }
