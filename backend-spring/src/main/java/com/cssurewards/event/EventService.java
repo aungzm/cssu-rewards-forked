@@ -2,6 +2,9 @@ package com.cssurewards.event;
 
 import com.cssurewards.event.dto.CreateEventRequest;
 import com.cssurewards.event.dto.UpdateEventRequest;
+import com.cssurewards.event.dto.AwardPointsRequest;
+import com.cssurewards.transaction.Transaction;
+import com.cssurewards.transaction.TransactionRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,11 +25,14 @@ public class EventService {
     private final EventRepository events;
     private final JdbcTemplate jdbc;
     private final UserRepository users;
+    private final TransactionRepository transactions;
 
-    public EventService(EventRepository events, JdbcTemplate jdbc, UserRepository users) {
+    public EventService(EventRepository events, JdbcTemplate jdbc, UserRepository users,
+            TransactionRepository transactions) {
         this.events = events;
         this.jdbc = jdbc;
         this.users = users;
+        this.transactions = transactions;
     }
 
     @Transactional
@@ -336,5 +342,58 @@ public class EventService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "You did not RSVP to this event");
         }
         jdbc.update("DELETE FROM rsvps WHERE event_id = ? AND user_id = ?", eventId, userId);
+    }
+
+    @Transactional
+    public Object award(Integer eventId, AwardPointsRequest request, Integer operatorId, boolean manager) {
+        if (eventId < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid eventId");
+        }
+        Event event = events.findByIdForUpdate(eventId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        if (!manager && membershipCount("organizer_events", eventId, operatorId) == 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient clearance");
+        }
+        List<Integer> recipients;
+        if (request.utorid() != null) {
+            User target = users.findByUtorid(request.utorid()).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Specified user not found"));
+            if (membershipCount("rsvps", eventId, target.getId()) == 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The specified user is not a guest of this event");
+            }
+            recipients = List.of(target.getId());
+        } else {
+            recipients = jdbc.queryForList("SELECT user_id FROM rsvps WHERE event_id = ? ORDER BY id",
+                Integer.class, eventId);
+            if (recipients.isEmpty()) {
+                return Map.of("message", "No guests to award points to.", "transactions", List.of());
+            }
+        }
+        long required = (long) request.amount() * recipients.size();
+        String budgetError = request.utorid() == null
+            ? "Not enough remaining points to award all guests" : "Not enough remaining points for this award";
+        if (required > event.getPointsRemain() || jdbc.update(
+                "UPDATE events SET points_remain = points_remain - ?, points_awarded = points_awarded + ? "
+                    + "WHERE id = ? AND points_remain >= ?", required, required, eventId, required) != 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, budgetError);
+        }
+        String creator = users.findById(operatorId).orElseThrow().getUtorid();
+        List<Map<String, Object>> awards = new java.util.ArrayList<>();
+        for (Integer recipientId : recipients) {
+            Transaction transaction = transactions.save(Transaction.event(recipientId, operatorId,
+                eventId, request.amount(), request.remark()));
+            users.credit(recipientId, request.amount());
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("id", transaction.getId());
+            response.put("recipient", users.findById(recipientId).orElseThrow().getUtorid());
+            response.put("awarded", request.amount());
+            response.put("type", "event");
+            response.put("relatedId", eventId);
+            response.put("remark", transaction.getRemarks());
+            response.put("createdBy", creator);
+            awards.add(response);
+        }
+        return request.utorid() == null ? awards : awards.get(0);
     }
 }

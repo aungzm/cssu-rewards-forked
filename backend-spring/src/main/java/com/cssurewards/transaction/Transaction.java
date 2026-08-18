@@ -33,6 +33,7 @@ public class Transaction {
     @Column(nullable = false)
     private boolean suspicious;
     private Integer relatedId;
+    private Integer relatedEventId;
 
     protected Transaction() {
     }
@@ -87,6 +88,19 @@ public class Transaction {
         return transaction;
     }
 
+    public static Transaction event(Integer userId, Integer operatorId, Integer eventId,
+            int amount, String remark) {
+        Transaction transaction = new Transaction();
+        transaction.type = TransactionType.EVENT;
+        transaction.userId = userId;
+        transaction.operatorId = operatorId;
+        transaction.relatedEventId = eventId;
+        transaction.amount = amount;
+        transaction.remarks = remark == null ? "" : remark;
+        transaction.createdAt = Instant.now();
+        return transaction;
+    }
+
     public Integer getId() { return id; }
     public TransactionType getType() { return type; }
     public BigDecimal getSpent() { return spent; }
@@ -99,6 +113,7 @@ public class Transaction {
     public Integer getReceiverId() { return receiverId; }
     public boolean isSuspicious() { return suspicious; }
     public Integer getRelatedId() { return relatedId; }
+    public Integer getRelatedEventId() { return relatedEventId; }
 
     public void setSuspicious(boolean suspicious) { this.suspicious = suspicious; }
 }

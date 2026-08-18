@@ -4,6 +4,7 @@ import com.cssurewards.event.dto.CreateEventRequest;
 import com.cssurewards.event.dto.UpdateEventRequest;
 import com.cssurewards.event.dto.AddOrganizerRequest;
 import com.cssurewards.event.dto.AddGuestRequest;
+import com.cssurewards.event.dto.AwardPointsRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -137,5 +138,12 @@ public class EventController {
     private boolean isManager(Authentication authentication) {
         return authentication.getAuthorities().stream().anyMatch(a ->
             a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_SUPERUSER"));
+    }
+
+    @PostMapping("/{eventId}/transactions")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Object award(@PathVariable Integer eventId, @Valid @RequestBody AwardPointsRequest request,
+            Authentication authentication) {
+        return service.award(eventId, request, (Integer) authentication.getPrincipal(), isManager(authentication));
     }
 }
