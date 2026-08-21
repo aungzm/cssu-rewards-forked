@@ -396,4 +396,27 @@ public class EventService {
         }
         return request.utorid() == null ? awards : awards.get(0);
     }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> transactions(Integer eventId, Integer requesterId, boolean manager) {
+        if (eventId < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid eventId");
+        }
+        events.findById(eventId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        if (!manager && membershipCount("organizer_events", eventId, requesterId) == 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not authorized to view transactions");
+        }
+        return transactions.findByRelatedEventIdOrderById(eventId).stream().map(transaction -> {
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("id", transaction.getId());
+            response.put("recipient", users.findById(transaction.getUserId()).orElseThrow().getUtorid());
+            response.put("awarded", transaction.getAmount() == null ? 0 : transaction.getAmount());
+            response.put("type", transaction.getType().name().toLowerCase(java.util.Locale.ROOT));
+            response.put("relatedId", eventId);
+            response.put("remark", transaction.getRemarks() == null ? "" : transaction.getRemarks());
+            response.put("createdBy", users.findById(transaction.getOperatorId()).orElseThrow().getUtorid());
+            return response;
+        }).toList();
+    }
 }

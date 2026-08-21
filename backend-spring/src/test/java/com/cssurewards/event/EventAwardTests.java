@@ -2,6 +2,7 @@ package com.cssurewards.event;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -110,5 +111,37 @@ class EventAwardTests {
         mvc.perform(post(url).header("Authorization", organizer).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"type\":\"event\",\"amount\":10,\"utorid\":\"member02\"}"))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.createdBy").value("member01"));
+    }
+
+    @Test
+    void eventAwardHistoryIsRestrictedAndAvailableInTransactionLists() throws Exception {
+        Event event = events.save(new Event("Meetup", "Description", "Hall",
+            Instant.now().plusSeconds(3600), Instant.now().plusSeconds(7200), 2, 50));
+        int recipient = users.findByUtorid("member01").orElseThrow().getId();
+        int organizer = users.findByUtorid("member02").orElseThrow().getId();
+        jdbc.update("INSERT INTO rsvps(event_id, user_id) VALUES (?, ?)", event.getId(), recipient);
+        jdbc.update("INSERT INTO organizer_events(event_id, organizer_id) VALUES (?, ?)", event.getId(), organizer);
+        String url = "/events/" + event.getId() + "/transactions";
+        String manager = token("manager1");
+        mvc.perform(post(url).header("Authorization", manager).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"type\":\"event\",\"amount\":15,\"utorid\":\"member01\"}"))
+            .andExpect(status().isCreated());
+        mvc.perform(get(url).header("Authorization", token("member01")))
+            .andExpect(status().isForbidden());
+        mvc.perform(get(url).header("Authorization", token("member02")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$[0].recipient").value("member01"))
+            .andExpect(jsonPath("$[0].awarded").value(15));
+        mvc.perform(get(url).header("Authorization", manager))
+            .andExpect(status().isOk()).andExpect(jsonPath("$[0].relatedId").value(event.getId()));
+        mvc.perform(get("/events/999999/transactions").header("Authorization", manager))
+            .andExpect(status().isNotFound());
+        mvc.perform(get("/transactions?type=event&relatedId=" + event.getId())
+                .header("Authorization", manager))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
+            .andExpect(jsonPath("$.results[0].relatedId").value(event.getId()));
+        mvc.perform(get("/users/me/transactions?type=event&relatedId=" + event.getId())
+                .header("Authorization", token("member01")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
+            .andExpect(jsonPath("$.results[0].relatedId").value(event.getId()));
     }
 }

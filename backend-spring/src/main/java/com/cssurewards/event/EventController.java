@@ -146,4 +146,9 @@ public class EventController {
             Authentication authentication) {
         return service.award(eventId, request, (Integer) authentication.getPrincipal(), isManager(authentication));
     }
+
+    @GetMapping("/{eventId}/transactions")
+    public List<Map<String, Object>> transactions(@PathVariable Integer eventId, Authentication authentication) {
+        return service.transactions(eventId, (Integer) authentication.getPrincipal(), isManager(authentication));
+    }
 }

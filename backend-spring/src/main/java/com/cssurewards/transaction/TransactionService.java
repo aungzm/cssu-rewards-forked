@@ -162,7 +162,8 @@ public class TransactionService {
         response.put("amount", transaction.getAmount());
         response.put("promotionIds", promotionIds(transaction.getId()));
         response.put("suspicious", transaction.isSuspicious());
-        response.put("relatedId", transaction.getRelatedId());
+        response.put("relatedId", transaction.getType() == TransactionType.EVENT
+            ? transaction.getRelatedEventId() : transaction.getRelatedId());
         response.put("remark", transaction.getRemarks() == null ? "" : transaction.getRemarks());
         response.put("createdBy", operator == null ? null : operator.getUtorid());
         return response;
@@ -200,7 +201,7 @@ public class TransactionService {
                         cb.equal(root.get("receiverId"), relatedId)));
                     case REDEMPTION -> conditions.add(cb.equal(root.get("operatorId"), relatedId));
                     case ADJUSTMENT -> conditions.add(cb.equal(root.get("relatedId"), relatedId));
-                    case EVENT -> conditions.add(cb.disjunction()); // Events are not ported yet.
+                    case EVENT -> conditions.add(cb.equal(root.get("relatedEventId"), relatedId));
                     default -> { }
                 }
             }
@@ -224,6 +225,7 @@ public class TransactionService {
                     ? transaction.getReceiverId() : transaction.getSenderId();
                 case REDEMPTION -> transaction.getOperatorId();
                 case ADJUSTMENT -> transaction.getRelatedId();
+                case EVENT -> transaction.getRelatedEventId();
                 default -> null;
             };
             Map<String, Object> item = new LinkedHashMap<>();
@@ -290,7 +292,7 @@ public class TransactionService {
                         cb.equal(root.get("receiverId"), relatedId)));
                     case REDEMPTION -> predicates.add(cb.equal(root.get("operatorId"), relatedId));
                     case ADJUSTMENT -> predicates.add(cb.equal(root.get("relatedId"), relatedId));
-                    case EVENT -> predicates.add(cb.disjunction());
+                    case EVENT -> predicates.add(cb.equal(root.get("relatedEventId"), relatedId));
                     default -> { }
                 }
             }
@@ -336,7 +338,7 @@ public class TransactionService {
                 }
                 case EVENT -> {
                     item.put("amount", transaction.getAmount());
-                    item.put("relatedId", null);
+                    item.put("relatedId", transaction.getRelatedEventId());
                 }
             }
             return item;

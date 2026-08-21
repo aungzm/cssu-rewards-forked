@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
 import java.util.Optional;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Integer>, JpaSpecificationExecutor<Transaction> {
@@ -22,4 +23,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT t FROM Transaction t WHERE t.id = :id")
     Optional<Transaction> findByIdForUpdate(@Param("id") Integer id);
+
+    List<Transaction> findByRelatedEventIdOrderById(Integer eventId);
 }
