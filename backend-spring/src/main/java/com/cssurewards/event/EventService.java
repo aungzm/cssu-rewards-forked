@@ -419,4 +419,41 @@ public class EventService {
             return response;
         }).toList();
     }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> organizedBy(Integer userId, boolean past, Boolean started,
+            Boolean ended, Boolean showFull, int page, int limit) {
+        if (page < 1 || limit < 1 || limit > 100 || started != null && ended != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid event filters.");
+        }
+        Instant now = Instant.now();
+        List<Integer> ids = jdbc.queryForList(
+            "SELECT event_id FROM organizer_events WHERE organizer_id = ?", Integer.class, userId);
+        List<Event> matching = events.findAllById(ids).stream()
+            .filter(event -> started == null || (started
+                ? !event.getStartTime().isAfter(now) : event.getStartTime().isAfter(now)))
+            .filter(event -> ended != null ? ended ? !event.getEndTime().isAfter(now)
+                : event.getEndTime().isAfter(now) : past || event.getEndTime().isAfter(now))
+            .filter(event -> !Boolean.FALSE.equals(showFull) || event.getCapacity() == null
+                || guestCount(event.getId()) < event.getCapacity())
+            .sorted(java.util.Comparator.comparing(Event::getStartTime))
+            .toList();
+        List<Map<String, Object>> results = matching.stream().skip((long) (page - 1) * limit).limit(limit)
+            .map(event -> {
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("id", event.getId());
+                row.put("name", event.getName());
+                row.put("description", event.getDescription());
+                row.put("startTime", event.getStartTime());
+                row.put("endTime", event.getEndTime());
+                row.put("location", event.getLocation());
+                row.put("capacity", event.getCapacity());
+                row.put("published", event.isPublished());
+                row.put("numGuests", guestCount(event.getId()));
+                row.put("isOrganizer", true);
+                row.put("isGuest", false);
+                return row;
+            }).toList();
+        return Map.of("count", matching.size(), "results", results);
+    }
 }

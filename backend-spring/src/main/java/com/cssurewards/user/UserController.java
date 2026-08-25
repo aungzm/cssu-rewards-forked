@@ -12,6 +12,7 @@ import com.cssurewards.transaction.dto.TransferResponse;
 import com.cssurewards.transaction.dto.RedemptionRequest;
 import com.cssurewards.transaction.dto.RedemptionResponse;
 import com.cssurewards.transaction.dto.TransactionFilters;
+import com.cssurewards.event.EventService;
 import jakarta.validation.Valid;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -36,10 +37,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
     private final UserService userService;
     private final TransactionService transactions;
+    private final EventService events;
 
-    public UserController(UserService userService, TransactionService transactions) {
+    public UserController(UserService userService, TransactionService transactions, EventService events) {
         this.userService = userService;
         this.transactions = transactions;
+        this.events = events;
     }
 
     @GetMapping("/me")
@@ -132,5 +135,16 @@ public class UserController {
             @RequestParam(defaultValue = "10") int limit) {
         return transactions.getMyTransactions((Integer) authentication.getPrincipal(),
             new TransactionFilters(type, relatedId, promotionId, amount, operator, page, limit));
+    }
+
+    @GetMapping("/me/events")
+    public Map<String, Object> myOrganizedEvents(Authentication authentication,
+            @RequestParam(defaultValue = "false") boolean past,
+            @RequestParam(required = false) Boolean started,
+            @RequestParam(required = false) Boolean ended,
+            @RequestParam(required = false) Boolean showFull,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit) {
+        return events.organizedBy((Integer) authentication.getPrincipal(), past, started, ended, showFull, page, limit);
     }
 }

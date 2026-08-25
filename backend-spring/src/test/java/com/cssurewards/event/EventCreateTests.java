@@ -283,4 +283,31 @@ class EventCreateTests {
                 .contentType(MediaType.APPLICATION_JSON).content("{\"utorid\":\"member01\"}"))
             .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void organizedEventListFiltersBeforePagination() throws Exception {
+        Instant now = Instant.now();
+        Event available = events.save(new Event("Available", "Description", "Hall",
+            now.plusSeconds(3600), now.plusSeconds(7200), 2, 100));
+        Event full = events.save(new Event("Full", "Description", "Hall",
+            now.plusSeconds(5000), now.plusSeconds(8000), 1, 100));
+        Event past = events.save(new Event("Past", "Description", "Hall",
+            now.minusSeconds(7200), now.minusSeconds(3600), null, 100));
+        int memberId = users.findByUtorid("member01").orElseThrow().getId();
+        for (Event event : java.util.List.of(available, full, past)) {
+            jdbc.update("INSERT INTO organizer_events(event_id, organizer_id) VALUES (?, ?)", event.getId(), memberId);
+        }
+        jdbc.update("INSERT INTO rsvps(event_id, user_id) VALUES (?, ?)", full.getId(),
+            users.findByUtorid("manager1").orElseThrow().getId());
+        String member = token("member01");
+        mvc.perform(get("/users/me/events?showFull=false&limit=1").header("Authorization", member))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
+            .andExpect(jsonPath("$.results[0].name").value("Available"))
+            .andExpect(jsonPath("$.results[0].isOrganizer").value(true));
+        mvc.perform(get("/users/me/events?past=true&ended=true").header("Authorization", member))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
+            .andExpect(jsonPath("$.results[0].name").value("Past"));
+        mvc.perform(get("/users/me/events?started=true&ended=false").header("Authorization", member))
+            .andExpect(status().isBadRequest());
+    }
 }
