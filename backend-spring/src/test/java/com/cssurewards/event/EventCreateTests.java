@@ -310,4 +310,26 @@ class EventCreateTests {
         mvc.perform(get("/users/me/events?started=true&ended=false").header("Authorization", member))
             .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void guestEventListReturnsOnlyMatchingEventIds() throws Exception {
+        Instant now = Instant.now();
+        Event upcoming = events.save(new Event("Upcoming", "Description", "Hall",
+            now.plusSeconds(3600), now.plusSeconds(7200), 2, 100));
+        Event past = events.save(new Event("Past", "Description", "Hall",
+            now.minusSeconds(7200), now.minusSeconds(3600), 2, 100));
+        int member = users.findByUtorid("member01").orElseThrow().getId();
+        jdbc.update("INSERT INTO rsvps(event_id, user_id) VALUES (?, ?)", upcoming.getId(), member);
+        jdbc.update("INSERT INTO rsvps(event_id, user_id) VALUES (?, ?)", past.getId(), member);
+        String bearer = token("member01");
+        mvc.perform(get("/users/me/events/guest").header("Authorization", bearer))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
+            .andExpect(jsonPath("$.results[0].eventId").value(upcoming.getId()))
+            .andExpect(jsonPath("$.results[0].name").doesNotExist());
+        mvc.perform(get("/users/me/events/guest?past=true").header("Authorization", bearer))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1))
+            .andExpect(jsonPath("$.results[0].eventId").value(past.getId()));
+        mvc.perform(get("/users/me/events/guest?limit=101").header("Authorization", bearer))
+            .andExpect(status().isBadRequest());
+    }
 }

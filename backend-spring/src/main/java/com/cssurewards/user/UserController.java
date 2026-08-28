@@ -147,4 +147,12 @@ public class UserController {
             @RequestParam(defaultValue = "10") int limit) {
         return events.organizedBy((Integer) authentication.getPrincipal(), past, started, ended, showFull, page, limit);
     }
+
+    @GetMapping("/me/events/guest")
+    public Map<String, Object> myGuestEvents(Authentication authentication,
+            @RequestParam(defaultValue = "false") boolean past,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit) {
+        return events.guestEvents((Integer) authentication.getPrincipal(), past, page, limit);
+    }
 }

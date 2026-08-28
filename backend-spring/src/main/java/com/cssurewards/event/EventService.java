@@ -456,4 +456,23 @@ public class EventService {
             }).toList();
         return Map.of("count", matching.size(), "results", results);
     }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> guestEvents(Integer userId, boolean past, int page, int limit) {
+        if (page < 1 || limit < 1 || limit > 100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid pagination parameters.");
+        }
+        if (!users.existsById(userId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found.");
+        }
+        List<Integer> ids = jdbc.queryForList("SELECT event_id FROM rsvps WHERE user_id = ?", Integer.class, userId);
+        Instant now = Instant.now();
+        List<Event> matching = events.findAllById(ids).stream()
+            .filter(event -> past ? !event.getEndTime().isAfter(now) : event.getEndTime().isAfter(now))
+            .sorted(java.util.Comparator.comparing(Event::getStartTime))
+            .toList();
+        List<Map<String, Integer>> results = matching.stream().skip((long) (page - 1) * limit)
+            .limit(limit).map(event -> Map.of("eventId", event.getId())).toList();
+        return Map.of("count", matching.size(), "results", results);
+    }
 }
