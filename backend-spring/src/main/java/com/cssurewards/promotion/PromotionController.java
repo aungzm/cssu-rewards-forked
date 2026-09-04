@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.core.Authentication;
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 @RestController
 @RequestMapping("/promotions")
@@ -30,8 +31,19 @@ public class PromotionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('MANAGER', 'SUPERUSER')")
-    public Promotion create(@Valid @RequestBody CreatePromotionRequest request) {
-        return service.create(request);
+    public Map<String, Object> create(@Valid @RequestBody CreatePromotionRequest request) {
+        Promotion promotion = service.create(request);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", promotion.getId());
+        response.put("name", promotion.getName());
+        response.put("description", promotion.getDescription());
+        response.put("type", promotion.getType());
+        response.put("startTime", promotion.getStartTime());
+        response.put("endTime", promotion.getEndTime());
+        response.put("minSpending", promotion.getMinSpending());
+        response.put("rate", promotion.getRate());
+        response.put("points", promotion.getPoints());
+        return response;
     }
 
     @GetMapping

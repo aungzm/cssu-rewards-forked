@@ -67,7 +67,9 @@ class PromotionCreateTests {
                     + start + "\",\"endTime\":\"" + end + "\"}"))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.name").value("Bonus"))
             .andExpect(jsonPath("$.points").value(0))
-            .andExpect(jsonPath("$.rate").value(0));
+            .andExpect(jsonPath("$.rate").value(0))
+            .andExpect(jsonPath("$.createdAt").doesNotExist())
+            .andExpect(jsonPath("$.updatedAt").doesNotExist());
         mvc.perform(post("/promotions").header("Authorization", token("regular1"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Bonus\",\"description\":\"Test\",\"type\":\"automatic\",\"startTime\":\""
