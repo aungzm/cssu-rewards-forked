@@ -180,10 +180,13 @@ public class EventService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Cannot reduce capacity below the number of guests already attending.");
         }
-        if (!manager && (request.points() != null || request.published() != null)) {
+        Integer changedPoints = request.points() != null
+            && request.points().longValue() != (long) event.getPointsAwarded() + event.getPointsRemain()
+            ? request.points() : null;
+        if (!manager && (changedPoints != null || request.published() != null)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient clearance");
         }
-        if (request.points() != null && request.points() < event.getPointsAwarded()) {
+        if (changedPoints != null && changedPoints < event.getPointsAwarded()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Total points cannot be reduced below the points already awarded.");
         }
@@ -191,7 +194,7 @@ public class EventService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Published can only be set to true.");
         }
         event.update(request.name(), request.description(), request.location(), request.startTime(),
-            request.endTime(), request.capacity(), request.points(), request.published());
+            request.endTime(), request.capacity(), changedPoints, request.published());
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("id", eventId);
         response.put("name", event.getName());

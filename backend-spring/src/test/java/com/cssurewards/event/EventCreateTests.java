@@ -159,6 +159,29 @@ class EventCreateTests {
     }
 
     @Test
+    void organizerMaySubmitCurrentTotalButNotChangeBudget() throws Exception {
+        Instant now = Instant.now();
+        Event event = events.save(new Event("Draft", "Description", "Hall",
+            now.plusSeconds(3600), now.plusSeconds(7200), 2, 100));
+        int organizerId = users.findByUtorid("member01").orElseThrow().getId();
+        jdbc.update("INSERT INTO organizer_events(event_id, organizer_id) VALUES (?, ?)", event.getId(), organizerId);
+        jdbc.update("UPDATE events SET points_remain = 60, points_awarded = 40 WHERE id = ?", event.getId());
+        String url = "/events/" + event.getId();
+        String organizer = token("member01");
+        mvc.perform(patch(url).header("Authorization", organizer)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Renamed\",\"points\":100}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Renamed"))
+            .andExpect(jsonPath("$.pointsRemain").value(60))
+            .andExpect(jsonPath("$.pointsAwarded").value(40));
+        mvc.perform(patch(url).header("Authorization", organizer)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"points\":120}"))
+            .andExpect(status().isForbidden());
+        mvc.perform(patch(url).header("Authorization", token("manager1"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"points\":120}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.pointsRemain").value(80));
+    }
+
+    @Test
     void managerMayOnlyDeleteUnpublishedEvent() throws Exception {
         Instant now = Instant.now();
         Event event = events.save(new Event("Draft", "Description", "Hall",
