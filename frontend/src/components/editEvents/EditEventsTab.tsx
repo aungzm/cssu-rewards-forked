@@ -90,8 +90,8 @@ export function EventDetailsTab({
       startTime: ensureFullIso(data.startTime),
       endTime: ensureFullIso(data.endTime),
       capacity: data.capacity,
-      // API expects "points" – use pointsRemain or default to 0.
-      points: data.pointsRemain !== null && data.pointsRemain !== undefined ? data.pointsRemain : 0 + (data.pointsAwarded || 0),
+      // The API accepts the total budget, not just the remaining points.
+      points: (data.pointsRemain ?? 0) + (data.pointsAwarded ?? 0),
       published: (data.published ? data.published : undefined),
     };
   }
@@ -261,9 +261,10 @@ export function EventDetailsTab({
       }
     }
     if (isManagerOrHigher) {
-      // Always include points even if unchanged
-      const newPoints = formData.pointsRemain ?? 0;
-      payload.points = newPoints + (event.pointsAwarded ?? 0);
+      const totalPoints = (formData.pointsRemain ?? 0) + (event.pointsAwarded ?? 0);
+      if (totalPoints !== (event.pointsRemain ?? 0) + (event.pointsAwarded ?? 0)) {
+        payload.points = totalPoints;
+      }
       const currentPublished = event.published || false;
       const newPublished = formData.published;
       if (newPublished !== currentPublished) {
@@ -278,8 +279,11 @@ export function EventDetailsTab({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(submitCompliantFormData(formData)),
+          body: JSON.stringify(payload),
         });
+        if (!response.ok) {
+          throw new Error("Failed to update event");
+        }
         const updatedEventData = await response.json();
         onEventUpdate({ ...event, ...updatedEventData });
         setSuccess("Event updated successfully!");
