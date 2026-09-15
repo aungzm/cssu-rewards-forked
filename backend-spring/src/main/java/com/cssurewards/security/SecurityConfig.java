@@ -42,6 +42,10 @@ public class SecurityConfig {
                 response.setStatus(401);
                 response.setContentType("application/json");
                 response.getWriter().write("{\"error\":\"No authorization header provided.\"}");
+            }).accessDeniedHandler((request, response, exception) -> {
+                response.setStatus(403);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"Insufficient clearance\"}");
             }))
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
             .build();

@@ -75,7 +75,8 @@ class EventCreateTests {
             .andExpect(jsonPath("$.guests").isArray());
         mvc.perform(post("/events").header("Authorization", token("member01"))
                 .contentType(MediaType.APPLICATION_JSON).content(body))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.error").value("Insufficient clearance"));
     }
 
     @Test
