@@ -14,7 +14,7 @@ public record CreatePromotionRequest(
     @NotNull Instant endTime,
     @DecimalMin("0") Double rate,
     @DecimalMin("0") Double minSpending,
-    @Min(0) Integer points,
+    @NotNull @Min(0) Integer points,
     @NotNull @Pattern(regexp = "automatic|one-time") String type
 ) {
 }

@@ -35,7 +35,7 @@ public class PromotionService {
         return promotions.save(new Promotion(request.name(), request.description(),
             request.startTime(), request.endTime(), request.rate() == null ? 0 : request.rate(),
             request.minSpending() == null ? 0 : request.minSpending(),
-            request.points() == null ? 0 : request.points(), request.type()));
+            request.points(), request.type()));
     }
 
     @Transactional(readOnly = true)

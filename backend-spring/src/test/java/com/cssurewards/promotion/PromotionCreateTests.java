@@ -64,7 +64,7 @@ class PromotionCreateTests {
         mvc.perform(post("/promotions").header("Authorization", token("manager1"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Bonus\",\"description\":\"Test\",\"type\":\"automatic\",\"startTime\":\""
-                    + start + "\",\"endTime\":\"" + end + "\"}"))
+                    + start + "\",\"endTime\":\"" + end + "\",\"points\":0}"))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.name").value("Bonus"))
             .andExpect(jsonPath("$.points").value(0))
             .andExpect(jsonPath("$.rate").value(0))
@@ -73,8 +73,23 @@ class PromotionCreateTests {
         mvc.perform(post("/promotions").header("Authorization", token("regular1"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Bonus\",\"description\":\"Test\",\"type\":\"automatic\",\"startTime\":\""
-                    + start + "\",\"endTime\":\"" + end + "\"}"))
+                    + start + "\",\"endTime\":\"" + end + "\",\"points\":0}"))
             .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void pointsAreRequiredForCreation() throws Exception {
+        String start = Instant.now().plusSeconds(3600).toString();
+        String end = Instant.now().plusSeconds(7200).toString();
+        String body = "{\"name\":\"Bonus\",\"description\":\"Test\",\"type\":\"automatic\","
+            + "\"startTime\":\"" + start + "\",\"endTime\":\"" + end + "\"}";
+        mvc.perform(post("/promotions").header("Authorization", token("manager1"))
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error[0].path").value("body.points"));
+        mvc.perform(post("/promotions").header("Authorization", token("manager1"))
+                .contentType(MediaType.APPLICATION_JSON).content(body.replace("}", ",\"points\":null}")))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -84,10 +99,10 @@ class PromotionCreateTests {
         String prefix = "{\"name\":\"Bonus\",\"description\":\"Test\",\"type\":\"one-time\",";
         String bearer = token("manager1");
         mvc.perform(post("/promotions").header("Authorization", bearer).contentType(MediaType.APPLICATION_JSON)
-                .content(prefix + "\"startTime\":\"" + past + "\",\"endTime\":\"" + future + "\"}"))
+                .content(prefix + "\"startTime\":\"" + past + "\",\"endTime\":\"" + future + "\",\"points\":0}"))
             .andExpect(status().isBadRequest());
         mvc.perform(post("/promotions").header("Authorization", bearer).contentType(MediaType.APPLICATION_JSON)
-                .content(prefix + "\"startTime\":\"" + future + "\",\"endTime\":\"" + past + "\"}"))
+                .content(prefix + "\"startTime\":\"" + future + "\",\"endTime\":\"" + past + "\",\"points\":0}"))
             .andExpect(status().isBadRequest());
     }
 
