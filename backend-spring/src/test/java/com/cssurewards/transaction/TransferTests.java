@@ -148,6 +148,12 @@ class TransferTests {
             .andExpect(jsonPath("$.results[0].amount").value(-40))
             .andExpect(jsonPath("$.results[0].relatedId").value(receiverId()))
             .andExpect(jsonPath("$.results[0].createdBy").value("sender01"));
+        mvc.perform(get("/users/me/transactions?amount=-40.5&operator=gte")
+                .header("Authorization", senderToken))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1));
+        mvc.perform(get("/users/me/transactions?amount=-40.5&operator=lte")
+                .header("Authorization", senderToken))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(0));
         mvc.perform(get("/users/me/transactions?type=redemption").header("Authorization", senderToken))
             .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(0));
         mvc.perform(get("/users/me/transactions?limit=101").header("Authorization", senderToken))

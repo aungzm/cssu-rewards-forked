@@ -15,6 +15,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Subquery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Path;
+import java.math.RoundingMode;
 import com.cssurewards.transaction.dto.PurchaseRequest;
 import com.cssurewards.transaction.dto.AdjustmentRequest;
 import com.cssurewards.promotion.Promotion;
@@ -206,11 +209,7 @@ public class TransactionService {
                 }
             }
             if (filters.amount() != null && filters.operator() != null) {
-                if (filters.operator().equals("gte")) {
-                    conditions.add(cb.ge(root.get("amount"), filters.amount()));
-                } else {
-                    conditions.add(cb.le(root.get("amount"), filters.amount()));
-                }
+                conditions.add(amountThreshold(cb, root.get("amount"), filters.amount(), filters.operator()));
             }
             return cb.and(conditions.toArray(Predicate[]::new));
         };
@@ -247,7 +246,7 @@ public class TransactionService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> listTransactions(String name, String createdBy, Boolean suspicious,
-            Integer promotionId, String typeName, Integer relatedId, Integer amount,
+            Integer promotionId, String typeName, Integer relatedId, BigDecimal amount,
             String operator, int pageNumber, int limit) {
         if (pageNumber < 1 || limit < 1 || limit > 100) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid pagination parameters.");
@@ -297,8 +296,7 @@ public class TransactionService {
                 }
             }
             if (amount != null && operator != null) {
-                predicates.add(operator.equals("gte") ? cb.ge(root.get("amount"), amount)
-                    : cb.le(root.get("amount"), amount));
+                predicates.add(amountThreshold(cb, root.get("amount"), amount, operator));
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };
@@ -469,5 +467,20 @@ public class TransactionService {
     private List<Integer> promotionIds(Integer transactionId) {
         return jdbc.queryForList("SELECT promotion_id FROM transaction_promotions WHERE transaction_id = ? ORDER BY promotion_id",
             Integer.class, transactionId);
+    }
+
+    private Predicate amountThreshold(CriteriaBuilder cb, Path<Integer> column,
+            BigDecimal amount, String operator) {
+        // Point amounts are integers: >= 10.5 means >= 11, and <= 10.5 means <= 10.
+        BigDecimal boundary = amount.setScale(0,
+            operator.equals("gte") ? RoundingMode.CEILING : RoundingMode.FLOOR);
+        if (operator.equals("gte")) {
+            if (boundary.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) > 0) return cb.disjunction();
+            if (boundary.compareTo(BigDecimal.valueOf(Integer.MIN_VALUE)) <= 0) return cb.isNotNull(column);
+            return cb.ge(column, boundary.intValueExact());
+        }
+        if (boundary.compareTo(BigDecimal.valueOf(Integer.MIN_VALUE)) < 0) return cb.disjunction();
+        if (boundary.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) >= 0) return cb.isNotNull(column);
+        return cb.le(column, boundary.intValueExact());
     }
 }

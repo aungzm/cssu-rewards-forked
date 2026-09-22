@@ -196,6 +196,10 @@ class RedemptionTests {
             .andExpect(jsonPath("$.results[0].createdBy").value("cashier1"));
         mvc.perform(get("/transactions?type=transfer").header("Authorization", bearer("manager1")))
             .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(0));
+        mvc.perform(get("/transactions?amount=-20.5&operator=gte").header("Authorization", bearer("manager1")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(1));
+        mvc.perform(get("/transactions?amount=-20.5&operator=lte").header("Authorization", bearer("manager1")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.count").value(0));
         mvc.perform(get("/transactions").header("Authorization", bearer("cashier1")))
             .andExpect(status().isForbidden());
         mvc.perform(get("/transactions?limit=0").header("Authorization", bearer("manager1")))

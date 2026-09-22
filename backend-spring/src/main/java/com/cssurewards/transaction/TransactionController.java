@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.validation.Validator;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.Map;
+import java.math.BigDecimal;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -67,7 +68,7 @@ public class TransactionController {
             @RequestParam(required = false) Integer promotionId,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) Integer relatedId,
-            @RequestParam(required = false) Integer amount,
+            @RequestParam(required = false) BigDecimal amount,
             @RequestParam(required = false) String operator,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int limit) {
