@@ -197,14 +197,13 @@ export function EventDetailsTab({
         const newEventData = await response.json();
         onEventUpdate(newEventData);
         setSuccess("Event created successfully!");
+        navigate("/events");
       } catch (err) {
         console.error("Failed to create event:", err);
         setError("Failed to create event. Please try again.");
       } finally {
         setLoading(false);
       }
-      // Go back to events page
-      window.location.href = "/events";
       return;
     }
   
