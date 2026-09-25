@@ -242,16 +242,18 @@ export function EventDetailsTab({
       return;
     }
     if (!eventStarted) {
-      // Always include start time (passing our full ISO string)
       const newStartTime = new Date(ensureFullIso(formData.startTime)).toISOString();
       const currentStartTime = new Date(ensureFullIso(event.startTime)).toISOString();
-      // Even if not changed, send the current valid ISO string.
-      payload.startTime = newStartTime || currentStartTime;
+      if (newStartTime !== currentStartTime) {
+        payload.startTime = newStartTime;
+      }
     }
     if (!eventEnded) {
       const newEndTime = new Date(ensureFullIso(formData.endTime)).toISOString();
       const currentEndTime = new Date(ensureFullIso(event.endTime)).toISOString();
-      payload.endTime = newEndTime || currentEndTime;
+      if (newEndTime !== currentEndTime) {
+        payload.endTime = newEndTime;
+      }
     }
     if (!eventStarted) {
       const currentCapacity = event.capacity;
