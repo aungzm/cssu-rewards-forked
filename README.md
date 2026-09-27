@@ -1,278 +1,171 @@
-Backend Deployment Instructions
-----------------------------------
+<p align="center">
+  <img src="frontend/src/assets/cssu.png" alt="CSSU Rewards logo" width="88">
+</p>
 
-Follow the steps below to deploy the backend server in a production environment.
+<h1 align="center">CSSU Rewards</h1>
+
+<p align="center">A points and rewards system for the Computer Science Student Union at the University of Toronto.</p>
+
+<p align="center">
+  <a href="https://cssu-rewards-ad54.vercel.app">Live demo</a>
+</p>
+
+<p align="center">
+  <img alt="React" src="https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.7-3178c6?logo=typescript&logoColor=white">
+  <img alt="Express" src="https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white">
+  <img alt="Prisma" src="https://img.shields.io/badge/Prisma-6-2d3748?logo=prisma&logoColor=white">
+  <img alt="Spring Boot" src="https://img.shields.io/badge/Spring_Boot-3.5-6db33f?logo=springboot&logoColor=white">
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169e1?logo=postgresql&logoColor=white">
+</p>
+
+CSSU Rewards runs the point system for the CS student union. Students earn points from purchases recorded by staff, event attendance and promotions. They can send points to each other and redeem them for rewards at the counter. Staff use the same app to manage accounts, events, promotions and redemption requests.
+
+The project started as a CSC309 (Software Design) course project in Winter 2025 and was entered in a competition to design the CSSU points system.
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+*Dashboard with available points, a personal QR code, upcoming events and active promotions.*
+
+## Screenshots
+
+| | |
+| --- | --- |
+| ![Events](docs/screenshots/events.png) <br> *Browse events and RSVP* | ![Promotions](docs/screenshots/promotions.png) <br> *Automatic and one-time promotions* |
+| ![Transaction history](docs/screenshots/transaction-history.png) <br> *Point summary, filters and history* | ![Create transaction](docs/screenshots/create-transaction.png) <br> *Record purchases, adjustments and other transactions* |
+| ![Event management](docs/screenshots/event-management.png) <br> *Manage attendees and award points* | ![User management](docs/screenshots/user-management.png) <br> *Roles, verification and account status* |
+
+## Features
+
+- Point ledger for purchases, adjustments, transfers, event awards and redemptions.
+- Promotions with a minimum spend, bonus rate, fixed points, one-time use and QR codes.
+- Events with organizers, guest lists, capacity limits, point budgets and attendance awards.
+- Role-based access for regular students, cashiers, managers and superusers.
+- Account lifecycle with activation tokens, password resets, avatar uploads, verification and suspicious flags.
+- Redemption flow where a student requests points and staff scan the QR code to confirm.
+
+## Roles
+
+| Role | Can do |
+| --- | --- |
+| Regular | Browse published events, RSVP, send and redeem points, edit their profile, view their own history |
+| Cashier | Everything a regular student can do, plus look up users, create accounts, record purchases and process redemptions |
+| Manager | Everything a cashier can do, plus manage events and promotions, adjust points, verify users, flag transactions and assign roles up to cashier |
+| Superuser | Full access, including promoting users to manager |
+
+## Tech stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite 6, Tailwind CSS 3, React Router 7 |
+| Express API | Node.js, Express 4, Prisma 6, PostgreSQL, Zod, JSON Web Tokens, bcrypt |
+| Spring API | Java 21, Spring Boot 3.5, Spring Security, Spring Data JPA, Flyway |
+| Tests | Jest and Supertest for Express, JUnit and MockMvc on H2 for Spring |
+
+## Repository layout
+
+```
+backend/         Express and Prisma API, the original implementation
+backend-spring/  Spring Boot port of the same API
+frontend/        React single-page app
+docs/            Screenshots used in this README
+```
+
+## Running the app
 
 ### Prerequisites
 
-Ensure the following dependencies are installed on your system:
+- Node.js 18 or newer
+- PostgreSQL 14 or newer, with an empty database for the app
+- Java 21 if you want to run the Spring backend
 
--   **Node.js** (v18 or higher recommended)
+### 1. Express backend
 
--   **npm** (v9 or higher)
-
--   **SQLite** (already used via dependency)
-
--   Optional: `pm2` or another process manager for persistent deployment
-
-* * * * *
-
-### Setup
-
-1.  **Clone the Repository**
-
-    ```
-    git clone <your-repo-url>
-    cd backend
-
-    ```
-
-2.  **Install Dependencies**
-
-    ```
-    npm install
-
-    ```
-
-3.  **Configure Environment Variables**\
-    Create a `.env` file in the `backend` directory. At minimum, include:
-
-    ```
-    DATABASE_URL="file:./dev.db"
-    JWT_SECRET="<your_jwt_secret>"
-
-    ```
-
-4.  **Generate Prisma Client & Push DB Schema**\
-    This resets and syncs the database schema:
-
-    ```
-    npm run reset
-
-    ```
-
-5.  **Seed the Database (Optional)**\
-    If you have seed data, run:
-
-    ```
-    npm run seed
-
-    ```
-
-* * * * *
-
-### Build & Start
-
-1.  **Build the Project**\
-    Compile TypeScript into JavaScript:
-
-    ```
-    npm run build
-
-    ```
-
-2.  **Start the Server**\
-    Launch the compiled server:
-
-    ```
-    npm start
-
-    ```
-
-    Alternatively, for development:
-
-    ```
-    npm run dev
-
-    ```
-
-* * * * *
-
-### Running Tests
-
-To execute the test suite:
-
+```bash
+cd backend
+cp .env.example .env
 ```
+
+Set `DATABASE_URL` and a random `JWT_SECRET` in `.env`, then install and start the API:
+
+```bash
+npm install
+npm run seed
+npm run dev
+```
+
+The API listens on http://localhost:3000. `npm run seed` drops and recreates the schema, then loads sample users, events and promotions. To skip the sample data, run `npm run reset` instead. Both commands destroy existing data, so use them only against a development database.
+
+The seeded manager account is `manager1` with password `20952`.
+
+### 2. Frontend
+
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Open http://localhost:5173. The example environment file points the app at http://localhost:3000, where the Express backend listens.
+
+### 3. Spring backend
+
+```bash
+cd backend-spring
+```
+
+Set `DB_URL`, `DB_USER`, `DB_PASSWORD` and a `JWT_SECRET` of at least 32 bytes, then run:
+
+```bash
+./mvnw spring-boot:run
+```
+
+On Windows use `./mvnw.cmd`. The Spring API listens on http://localhost:3001, which is the frontend's default when `VITE_BACKEND_URL` is unset.
+
+Flyway creates the schema on first start, so use an empty database. Do not point it at the Express database. To create the first superuser, start the app with `BOOTSTRAP_SUPERUSER_UTORID`, `BOOTSTRAP_SUPERUSER_EMAIL` and `BOOTSTRAP_SUPERUSER_PASSWORD` set, and remove those variables once the account exists. More detail is in [backend-spring/README.md](backend-spring/README.md).
+
+## Tests
+
+```bash
+cd backend
 npm test
 
-```
+cd ../backend-spring
+./mvnw test
 
-This includes setup, running, and teardown automatically.
-
-* * * * *
-
-### Useful Scripts
-
-| Command | Description |
-| --- | --- |
-| `npm run reset` | Regenerate and force-reset Prisma DB schema |
-| `npm run seed` | Resets DB and populates it with seed data |
-| `npm run dev` | Starts server with live reload (TS) |
-| `npm run build` | Compiles TypeScript to `dist/` |
-| `npm start` | Starts compiled JavaScript server |
-| `npm test` | Runs the complete test suite |
-
-* * * * *
-
-### Notes
-
--   Make sure to replace `<your_jwt_secret>` with a secure, random string.
-
--   Production deployments may want to use `pm2` or Docker for managing the backend process.
-
--   Ensure ports and CORS settings match your frontend configuration.
-
-
-
-Frontend Deployment Instructions
------------------------------------
-
-Follow these steps to set up and deploy the frontend in a production environment.
-
-### 🔧 Prerequisites
-
-Ensure your system has the following installed:
-
--   **Node.js** (v18 or higher)
-
--   **npm** (v9 or higher)
-
--   A modern browser for previewing
-
-* * * * *
-
-### 🛠️ Setup
-
-1.  **Navigate to the Frontend Directory**\
-    From the root of your project:
-
-    ```
-    cd frontend
-
-    ```
-
-2.  **Install Dependencies**\
-    Install all required packages using:
-
-    ```
-    npm install
-
-    ```
-
-3.  **Configure Environment Variables (Optional)**\
-    If your application relies on any environment variables (e.g., API base URL), create a `.env` file:
-
-    ```
-    VITE_API_BASE_URL="http://localhost:3000"
-
-    ```
-
-    > Vite requires all env variables to be prefixed with `VITE_` to be exposed to the client.
-
-* * * * *
-
-### Development
-
-To start the development server with hot module reloading:
-
-```
-npm run dev
-
-```
-
-The app should be available at <http://localhost:5173> by default.
-
-* * * * *
-
-### Production Build
-
-To create a production-ready build:
-
-```
-npm run build
-
-```
-
-The optimized and minified static assets will be generated in the `dist/` folder.
-
-You can preview the production build locally using:
-
-```
-npm run preview
-
-```
-
-* * * * *
-
-### Code Quality
-
-Run ESLint to analyze code for potential issues:
-
-```
+cd ../frontend
 npm run lint
-
+npm run build
 ```
 
-* * * * *
+The Express tests generate a temporary SQLite schema and restore the PostgreSQL client when they finish. The Spring tests run on H2. Neither suite touches the development database.
 
-### Useful Scripts
+## API
 
-| Command | Description |
+All routes require a bearer token except login and password reset. The API is grouped by resource:
+
+| Prefix | Contents |
 | --- | --- |
-| `npm run dev` | Start the dev server with hot reload |
-| `npm run build` | Build the app for production |
-| `npm run preview` | Preview the production build locally |
-| `npm run lint` | Run ESLint for code quality checks |
+| `/auth` | Login, password reset and account activation |
+| `/users` | Profiles, avatars, staff user management, transfers, redemptions, personal transaction and event lists |
+| `/transactions` | Purchases, adjustments, transaction search and redemption processing |
+| `/events` | Events, organizers, guests and attendance awards |
+| `/promotions` | Promotions and their QR codes |
 
-* * * * *
-## Installed Packages
+## Demo
 
-###  Frontend Dependencies
+A hosted version runs at https://cssu-rewards-ad54.vercel.app.
 
-The following key packages are used in the frontend (`/frontend`):
+```
+UTORid:   Clive123
+Password: Clive123
+```
 
-- **React** (`react`, `react-dom`) — Core UI library
-- **React Router DOM v7** (`react-router-dom`) — Client-side routing
-- **Headless UI** (`@headlessui/react`) — Accessible UI primitives
-- **Lucide React** (`lucide-react`) — Icon library
-- **QR Code Utilities**:
-  - `qrcode.react` — Generate QR codes
-  - `react-qr-code` — SVG-based QR rendering
-  - `jsqr` — QR code decoding
-- **Date Picker**: `react-datepicker`
-- **Icons**: `react-icons`
-- **Type Definitions**: `@types/react`, `@types/react-dom`, `@types/react-router-dom`
-- **Development Tools**:
-  - `vite` — Fast build tool
-  - `eslint` — Linting
-  - `tailwindcss` — Utility-first CSS
-  - `typescript` — Static typing
+## Project status
 
-### Backend Dependencies
+The Express backend is the original implementation. The Spring Boot port implements the same API surface and passes its own test suite, but its responses have not been checked field for field against Express. See [backend-spring/README.md](backend-spring/README.md) for what it covers and what still needs work.
 
-The backend (`/backend`) is built using the following packages:
+## License
 
-- **Prisma** (`@prisma/client`, `prisma`) — ORM for database access
-- **SQLite** (`sqlite3`) — Lightweight database for development/testing
-- **Express** — HTTP server framework
-- **Middleware**:
-  - `cors` — CORS policy configuration
-  - `morgan` — Logging middleware
-  - `multer` — File uploads
-  - `express-jwt`, `jsonwebtoken` — Authentication with JWT
-- **User Authentication**:
-  - `bcrypt` — Password hashing
-  - `uuid` — Unique identifier generation
-- **Validation**: `zod` — Schema validation
-- **Environment**: `dotenv` — Load `.env` variables
-
-
-### Notes
-
--   Ensure that the API base URL in `.env` matches your backend deployment.
-
--   For production deployment, serve the contents of the `dist/` folder using a static file server (e.g., Nginx, Vercel, Netlify).
-
--   Tailwind CSS is used for styling, and React Router (v7) is used for routing.
-
--   This project uses Vite for fast bundling and optimized builds.
+MIT. See [LICENSE](LICENSE).
