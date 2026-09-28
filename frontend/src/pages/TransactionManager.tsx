@@ -181,7 +181,10 @@ const TransactionManager: React.FC = () => {
                 if (currentPage === 1) {
                     setTotalCount(data.count);
 
-                    if (data.count > 100) {
+                    if (data.count === 0) {
+                        updatedAllTransactions = [];
+                        setAllTransactions([]);
+                    } else if (data.count > 100) {
                         console.log("Fetching all transactions");
                         updatedAllTransactions = await fetchAllTransactions(reqUrl, data.count);
                         setAllTransactions(updatedAllTransactions); // Update state
@@ -203,7 +206,7 @@ const TransactionManager: React.FC = () => {
 
 
                 // Apply filters to updatedAllTransactions
-                const filteredTransactions = [...updatedAllTransactions, ...data.results].filter((transaction) => {
+                const filteredTransactions = updatedAllTransactions.filter((transaction) => {
                     let matches = true;
                     if (currentFilters.type && transaction.type !== currentFilters.type) matches = false;
                     if (currentFilters.relatedId !== null && transaction.relatedId !== currentFilters.relatedId) matches = false;

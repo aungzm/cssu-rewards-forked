@@ -133,17 +133,20 @@ const fetchTransactionHistory = useCallback(
                 setTotalCount(data.count);
 
 				
-                const responseAll = await fetchWithAuth(reqUrl + `limit=${data.count}`, {}); // Get all the user's transactions
-                if (!responseAll.ok) {
-                    throw new Error('Network response was not ok');
+                updatedAllTransactions = [];
+                for (let page = 1; page <= Math.ceil(data.count / 100); page++) {
+                    const responseAll = await fetchWithAuth(reqUrl + `limit=100&page=${page}`, {});
+                    if (!responseAll.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    const dataAll = await responseAll.json();
+                    updatedAllTransactions.push(...dataAll.results);
                 }
-                const dataAll = await responseAll.json();
-                updatedAllTransactions = dataAll.results;
-                setAllTransactions(dataAll.results); // Update state
+                setAllTransactions(updatedAllTransactions);
             }
 
             // Apply filters to updatedAllTransactions
-            const filteredTransactions = [...updatedAllTransactions, ...data.results].filter((transaction) => {
+            const filteredTransactions = updatedAllTransactions.filter((transaction) => {
                 let matches = true;
                 if (currentFilters.type && transaction.type !== currentFilters.type) matches = false;
                 if (currentFilters.relatedId !== null && transaction.relatedId !== currentFilters.relatedId) matches = false;

@@ -3,7 +3,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import { useState } from "react";
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { API_BASE_URL } from "../utils/auth";
+import { API_BASE_URL, PASSWORD_UPDATES_ENABLED } from "../utils/auth";
 
 interface AuthTokenResponse {
   token: string;
@@ -11,7 +11,8 @@ interface AuthTokenResponse {
 }
 
 interface ApiError {
-  message: string;
+  error?: string;
+  message?: string;
 }
 
 const LoginPage: React.FC = () => {
@@ -47,13 +48,9 @@ const LoginPage: React.FC = () => {
 
       // Try to parse the body regardless of status code
       const data: AuthTokenResponse | ApiError = await response.json();
-      console.log("Response data:", data); // Log the response data
       if (!response.ok) {
-        // Check if the parsed data has a 'message' property
         const errorMessage =
-          typeof data === "object" && data !== null && "message" in data
-            ? (data as ApiError).message
-            : `HTTP error! Status: ${response.status}`;
+          (data as ApiError).error || (data as ApiError).message || `HTTP error! Status: ${response.status}`;
         throw new Error(errorMessage);
       }
 
@@ -177,14 +174,14 @@ const LoginPage: React.FC = () => {
         </form>
 
         {/* Help Text */}
-        <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+        {PASSWORD_UPDATES_ENABLED && <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           <p>
             Don't have an account?{" "}
             <a onClick={() => navigate('/signup')} className="text-black dark:text-white hover:underline" style={{ cursor: 'pointer' }}>
               Sign up
             </a>
           </p>
-        </div>
+        </div>}
       </div>
     </div>
   );

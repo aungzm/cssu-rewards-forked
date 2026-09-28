@@ -107,7 +107,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. The example environment file points the app at http://localhost:3000, where the Express backend listens.
+Open http://localhost:5173. The example environment file points the app at http://localhost:3001, where the Spring backend listens. To use Express locally instead, set `VITE_BACKEND_URL=http://localhost:3000`.
 
 ### 3. Spring backend
 
@@ -121,7 +121,7 @@ Set `DB_URL`, `DB_USER`, `DB_PASSWORD` and a `JWT_SECRET` of at least 32 bytes, 
 ./mvnw spring-boot:run
 ```
 
-On Windows use `./mvnw.cmd`. The Spring API listens on http://localhost:3001, which is the frontend's default when `VITE_BACKEND_URL` is unset.
+On Windows use `./mvnw.cmd`. The Spring API listens on http://localhost:3001, which is the frontend's default when `VITE_BACKEND_URL` is unset. Password reset and password changes are disabled by default for the demo; the example frontend environment hides those actions.
 
 Flyway creates the schema on first start, so use an empty database. Do not point it at the Express database. To create the first superuser, start the app with `BOOTSTRAP_SUPERUSER_UTORID`, `BOOTSTRAP_SUPERUSER_EMAIL` and `BOOTSTRAP_SUPERUSER_PASSWORD` set, and remove those variables once the account exists. More detail is in [backend-spring/README.md](backend-spring/README.md).
 

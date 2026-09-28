@@ -9,7 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute"; 
 import Signup from "./pages/Signup";
 import PromotionsPage from "./pages/Promotions";
-import { isAuthenticated } from "./utils/auth";
+import { isAuthenticated, PASSWORD_UPDATES_ENABLED } from "./utils/auth";
 import UserProfile from './pages/UserProfile';
 import EventsPage from "./pages/Events"
 import UserManagment from './pages/UserManagment';
@@ -32,10 +32,10 @@ function App() {
           path="/login"
           element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />}
         />
-        <Route
+        {PASSWORD_UPDATES_ENABLED && <Route
           path="/signup"
-          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Signup />} 
-        />
+          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Signup />}
+        />}
         {/* Checks auth and has userProvider */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
