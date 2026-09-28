@@ -28,6 +28,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.server.ResponseStatusException;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,6 +41,8 @@ public class UserController {
     private final UserService userService;
     private final TransactionService transactions;
     private final EventService events;
+    @Value("${app.password-updates-enabled:false}")
+    private boolean passwordUpdatesEnabled;
 
     public UserController(UserService userService, TransactionService transactions, EventService events) {
         this.userService = userService;
@@ -67,6 +71,9 @@ public class UserController {
     @PatchMapping("/me/password")
     public Map<String, String> changePassword(Authentication authentication,
             @Valid @RequestBody ChangePasswordRequest request) {
+        if (!passwordUpdatesEnabled) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Password changes are disabled for this demo.");
+        }
         userService.changePassword((Integer) authentication.getPrincipal(), request);
         return Map.of("message", "Password updated successfully.");
     }

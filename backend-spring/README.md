@@ -20,11 +20,17 @@ The first superuser can be created at startup by setting `BOOTSTRAP_SUPERUSER_UT
 (8 alphanumeric characters), `BOOTSTRAP_SUPERUSER_EMAIL`, and
 `BOOTSTRAP_SUPERUSER_PASSWORD` (at least 8 characters). This happens only if
 the database has no users; remove the bootstrap variables afterward.
-Activation and password reset use `POST /auth/resets` and
-`POST /auth/resets/{resetToken}`. For compatibility with Express, the public
-reset-request endpoint returns the token directly. **This allows account
-takeover if someone knows a UTORid. Do not use this flow with real accounts.**
-Replace it with email delivery before production deployment.
+Password updates are disabled by default for the demo. `POST /auth/resets`,
+`POST /auth/resets/{resetToken}`, and `PATCH /users/me/password` cannot change
+passwords. Configure the frontend with `VITE_PASSWORD_UPDATES_ENABLED=false`
+to hide signup and password editing. Staff can still create accounts, but new
+accounts cannot activate while password updates are disabled. Use pre-created
+demo accounts instead.
+
+Setting `PASSWORD_UPDATES_ENABLED=true` re-enables these endpoints, but the
+reset-request endpoint returns a usable token to anyone who knows a UTORid.
+**Do not enable it with real accounts.** Implement out-of-band token delivery
+and remove tokens from responses before enabling password reset in production.
 
 ## Run
 
