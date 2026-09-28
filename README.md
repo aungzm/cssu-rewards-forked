@@ -121,7 +121,7 @@ Set `DB_URL`, `DB_USER`, `DB_PASSWORD` and a `JWT_SECRET` of at least 32 bytes, 
 ./mvnw spring-boot:run
 ```
 
-On Windows use `./mvnw.cmd`. The Spring API listens on http://localhost:3001, which is the frontend's default when `VITE_BACKEND_URL` is unset. Password reset and password changes are disabled by default for the demo; the example frontend environment hides those actions.
+On Windows use `./mvnw.cmd`. The Spring API listens on http://localhost:3001, which is the frontend's default when `VITE_BACKEND_URL` is unset. For a demo instance, set `DEMO_MODE=true` in Spring's process environment and `VITE_DEMO_MODE=true` in the frontend `.env` before building. This disables password reset and password changes and hides their UI. Both default to `false`; do not use the existing reset flow with real accounts (see [the Spring backend warning](backend-spring/README.md)).
 
 Flyway creates the schema on first start, so use an empty database. Do not point it at the Express database. To create the first superuser, start the app with `BOOTSTRAP_SUPERUSER_UTORID`, `BOOTSTRAP_SUPERUSER_EMAIL` and `BOOTSTRAP_SUPERUSER_PASSWORD` set, and remove those variables once the account exists. More detail is in [backend-spring/README.md](backend-spring/README.md).
 

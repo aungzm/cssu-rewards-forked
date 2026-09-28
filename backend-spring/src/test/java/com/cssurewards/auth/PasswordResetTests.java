@@ -18,7 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest(properties = "app.password-updates-enabled=true")
+@SpringBootTest
 @AutoConfigureMockMvc
 class PasswordResetTests {
     @Autowired MockMvc mvc;

@@ -3,7 +3,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import { useState } from "react";
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { API_BASE_URL, PASSWORD_UPDATES_ENABLED } from "../utils/auth";
+import { API_BASE_URL, DEMO_MODE } from "../utils/auth";
 
 interface AuthTokenResponse {
   token: string;
@@ -174,7 +174,7 @@ const LoginPage: React.FC = () => {
         </form>
 
         {/* Help Text */}
-        {PASSWORD_UPDATES_ENABLED && <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+        {!DEMO_MODE && <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           <p>
             Don't have an account?{" "}
             <a onClick={() => navigate('/signup')} className="text-black dark:text-white hover:underline" style={{ cursor: 'pointer' }}>

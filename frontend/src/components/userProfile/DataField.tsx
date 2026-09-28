@@ -1,7 +1,7 @@
 import { Pencil } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchWithAuth } from '../../utils/authHelper';
-import { API_BASE_URL, PASSWORD_UPDATES_ENABLED } from '../../utils/auth';
+import { API_BASE_URL, DEMO_MODE } from '../../utils/auth';
 import PasswordChangeModal from './PasswordChangeModal';
 import DatePickerInput from './DatePicker';
 
@@ -218,7 +218,7 @@ const DataField: React.FC<DataFieldProps> = ({
           className="ml-auto p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleClick}
           aria-label={`Edit ${fieldName}`}
-          disabled={!isEditable || (fieldName === 'Password' && !PASSWORD_UPDATES_ENABLED) || (isEditing && fieldName !== 'Password')}
+          disabled={!isEditable || (fieldName === 'Password' && DEMO_MODE) || (isEditing && fieldName !== 'Password')}
         >
           {isEditable ? (
             <Pencil size={20} />

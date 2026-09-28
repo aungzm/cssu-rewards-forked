@@ -20,17 +20,18 @@ The first superuser can be created at startup by setting `BOOTSTRAP_SUPERUSER_UT
 (8 alphanumeric characters), `BOOTSTRAP_SUPERUSER_EMAIL`, and
 `BOOTSTRAP_SUPERUSER_PASSWORD` (at least 8 characters). This happens only if
 the database has no users; remove the bootstrap variables afterward.
-Password updates are disabled by default for the demo. `POST /auth/resets`,
-`POST /auth/resets/{resetToken}`, and `PATCH /users/me/password` cannot change
-passwords. Configure the frontend with `VITE_PASSWORD_UPDATES_ENABLED=false`
-to hide signup and password editing. Staff can still create accounts, but new
-accounts cannot activate while password updates are disabled. Use pre-created
-demo accounts instead.
+Set `DEMO_MODE=true` in the Spring process environment to disable
+`POST /auth/resets`, `POST /auth/resets/{resetToken}`, and
+`PATCH /users/me/password`. Set `VITE_DEMO_MODE=true` in the frontend `.env`
+and rebuild it to hide signup and password editing. Both flags default to
+`false`, so normal instances retain the existing endpoints. Staff can still
+create accounts in demo mode, but new accounts cannot activate. Use
+pre-created demo accounts instead.
 
-Setting `PASSWORD_UPDATES_ENABLED=true` re-enables these endpoints, but the
-reset-request endpoint returns a usable token to anyone who knows a UTORid.
-**Do not enable it with real accounts.** Implement out-of-band token delivery
-and remove tokens from responses before enabling password reset in production.
+When demo mode is off, the public reset-request endpoint returns a usable token
+to anyone who knows a UTORid. **This allows account takeover with real accounts.**
+Do not deploy with real accounts until reset tokens are delivered out of band
+and removed from responses. A `DEMO_MODE` flag alone does not fix this risk.
 
 ## Run
 

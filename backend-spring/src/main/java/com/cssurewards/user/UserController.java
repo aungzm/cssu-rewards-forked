@@ -41,8 +41,8 @@ public class UserController {
     private final UserService userService;
     private final TransactionService transactions;
     private final EventService events;
-    @Value("${app.password-updates-enabled:false}")
-    private boolean passwordUpdatesEnabled;
+    @Value("${app.demo-mode:false}")
+    private boolean demoMode;
 
     public UserController(UserService userService, TransactionService transactions, EventService events) {
         this.userService = userService;
@@ -71,7 +71,7 @@ public class UserController {
     @PatchMapping("/me/password")
     public Map<String, String> changePassword(Authentication authentication,
             @Valid @RequestBody ChangePasswordRequest request) {
-        if (!passwordUpdatesEnabled) {
+        if (demoMode) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Password changes are disabled for this demo.");
         }
         userService.changePassword((Integer) authentication.getPrincipal(), request);

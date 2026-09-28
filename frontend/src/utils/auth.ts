@@ -14,4 +14,4 @@ export const isAuthenticated = (): boolean => {
   
 // Base URL for API requests
 export const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'; // Replace with your backend URL
-export const PASSWORD_UPDATES_ENABLED = import.meta.env.VITE_PASSWORD_UPDATES_ENABLED === 'true';
+export const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';

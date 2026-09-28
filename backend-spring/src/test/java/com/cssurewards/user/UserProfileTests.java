@@ -20,7 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.mock.web.MockMultipartFile;
 
-@SpringBootTest(properties = "app.password-updates-enabled=true")
+@SpringBootTest
 @AutoConfigureMockMvc
 class UserProfileTests {
     @Autowired MockMvc mvc;

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth/resets")
-@ConditionalOnProperty(name = "app.password-updates-enabled", havingValue = "true")
+@ConditionalOnProperty(name = "app.demo-mode", havingValue = "false", matchIfMissing = true)
 public class PasswordResetController {
     private final AuthService authService;
 
