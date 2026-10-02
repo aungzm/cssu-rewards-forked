@@ -1,0 +1,30 @@
+CREATE TABLE promotions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    rate DOUBLE PRECISION NOT NULL DEFAULT 0,
+    min_spending DOUBLE PRECISION NOT NULL DEFAULT 0,
+    type VARCHAR(32) NOT NULL,
+    points INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_promotions_start_time ON promotions(start_time);
+CREATE INDEX idx_promotions_end_time ON promotions(end_time);
+CREATE INDEX idx_promotions_type ON promotions(type);
+
+CREATE TABLE transaction_promotions (
+    transaction_id INTEGER NOT NULL REFERENCES transactions(id),
+    promotion_id INTEGER NOT NULL REFERENCES promotions(id),
+    PRIMARY KEY(transaction_id, promotion_id)
+);
+CREATE TABLE user_promotions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    promotion_id INTEGER NOT NULL REFERENCES promotions(id),
+    used_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, promotion_id)
+);
+CREATE INDEX idx_user_promotions_promotion_id ON user_promotions(promotion_id);

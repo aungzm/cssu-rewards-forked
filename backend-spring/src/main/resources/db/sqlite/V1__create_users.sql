@@ -1,0 +1,20 @@
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    utorid VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255),
+    birthday TIMESTAMP,
+    avatar_url VARCHAR(2048),
+    avatar TEXT,
+    password VARCHAR(255),
+    role VARCHAR(32) NOT NULL,
+    activated BOOLEAN NOT NULL DEFAULT FALSE,
+    verified BOOLEAN NOT NULL DEFAULT FALSE,
+    suspicious BOOLEAN NOT NULL DEFAULT FALSE,
+    last_login TIMESTAMP,
+    points INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_users_role ON users(role);
