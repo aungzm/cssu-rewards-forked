@@ -83,6 +83,14 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Never select a deployment database from the shell running tests. -->
+                    <excludedEnvironmentVariables>DATABASE_URL,DATABASE_USER,DATABASE_PASSWORD,DB_URL,DB_USER,DB_PASSWORD,SQLITE_URL,SPRING_PROFILES_ACTIVE</excludedEnvironmentVariables>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -96,8 +104,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
-                                <spring.profiles.active>sqlite</spring.profiles.active>
-                                <SQLITE_URL>jdbc:sqlite:${project.build.directory}/sqlite-tests-${maven.build.timestamp}.db</SQLITE_URL>
+                                <DATABASE_URL>jdbc:sqlite:${project.build.directory}/sqlite-tests-${maven.build.timestamp}.db</DATABASE_URL>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

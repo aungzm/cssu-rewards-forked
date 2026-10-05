@@ -37,9 +37,11 @@ and removed from responses. A `DEMO_MODE` flag alone does not fix this risk.
 ## Run
 
 With Java 21 installed, from this directory run `./mvnw.cmd test` on Windows.
-To run the API, set `DB_URL`, `DB_USER`, `DB_PASSWORD`, and a random `JWT_SECRET`
-of at least 32 UTF-8 bytes, then run `./mvnw.cmd spring-boot:run`. The database
-URL defaults to `jdbc:postgresql://localhost:5432/cssu_rewards_spring`.
+To run the API, set `DATABASE_URL`, `DATABASE_USER`, `DATABASE_PASSWORD`, and a
+random `JWT_SECRET` of at least 32 UTF-8 bytes, then run
+`./mvnw.cmd spring-boot:run`. `DATABASE_URL` selects SQLite or PostgreSQL from
+its JDBC prefix. SQLite ignores the database username and password. When unset,
+the URL defaults to `jdbc:postgresql://localhost:5432/cssu_rewards_spring`.
 On macOS/Linux use `sh ./mvnw`
 (or `./mvnw` if the script has execute permission).
 The wrapper downloads Maven 3.9.11 on first use, so it needs network access
@@ -48,13 +50,14 @@ URL.
 
 ## SQLite demo
 
-PostgreSQL remains the default. To use a local SQLite file instead, enable the
-`sqlite` Spring profile. No database server or database password is required.
+PostgreSQL remains the default. To use a local SQLite file instead, set
+`DATABASE_URL=jdbc:sqlite:./rewards.db`. No profile, database type flag, database
+server, or database password is required.
 
 On Linux/macOS, from this directory:
 
 ```sh
-SPRING_PROFILES_ACTIVE=sqlite \
+DATABASE_URL=jdbc:sqlite:./rewards.db \
 DEMO_MODE=true \
 JWT_SECRET='replace-with-at-least-32-random-bytes' \
 sh ./mvnw spring-boot:run
@@ -63,7 +66,7 @@ sh ./mvnw spring-boot:run
 On PowerShell:
 
 ```powershell
-$env:SPRING_PROFILES_ACTIVE = 'sqlite'
+$env:DATABASE_URL = 'jdbc:sqlite:./rewards.db'
 $env:DEMO_MODE = 'true'
 $env:JWT_SECRET = 'replace-with-at-least-32-random-bytes'
 .\mvnw.cmd spring-boot:run
@@ -71,10 +74,26 @@ $env:JWT_SECRET = 'replace-with-at-least-32-random-bytes'
 
 Generate your own random secret instead of using the placeholder. Spring does
 not load a `.env` file automatically; export its variables or use Compose's
-`env_file`. SQLite mode defaults to `jdbc:sqlite:./rewards.db`, relative to the
-process working directory. Set `SQLITE_URL=jdbc:sqlite:/data/rewards.db` to choose
-another file. Its parent directory must exist and be writable by the app.
-`DB_URL`, `DB_USER`, and `DB_PASSWORD` are not used by this profile.
+`env_file`. Export `DATABASE_URL` in the process environment or pass
+`--DATABASE_URL=...` to the JAR, so the app can select the database before loading
+its database-specific configuration. Relative SQLite paths use the process
+working directory. Use `DATABASE_URL=jdbc:sqlite:/data/rewards.db` for another
+file. Its parent directory must exist and be writable by the app.
+
+For example, a Compose `.env` can document both choices:
+
+```dotenv
+# SQLite: jdbc:sqlite:/data/rewards.db
+# PostgreSQL: jdbc:postgresql://your-db-host:5432/cssu_rewards
+DATABASE_URL=jdbc:sqlite:/data/rewards.db
+# PostgreSQL only. Ignored for SQLite.
+DATABASE_USER=postgres
+DATABASE_PASSWORD=
+```
+
+The URL already identifies the database type, so a separate `DATABASE_TYPE`
+would duplicate it and could disagree with it. Spring still uses its SQLite
+profile internally, but you do not need to configure that yourself.
 
 Flyway creates the schema without resetting existing data. Bootstrap credentials
 work the same as with PostgreSQL. This does not add sample events or other demo
@@ -101,14 +120,22 @@ SQLite-aware backup tool. The database files are Git-ignored.
 
 ### Keeping PostgreSQL
 
-To use PostgreSQL, remove `sqlite` from `SPRING_PROFILES_ACTIVE` and set the usual
-`DB_URL`, `DB_USER`, and `DB_PASSWORD`. Both drivers ship in the same JAR. The
+To use PostgreSQL, set `DATABASE_URL=jdbc:postgresql://host:5432/database`, plus
+`DATABASE_USER` and `DATABASE_PASSWORD`. Both drivers ship in the same JAR. The
 PostgreSQL migrations, checksums, and locking behavior are unchanged.
 
-Switching profiles selects a different database. It does not convert or copy
+Changing the URL selects a different database. It does not convert or copy
 existing data between PostgreSQL and SQLite. For a demo, start with a fresh
 SQLite file. Retaining existing PostgreSQL data would require a separate export
 and import, including IDs, relationships, timestamps, and identity sequences.
+
+### Existing configuration compatibility
+
+The old `DB_URL`, `DB_USER`, and `DB_PASSWORD` settings remain fallbacks for
+PostgreSQL. `SPRING_PROFILES_ACTIVE=sqlite` with `SQLITE_URL` still works too.
+The new `DATABASE_*` settings take precedence. Remove an explicitly configured
+`sqlite` profile when switching to PostgreSQL; a conflicting profile and URL
+fail startup rather than silently connecting with the wrong settings.
 
 ## Tests
 
@@ -120,7 +147,8 @@ sh ./mvnw -Psqlite-tests test
 Use `.\mvnw.cmd` on Windows. The default suite retains H2's PostgreSQL-compatible
 test configuration. `sqlite-tests` runs the same API and concurrency suite on a
 new SQLite file under `target/` for each Maven invocation. Neither command uses
-your normal app database. Additional tests start and stop the real Spring app
+your normal app database. Maven excludes database-selection environment variables
+from the forked test process. Additional tests start and stop the real Spring app
 against a temporary SQLite file to verify migrations, bootstrap idempotency,
 restart persistence, timestamp filters, money values, connection settings,
 foreign keys, unique constraints, and cascading deletes.

@@ -9,8 +9,12 @@ serves both on port 8080 in one Java process. SQLite stores data under `/data` o
 a named volume. This means one image and one container, with no database service,
 nginx container, or frontend development server.
 
-The sample selects `SPRING_PROFILES_ACTIVE=sqlite`. PostgreSQL remains available
-in the same Spring app without that profile. See the
+The sample sets `DATABASE_URL=jdbc:sqlite:/data/rewards.db`. The URL selects the
+database automatically. To use an existing PostgreSQL server instead, set
+`DATABASE_URL=jdbc:postgresql://host:5432/database`, `DATABASE_USER`, and
+`DATABASE_PASSWORD`. No `SPRING_PROFILES_ACTIVE` or database type flag is needed.
+The mounted volume is only used for SQLite; this sample does not start a
+PostgreSQL server. See the
 [database setup and SQLite limits](../../backend-spring/README.md#sqlite-demo).
 
 ## Avoid frontend and backend URL settings
@@ -92,7 +96,8 @@ network access. SQLite has no database port.
 
 Compose reads `.env` for `${...}` substitutions. `env_file: .env` also injects its
 values into the app process. Explicit `environment` entries take precedence.
-The SQLite profile uses `SQLITE_URL`, not PostgreSQL's `DB_URL` or credentials.
+Both database choices use `DATABASE_URL`. SQLite ignores `DATABASE_USER` and
+`DATABASE_PASSWORD`; PostgreSQL uses them to authenticate.
 
 The named volume retains database state when containers are recreated. Do not
 run `docker compose down -v` unless you intend to delete the database. Run one

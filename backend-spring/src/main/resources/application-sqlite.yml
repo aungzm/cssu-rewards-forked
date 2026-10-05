@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${SQLITE_URL:jdbc:sqlite:./rewards.db}
+    url: ${DATABASE_URL:${SQLITE_URL:jdbc:sqlite:./rewards.db}}
     driver-class-name: org.sqlite.JDBC
     username: ""
     password: ""

@@ -115,7 +115,7 @@ Open http://localhost:5173. The example environment file points the app at http:
 cd backend-spring
 ```
 
-Set `DB_URL`, `DB_USER`, `DB_PASSWORD` and a `JWT_SECRET` of at least 32 bytes, then run:
+Set `DATABASE_URL`, `DATABASE_USER`, `DATABASE_PASSWORD` and a `JWT_SECRET` of at least 32 bytes, then run:
 
 ```bash
 ./mvnw spring-boot:run
@@ -125,10 +125,11 @@ On Windows use `./mvnw.cmd`. The Spring API listens on http://localhost:3001, wh
 
 Flyway creates the schema on first start, so use an empty database. Do not point it at the Express database. To create the first superuser, start the app with `BOOTSTRAP_SUPERUSER_UTORID`, `BOOTSTRAP_SUPERUSER_EMAIL` and `BOOTSTRAP_SUPERUSER_PASSWORD` set, and remove those variables once the account exists. More detail is in [backend-spring/README.md](backend-spring/README.md).
 
-For a single-instance SQLite demo, set `SPRING_PROFILES_ACTIVE=sqlite` and
-`DEMO_MODE=true`, plus `JWT_SECRET`. The default file is `./rewards.db`; set
-`SQLITE_URL` to choose another location. PostgreSQL remains the default, and
-switching databases does not migrate existing data. See the
+The URL selects the database automatically: `jdbc:sqlite:./rewards.db` for a
+single-instance SQLite demo, or `jdbc:postgresql://host:5432/database` for
+PostgreSQL. Set `DEMO_MODE=true` for the demo. SQLite needs no database username
+or password. PostgreSQL remains the default when no URL is set, and switching
+databases does not migrate existing data. See the
 [SQLite setup and storage limits](backend-spring/README.md#sqlite-demo).
 
 ### Docker demo proposal

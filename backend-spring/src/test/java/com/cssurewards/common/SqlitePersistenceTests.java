@@ -92,8 +92,7 @@ class SqlitePersistenceTests {
 
     private ConfigurableApplicationContext start(Path database) {
         return new SpringApplicationBuilder(RewardsApplication.class).run(
-            "--spring.profiles.active=sqlite",
-            "--SQLITE_URL=jdbc:sqlite:" + database.toAbsolutePath(),
+            "--DATABASE_URL=jdbc:sqlite:" + database.toAbsolutePath(),
             "--server.port=0",
             "--app.jwt-secret=sqlite-persistence-test-only-secret-123456789",
             "--app.demo-mode=true",
