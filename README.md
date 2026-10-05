@@ -59,7 +59,7 @@ The project started as a CSC309 (Software Design) course project in Winter 2025 
 | --- | --- |
 | Frontend | React 19, TypeScript, Vite 6, Tailwind CSS 3, React Router 7 |
 | Express API | Node.js, Express 4, Prisma 6, PostgreSQL, Zod, JSON Web Tokens, bcrypt |
-| Spring API | Java 21, Spring Boot 3.5, Spring Security, Spring Data JPA, Flyway |
+| Spring API | Java 21, Spring Boot 3.5, Spring Security, Spring Data JPA, Flyway, PostgreSQL or SQLite |
 | Tests | Jest and Supertest for Express, JUnit and MockMvc on H2 for Spring |
 
 ## Repository layout
@@ -76,7 +76,7 @@ docs/            Screenshots used in this README
 ### Prerequisites
 
 - Node.js 18 or newer
-- PostgreSQL 14 or newer, with an empty database for the app
+- PostgreSQL 14 or newer for Express or Spring's default database mode. Spring can also use SQLite without a database server.
 - Java 21 if you want to run the Spring backend
 
 ### 1. Express backend
@@ -125,6 +125,18 @@ On Windows use `./mvnw.cmd`. The Spring API listens on http://localhost:3001, wh
 
 Flyway creates the schema on first start, so use an empty database. Do not point it at the Express database. To create the first superuser, start the app with `BOOTSTRAP_SUPERUSER_UTORID`, `BOOTSTRAP_SUPERUSER_EMAIL` and `BOOTSTRAP_SUPERUSER_PASSWORD` set, and remove those variables once the account exists. More detail is in [backend-spring/README.md](backend-spring/README.md).
 
+For a single-instance SQLite demo, set `SPRING_PROFILES_ACTIVE=sqlite` and
+`DEMO_MODE=true`, plus `JWT_SECRET`. The default file is `./rewards.db`; set
+`SQLITE_URL` to choose another location. PostgreSQL remains the default, and
+switching databases does not migrate existing data. See the
+[SQLite setup and storage limits](backend-spring/README.md#sqlite-demo).
+
+### Docker demo proposal
+
+For a proposed single-image Spring + React deployment, see the
+[Docker demo assessment and sample Compose file](docs/docker/README.md).
+The combined image is not implemented or published yet.
+
 ## Tests
 
 ```bash
@@ -133,13 +145,14 @@ npm test
 
 cd ../backend-spring
 ./mvnw test
+./mvnw -Psqlite-tests test
 
 cd ../frontend
 npm run lint
 npm run build
 ```
 
-The Express tests generate a temporary SQLite schema and restore the PostgreSQL client when they finish. The Spring tests run on H2. Neither suite touches the development database.
+The Express tests generate a temporary SQLite schema and restore the PostgreSQL client when they finish. The Spring tests use H2 by default; `-Psqlite-tests` runs the same suite against SQLite. Spring also tests SQLite restart persistence. Neither suite touches the development database.
 
 ## API
 
