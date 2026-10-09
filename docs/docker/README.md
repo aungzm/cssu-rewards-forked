@@ -32,6 +32,14 @@ same image, but the sample Compose file does not start a PostgreSQL server.
   version tag. Other refs cannot publish from a manual run.
 - Main/tag builds also build `linux/arm64` for ARM hosts.
 
+Automatic branch/PR builds run only when frontend, Spring source, the Spring POM,
+Dockerfile, `.dockerignore`, or this image workflow/smoke script changes. Docs,
+Markdown, `.env` examples, Compose deployment settings, and Express-only changes
+do not trigger a build by themselves. A mixed code-and-docs change still builds.
+Version tags and manual runs bypass path filtering. `.dockerignore` also excludes
+docs and environment files from the build context, but it does not control when
+GitHub starts a workflow.
+
 The workflow uses `GITHUB_TOKEN` with `contents: read` and `packages: write`.
 No personal access token or Docker Hub account is needed. Actions are pinned to
 commit SHAs. Do not use `pull_request_target` to build untrusted pull-request code.
@@ -98,6 +106,15 @@ public demo, put a TLS reverse proxy in front and forward the original host and
 scheme. The image enables Spring's forwarded-header handling; configure your
 proxy to replace client-supplied forwarded headers. Alternatively, deliberately
 change `BIND_ADDRESS` for direct network access.
+
+Set `CORS_ORIGINS` in your runtime environment to your public browser origin,
+for example `https://cssu-rewards.aungzm.com`, with no trailing slash. Multiple
+origins can be comma-separated. This is useful if a reverse proxy makes Spring
+treat same-site requests as cross-origin. A rejected request can return plain
+text `Invalid CORS request`, which appears as a JSON parsing error on the login
+page. Save the environment and recreate/redeploy the container after changing
+it; rebuilding the image is unnecessary. Do not change the database or JWT secret
+to fix CORS.
 
 No frontend/backend hostnames or build-time URLs are needed. `/app-config.js`
 returns only `/api` and the runtime demo flag before React loads. It is not

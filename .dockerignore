@@ -10,3 +10,5 @@
 **/*.log
 backend
 docs
+**/docs
+**/*.md
