@@ -97,8 +97,9 @@ profile internally, but you do not need to configure that yourself.
 
 Flyway creates the schema without resetting existing data. Bootstrap credentials
 work the same as with PostgreSQL. This does not add sample events or other demo
-seed data. Demo mode is separate from the database choice and still needs
-`VITE_DEMO_MODE=true` in the frontend build until runtime UI configuration exists.
+seed data. Demo mode is separate from the database choice. With a separately
+hosted frontend, set `VITE_DEMO_MODE=true` at build time. The combined Docker image
+reads the same backend demo flag at runtime instead.
 
 ### Concurrency and storage limits
 
@@ -136,6 +137,17 @@ PostgreSQL. `SPRING_PROFILES_ACTIVE=sqlite` with `SQLITE_URL` still works too.
 The new `DATABASE_*` settings take precedence. Remove an explicitly configured
 `sqlite` profile when switching to PostgreSQL; a conflicting profile and URL
 fail startup rather than silently connecting with the wrong settings.
+
+## Combined frontend image
+
+The root Dockerfile includes the built React app and sets `SERVE_FRONTEND=true`.
+This moves REST controllers under `/api`, permits public static assets, forwards
+known React deep links to `index.html`, and provides `/app-config.js` with the API
+prefix and demo flag. Unknown API routes do not fall back to frontend HTML.
+The existing standalone API paths remain unchanged when `SERVE_FRONTEND` is false.
+
+See [Docker builds and GHCR publication](../docs/docker/README.md). The image
+defaults to SQLite and demo mode but still requires your own JWT secret.
 
 ## Tests
 

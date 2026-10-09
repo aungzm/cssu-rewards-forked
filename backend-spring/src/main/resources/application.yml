@@ -16,6 +16,7 @@ spring:
     open-in-view: false
 
 app:
+  serve-frontend: ${SERVE_FRONTEND:false}
   jwt-secret: ${JWT_SECRET}
   cors-origins: ${CORS_ORIGINS:http://localhost:5173}
   demo-mode: ${DEMO_MODE:false}

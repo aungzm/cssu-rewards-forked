@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import jakarta.servlet.DispatcherType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -30,15 +31,28 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity
 public class SecurityConfig {
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter,
+            @Value("${app.serve-frontend:false}") boolean serveFrontend) throws Exception {
+        String prefix = serveFrontend ? "/api" : "";
         return http.csrf(csrf -> csrf.disable())
             .cors(cors -> {})
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/auth/tokens").permitAll()
-                .requestMatchers(HttpMethod.POST, "/auth/resets", "/auth/resets/*").permitAll()
-                .requestMatchers("/error").permitAll()
-                .anyRequest().authenticated())
+            .authorizeHttpRequests(auth -> {
+                auth.dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.FORWARD).permitAll()
+                    .requestMatchers(HttpMethod.POST, prefix + "/auth/tokens").permitAll()
+                    .requestMatchers(HttpMethod.POST, prefix + "/auth/resets", prefix + "/auth/resets/*").permitAll()
+                    .requestMatchers("/error").permitAll();
+                if (serveFrontend) {
+                    // Public static pages contain no user data. API authorization
+                    // still applies before any frontend/static resource handling.
+                    auth.requestMatchers("/api", "/api/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/**").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/**").permitAll()
+                        .anyRequest().denyAll();
+                } else {
+                    auth.anyRequest().authenticated();
+                }
+            })
             .exceptionHandling(errors -> errors.authenticationEntryPoint((request, response, exception) -> {
                 response.setStatus(401);
                 response.setContentType("application/json");

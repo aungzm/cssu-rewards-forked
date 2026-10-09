@@ -1,5 +1,5 @@
-# Deployment sample for the proposed combined Spring + React image.
-# SQLite works in Spring; image packaging and frontend integration are pending.
+# Single-image Spring + React deployment. Publish the image first, or build it
+# locally and set APP_IMAGE to that local tag. See README.md.
 services:
   app:
     image: ${APP_IMAGE:-ghcr.io/aungzm/cssu-rewards-forked:demo}

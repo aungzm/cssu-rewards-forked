@@ -1,88 +1,91 @@
-# Single-image demo deployment proposal
+# Docker image and GHCR builds
 
-The sample `docker-compose.yml` describes a target deployment, not something the
-current checkout can run yet. SQLite support is implemented in Spring, but no
-combined frontend/backend image has been built or published.
+The root `Dockerfile` builds React and Spring into one image. Spring serves the
+frontend at `/` and the API at `/api` on port 8080. SQLite data lives under `/data`
+on a named volume. The container runs one Java process as UID/GID 10001, not root.
+Express is not included. An image has not yet been published by this work.
 
-Use one custom image containing the React build and Spring Boot backend. Spring
-serves both on port 8080 in one Java process. SQLite stores data under `/data` on
-a named volume. This means one image and one container, with no database service,
-nginx container, or frontend development server.
+The URL selects the database automatically. SQLite needs no database server:
 
-The sample sets `DATABASE_URL=jdbc:sqlite:/data/rewards.db`. The URL selects the
-database automatically. To use an existing PostgreSQL server instead, set
-`DATABASE_URL=jdbc:postgresql://host:5432/database`, `DATABASE_USER`, and
-`DATABASE_PASSWORD`. No `SPRING_PROFILES_ACTIVE` or database type flag is needed.
-The mounted volume is only used for SQLite; this sample does not start a
-PostgreSQL server. See the
-[database setup and SQLite limits](../../backend-spring/README.md#sqlite-demo).
+```dotenv
+# SQLite: jdbc:sqlite:/data/rewards.db
+# PostgreSQL: jdbc:postgresql://your-db-host:5432/cssu_rewards
+DATABASE_URL=jdbc:sqlite:/data/rewards.db
+# PostgreSQL only. Ignored for SQLite.
+DATABASE_USER=postgres
+DATABASE_PASSWORD=
+DEMO_MODE=true
+```
 
-## Avoid frontend and backend URL settings
+See [SQLite storage limits](../../backend-spring/README.md#sqlite-demo). Run only
+one application instance per SQLite file. PostgreSQL remains available in the
+same image, but the sample Compose file does not start a PostgreSQL server.
 
-Use `/api` as the frontend API base URL. The browser then sends requests to the
-same origin that served the page, whether that is localhost, an IP, or a domain.
-No deployment-specific `VITE_BACKEND_URL`, public backend URL, or CORS allowlist
-is needed for this same-origin deployment. A different origin would still need
-explicit CORS configuration.
+## GitHub Actions
 
-The existing UI and API both use `/events` and `/promotions`. Simply serving the
-frontend beside today's API would break page refreshes on those paths. Prefix the
-API routes with `/api`, including authentication and security matchers, while
-keeping the UI routes at the root. Do not set the whole application's servlet
-context path to `/api`, since that would move the frontend too.
+`.github/workflows/docker-image.yml` builds the image and tests it before pushing:
 
-Vite replaces `import.meta.env.VITE_*` values during the build. Passing
-`VITE_DEMO_MODE=true` through Compose does not change an already-built frontend.
-Instead, add a public runtime configuration endpoint such as `/app-config` that
-returns only `{ "demoMode": true }` from Spring's `app.demo-mode` property. Load
-it before rendering React and use it instead of the current build-time flag.
-Do not cache this configuration across deployments. Never return JWT or database
-secrets. Backend checks must continue to enforce demo restrictions independently.
+- Pull requests to `main` build and smoke-test `linux/amd64` without publishing.
+- Pushes to `main` publish `demo`, `latest`, and a full commit SHA tag to GHCR.
+- Version tags such as `v1.0.0` publish a version tag and commit SHA tag.
+- Manual runs default to build-only. Check `publish` to push from `main` or a
+  version tag. Other refs cannot publish from a manual run.
+- Main/tag builds also build `linux/arm64` for ARM hosts.
 
-This makes `DEMO_MODE=true` in `.env` the single setting for both sides. Changing
-it requires recreating the app container, not rebuilding the image.
+The workflow uses `GITHUB_TOKEN` with `contents: read` and `packages: write`.
+No personal access token or Docker Hub account is needed. Actions are pinned to
+commit SHAs. Do not use `pull_request_target` to build untrusted pull-request code.
 
-## Work required
+The Docker build runs both Spring test configurations and builds the frontend
+using `npm ci`. Before publication, the workflow starts an amd64 container and
+checks runtime demo configuration, frontend deep links, login, API authorization,
+disabled reset requests, and SQLite persistence across container recreation.
+Build-only/manual runs validate the image too. They do not change GHCR visibility.
 
-- Add a multi-stage Dockerfile: build React with Node, copy `frontend/dist` into
-  Spring's classpath `static` directory, package with Java 21 and Maven, then copy
-  only the executable JAR into a non-root Java 21 runtime image. Make `/data`
-  writable by that user, including when Docker initializes a fresh named volume.
-- Add a `.dockerignore` that excludes `.env` files, Git data, dependencies and
-  build outputs. Add a frontend dependency lockfile and use `npm ci` in builds.
-- Add the `/api` prefix and update Spring Security, JWT-filter path handling,
-  frontend API calls, and tests consistently. Check avatar URL handling too.
-- Permit unauthenticated access to frontend assets and `/app-config`. Forward
-  known React page routes to `index.html` so direct navigation works. Unknown API
-  routes must return API errors rather than the frontend HTML.
-- Replace the frontend's hardcoded localhost fallback and build-time demo flag
-  in `frontend/src/utils/auth.ts` with the same-origin/runtime configuration.
-  Keep local development working through a Vite `/api` proxy.
-- Add a demo seed for Spring. It currently creates the schema and can bootstrap
-  one superuser, but does not load the Express sample users, events or promotions.
-  Make seeding repeatable without deleting existing data. Decide whether a public
-  demo should reset periodically, and keep any reset operation explicitly opt-in.
-- Add container integration tests using SQLite. Check login, UI deep links,
-  demo restrictions, uploads, and volume persistence. Spring's SQLite API,
-  concurrency and application-restart tests already run outside Docker.
-- Add a GitHub Actions workflow to build and push to GHCR using `GITHUB_TOKEN`
-  with `contents: read` and `packages: write`. Publish commit/version tags plus a
-  demo tag. Build `linux/amd64` and `linux/arm64` for Intel/AMD and ARM hosts.
+### Make the package public
 
-The repository is currently private. A GHCR package can be public independently
-of its source repository. After the initial publish, set the package visibility
-to public and verify an anonymous pull works. Do not change repository visibility
-or include secrets in image layers. Publishing and package visibility changes
-have not been performed as part of this assessment.
+GHCR can host a public image even when this repository stays private. After the
+first successful publication:
 
-## Using the sample after implementation and publication
+1. Open the `cssu-rewards-forked` container package under your GitHub account.
+2. Open **Package settings**, then **Change visibility**, and choose **Public**.
+3. Test a pull from a machine with no GHCR credentials:
 
-Copy this directory's `docker-compose.yml` and `.env.example` to your deployment
-directory, rename `.env.example` to `.env`, and fill in the random JWT secret and
-the bootstrap password. The example bootstrap account is an administrator, not
-a safe public guest login. Use a separately seeded regular account for visitors.
+```sh
+docker pull ghcr.io/aungzm/cssu-rewards-forked:demo
+```
 
-From that directory:
+The workflow does not make the source repository public or change package
+visibility automatically. Anyone can download a public image and inspect its
+compiled frontend and backend. Never include secrets or a populated database in
+the image. `.dockerignore` excludes environment files, databases, Git data,
+Express, dependencies, and local build outputs.
+
+Private repository Actions usage may count against your GitHub plan. Check your
+account's Actions usage and package policies before enabling regular publication.
+
+## Build locally
+
+Docker must be running. From the repository root:
+
+```sh
+docker build --tag cssu-rewards:local .
+bash .github/scripts/smoke-image.sh cssu-rewards:local
+```
+
+The smoke script needs Bash, curl, jq, and OpenSSL. GitHub's Ubuntu runner has
+these tools. It creates a disposable container and named volume, then removes
+only those test resources. Its sample login is not a real account.
+
+For deployment, copy this directory's `.env.example` to `.env`, set
+`APP_IMAGE=cssu-rewards:local`, and fill in the JWT secret and bootstrap password.
+From this directory use `docker compose up -d --pull never` to use the local tag.
+
+## Deploy a published image
+
+Copy `docker-compose.yml` and `.env.example` into your deployment directory.
+Rename `.env.example` to `.env`, generate a JWT secret of at least 32 random bytes,
+and choose the first administrator's bootstrap password. Keep `.env` private.
 
 ```sh
 docker compose config --quiet
@@ -90,30 +93,34 @@ docker compose pull
 docker compose up -d
 ```
 
-Open `http://localhost:8080`. The default binding is local-only. Put a TLS reverse
-proxy in front for a public demo, or deliberately change `BIND_ADDRESS` for direct
-network access. SQLite has no database port.
+Open `http://localhost:8080`. The published port defaults to local-only. For a
+public demo, put a TLS reverse proxy in front and forward the original host and
+scheme. The image enables Spring's forwarded-header handling; configure your
+proxy to replace client-supplied forwarded headers. Alternatively, deliberately
+change `BIND_ADDRESS` for direct network access.
 
-Compose reads `.env` for `${...}` substitutions. `env_file: .env` also injects its
-values into the app process. Explicit `environment` entries take precedence.
-Both database choices use `DATABASE_URL`. SQLite ignores `DATABASE_USER` and
-`DATABASE_PASSWORD`; PostgreSQL uses them to authenticate.
+No frontend/backend hostnames or build-time URLs are needed. `/app-config.js`
+returns only `/api` and the runtime demo flag before React loads. It is not
+cached and never contains database credentials or the JWT secret. Changing
+`DEMO_MODE` requires recreating the container, not rebuilding the image.
 
-The named volume retains database state when containers are recreated. Do not
-run `docker compose down -v` unless you intend to delete the database. Run one
-app instance per SQLite file and keep the volume on local storage. Back up with
-the app stopped or a SQLite-aware backup tool, not by copying only an open `.db`
-file and omitting its WAL.
+Compose uses `.env` for substitutions and passes it into the app via `env_file`.
+Explicit `environment` entries take precedence. The named volume retains data
+when containers are recreated. Do not use `docker compose down -v` unless you
+intend to delete the database. Use local storage, not a network filesystem.
+Back up with the app stopped or a SQLite-aware backup tool, not by copying only
+an open `.db` file and omitting its WAL.
 
-## Demo limitations and security
+## Demo limitations
 
-Spring's current `DEMO_MODE=true` disables password reset and password changes.
-The frontend flag hides signup and password editing. It does not make the app
-read-only or stop staff from modifying data. Staff can still create accounts,
-but those accounts cannot use the disabled activation flow.
+Demo mode disables password resets and password changes. In this image it also
+hides signup/password editing at runtime. It does not make the app read-only or
+stop staff from modifying data. The bootstrap account has full administrative
+access and is not a safe public guest login. No sample events or visitor accounts
+are seeded yet. Use pre-created accounts; staff-created users cannot activate
+while the activation/reset flow is disabled.
 
 Do not use real accounts or personal data. With demo mode off, the current reset
-endpoint returns usable reset tokens to callers. The Spring README documents
-this account-takeover risk. Turning off the demo flag is not safe for a real
-deployment until that flow is fixed. Public demo accounts also need a decision
-about role limits, profile editing, abuse controls and data cleanup.
+endpoint returns usable reset tokens to callers. This account-takeover risk must
+be fixed before a real deployment. Public visitor roles, abuse controls, demo
+seed data, and any periodic data reset remain separate work.

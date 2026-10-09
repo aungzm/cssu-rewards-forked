@@ -14,23 +14,29 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtDecoder jwtDecoder;
     private final UserRepository users;
+    private final String prefix;
 
-    public JwtAuthenticationFilter(JwtDecoder jwtDecoder, UserRepository users) {
+    public JwtAuthenticationFilter(JwtDecoder jwtDecoder, UserRepository users,
+            @Value("${app.serve-frontend:false}") boolean serveFrontend) {
         this.jwtDecoder = jwtDecoder;
         this.users = users;
+        this.prefix = serveFrontend ? "/api" : "";
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return request.getMethod().equals("POST") && (request.getServletPath().equals("/auth/tokens")
-            || request.getServletPath().equals("/auth/resets")
-            || request.getServletPath().startsWith("/auth/resets/"));
+        String path = request.getServletPath();
+        if (path.isEmpty()) path = request.getRequestURI().substring(request.getContextPath().length());
+        if (!prefix.isEmpty() && !path.equals(prefix) && !path.startsWith(prefix + "/")) return true;
+        return request.getMethod().equals("POST") && (path.equals(prefix + "/auth/tokens")
+            || path.equals(prefix + "/auth/resets") || path.startsWith(prefix + "/auth/resets/"));
     }
 
     @Override

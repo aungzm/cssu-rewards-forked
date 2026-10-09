@@ -132,11 +132,12 @@ or password. PostgreSQL remains the default when no URL is set, and switching
 databases does not migrate existing data. See the
 [SQLite setup and storage limits](backend-spring/README.md#sqlite-demo).
 
-### Docker demo proposal
+### Docker image
 
-For a proposed single-image Spring + React deployment, see the
-[Docker demo assessment and sample Compose file](docs/docker/README.md).
-The combined image is not implemented or published yet.
+The root `Dockerfile` packages Spring and React in one image, with SQLite stored
+on a volume. See the [GHCR workflow and Compose setup](docs/docker/README.md).
+The workflow builds amd64/arm64 images and can publish to GHCR. No image has been
+published by this work yet.
 
 ## Tests
 
